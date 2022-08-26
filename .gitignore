@@ -1,0 +1,17 @@
+bin
+obj
+lib
+.vs
+packages
+
+*.suo
+*.user
+
+TestResults
+
+*.nupkg
+nuget.exe
+
+
+
+
