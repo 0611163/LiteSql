@@ -737,7 +737,7 @@ using (var session = LiteSqlFactory.GetSession(splitTableMapping))
 
     session.Insert(user);
 
-    user.Id = session.GetSingle<long>("select @@IDENTITY");
+    user.Id = session.QuerySingle<long>("select @@IDENTITY");
     Console.WriteLine("插入成功, user.Id=" + user.Id);
 }
 ```
