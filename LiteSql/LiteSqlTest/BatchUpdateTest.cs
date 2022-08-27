@@ -1,4 +1,5 @@
 ﻿using DAL;
+using LiteSql;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using System;
@@ -38,14 +39,16 @@ namespace LiteSqlTest
                 user.UpdateUserid = "1";
                 user.UpdateTime = DateTime.Now;
             }
-
-            Console.WriteLine("开始 count=" + userList.Count);
-            DateTime dt = DateTime.Now;
-
             m_SysUserDal.Update(userList);
 
-            string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-            Console.WriteLine("结束，耗时：" + time + "秒");
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                long count = session.QueryCount(session.CreateSqlString(
+                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户%" }));
+                Assert.IsTrue(count >= userList.Count);
+            }
         }
         #endregion
 
@@ -57,18 +60,20 @@ namespace LiteSqlTest
 
             foreach (SysUser user in userList)
             {
-                user.Remark = "测试修改用户" + _rnd.Next(1, 10000);
+                user.Remark = "测试修改用户Async" + _rnd.Next(1, 10000);
                 user.UpdateUserid = "1";
                 user.UpdateTime = DateTime.Now;
             }
-
-            Console.WriteLine("开始 count=" + userList.Count);
-            DateTime dt = DateTime.Now;
-
             await m_SysUserDal.UpdateAsync(userList);
 
-            string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-            Console.WriteLine("结束，耗时：" + time + "秒");
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                long count = session.QueryCount(session.CreateSqlString(
+                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户Async%" }));
+                Assert.IsTrue(count >= userList.Count);
+            }
         }
         #endregion
 

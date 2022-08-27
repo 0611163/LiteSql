@@ -94,7 +94,7 @@ namespace LiteSqlTest
                 Assert.IsFalse(sql.SQL.Contains("and t.order_time >="));
                 Assert.IsTrue(sql.SQL.Contains("and t.order_time <="));
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+                List<BsOrder> list = session.QueryList<BsOrder>(sql);
                 return list;
             }
         }
@@ -131,7 +131,7 @@ namespace LiteSqlTest
                 long id = session.QuerySingle<long>(singleQuerySql.SQL, singleQuerySql.Params);
                 Assert.IsTrue(id == 1);
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+                List<BsOrder> list = session.QueryList<BsOrder>(sql);
                 foreach (BsOrder item in list)
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));

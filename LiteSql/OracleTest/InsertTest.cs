@@ -49,7 +49,7 @@ namespace OracleTest
 
                 SqlString sql = session.CreateSqlString("select * from CARINFO_MERGE where id=@id", info.Id);
 
-                CarinfoMerge carinfo = session.Query<CarinfoMerge>(sql.SQL, sql.Params);
+                CarinfoMerge carinfo = session.Query<CarinfoMerge>(sql);
                 Assert.AreEqual(carinfo.High, 8);
                 Assert.AreEqual(carinfo.BeginTime, new DateTime(2020, 1, 1));
                 Console.WriteLine(ModelToStringUtil.ToString(carinfo));
@@ -69,7 +69,7 @@ namespace OracleTest
 
                 SqlString sql = session.CreateSqlString("select * from CARINFO_MERGE where id=@id", info.Id);
 
-                CarinfoMerge carinfo = session.Query<CarinfoMerge>(sql.SQL, sql.Params);
+                CarinfoMerge carinfo = session.Query<CarinfoMerge>(sql);
                 Assert.AreEqual(carinfo.High, 9);
                 Assert.AreEqual(carinfo.BeginTime, new DateTime(2020, 1, 2));
                 Console.WriteLine(ModelToStringUtil.ToString(carinfo));

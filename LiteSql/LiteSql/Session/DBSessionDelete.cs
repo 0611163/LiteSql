@@ -261,5 +261,40 @@ namespace LiteSql
         }
         #endregion
 
+
+        #region 传SqlString
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        public int DeleteByCondition<T>(SqlString sql)
+        {
+            return DeleteByCondition<T>(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        public Task<int> DeleteByConditionAsync<T>(SqlString sql)
+        {
+            return DeleteByConditionAsync<T>(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        public int DeleteByCondition(Type type, SqlString sql)
+        {
+            return DeleteByCondition(type, sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        public Task<int> DeleteByConditionAsync(Type type, SqlString sql)
+        {
+            return DeleteByConditionAsync(type, sql.SQL, sql.Params);
+        }
+        #endregion
+
     }
 }

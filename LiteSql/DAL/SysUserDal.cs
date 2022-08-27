@@ -61,10 +61,7 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                 info.CreateTime = DateTime.Now;
                 session.Insert(info);
@@ -78,17 +75,16 @@ namespace DAL
         /// <summary>
         /// 添加
         /// </summary>
-        public async Task InsertAsync(SysUser info)
+        public async Task<long> InsertAsync(SysUser info)
         {
             using (var session = await LiteSqlFactory.GetSessionAsync())
             {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                 info.CreateTime = DateTime.Now;
                 await session.InsertAsync(info);
+                long id = await session.QuerySingleAsync<long>("select @@IDENTITY");
+                return id;
             }
         }
         #endregion

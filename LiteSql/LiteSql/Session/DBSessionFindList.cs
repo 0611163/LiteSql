@@ -141,6 +141,25 @@ namespace LiteSql
         #endregion
 
 
+        #region 查询列表(传SqlString)
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        public List<T> QueryList<T>(SqlString sql) where T : new()
+        {
+            return QueryList<T>(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        public Task<List<T>> QueryListAsync<T>(SqlString sql) where T : new()
+        {
+            return QueryListAsync<T>(sql.SQL, sql.Params);
+        }
+        #endregion
+
+
         #region DataReaderToList
         /// <summary>
         /// DataReaderToList

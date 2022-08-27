@@ -270,20 +270,12 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                var list = session.QueryList<BsOrder>("select * from bs_order");
-                if (list.Count > 0)
-                {
-                    BsOrder result = list[0];
+                BsOrder result = session.Query<BsOrder>("select * from bs_order");
 
-                    List<BsOrderDetail> detailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(result.Id);
-                    result.DetailList = detailList;
+                List<BsOrderDetail> detailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(result.Id);
+                result.DetailList = detailList;
 
-                    return result;
-                }
-                else
-                {
-                    return null;
-                }
+                return result;
             }
         }
         #endregion
@@ -306,9 +298,9 @@ namespace DAL
 
                 sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
                 int index = 0;
                 string[] idArr = ids.Split(',');
@@ -317,7 +309,7 @@ namespace DAL
 
                 sql.Append(" order by t.order_time desc, t.id asc ");
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+                List<BsOrder> list = session.QueryList<BsOrder>(sql);
                 return list;
             }
         }
@@ -341,13 +333,13 @@ namespace DAL
 
                 sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
                 sql.Append(" order by t.order_time desc, t.id asc ");
 
-                List<BsOrder> list = await session.QueryListAsync<BsOrder>(sql.SQL, sql.Params);
+                List<BsOrder> list = await session.QueryListAsync<BsOrder>(sql);
                 return list;
             }
         }
@@ -371,14 +363,14 @@ namespace DAL
 
                 sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
                 string orderby = " order by t.order_time desc, t.id asc ";
 
-                pageModel.TotalRows = session.QueryCount(sql.SQL, sql.Params);
-                List<BsOrder> result = session.QueryPage<BsOrder>(sql.SQL, orderby, pageModel.PageSize, pageModel.CurrentPage, sql.Params);
+                pageModel.TotalRows = session.QueryCount(sql);
+                List<BsOrder> result = session.QueryPage<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
                 return result;
             }
         }
@@ -402,15 +394,15 @@ namespace DAL
 
                 sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
                 string orderby = " order by t.order_time desc, t.id asc ";
 
-                var countResult = await session.QueryCountAsync(sql.SQL, sql.Params, pageModel.PageSize);
+                var countResult = await session.QueryCountAsync(sql, pageModel.PageSize);
                 pageModel.TotalRows = countResult.Count;
-                return await session.QueryPageAsync<BsOrder>(sql.SQL, orderby, pageModel.PageSize, pageModel.CurrentPage, sql.Params);
+                return await session.QueryPageAsync<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
             }
         }
         #endregion
@@ -441,7 +433,7 @@ namespace DAL
 
                 sql.Append(" order by t.order_time desc, t.id asc ");
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+                List<BsOrder> list = session.QueryList<BsOrder>(sql);
                 return list;
             }
         }

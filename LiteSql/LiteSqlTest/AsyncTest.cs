@@ -30,6 +30,7 @@ namespace LiteSqlTest
         {
             var task = m_BsOrderDal.GetListAsync(0, "订单", DateTime.MinValue, DateTime.Now.AddDays(1));
             List<BsOrder> list = await task;
+            Assert.IsTrue(list.Count > 0);
 
             foreach (BsOrder item in list)
             {

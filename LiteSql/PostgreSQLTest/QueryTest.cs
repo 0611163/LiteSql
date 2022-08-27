@@ -1,9 +1,11 @@
 ﻿using LiteSql;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -64,8 +66,8 @@ namespace PostgreSQLTest
                     sql.Append(@" and t.""Id"" in @ids ", sql.ForList(new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }));
 
                     string orderby = @" order by t.""Id"" ";
-                    pageModel.TotalRows = session.QueryCount(sql.SQL, sql.Params);
-                    List<SysUser> list = session.QueryPage<SysUser>(sql.SQL, orderby, pageModel.PageSize, pageModel.CurrentPage, sql.Params);
+                    pageModel.TotalRows = session.QueryCount(sql);
+                    List<SysUser> list = session.QueryPage<SysUser>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
                     foreach (SysUser item in list)
                     {
                         Console.WriteLine(ModelToStringUtil.ToString(item));

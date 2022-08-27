@@ -39,14 +39,13 @@ namespace LiteSqlTest
                 user.CreateUserid = "1";
                 userList.Add(user);
             }
-
-            Console.WriteLine("开始 count=" + userList.Count);
-            DateTime dt = DateTime.Now;
-
             m_SysUserDal.Insert(userList);
 
-            string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-            Console.WriteLine("结束，耗时：" + time + "秒");
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                long count = session.QueryCount("select * from sys_user");
+                Assert.IsTrue(count >= 1000);
+            }
         }
         #endregion
 
@@ -64,15 +63,13 @@ namespace LiteSqlTest
                 user.CreateUserid = "1";
                 userList.Add(user);
             }
+            await m_SysUserDal.InsertAsync(userList);
 
-            Console.WriteLine("开始 count=" + userList.Count);
-            DateTime dt = DateTime.Now;
-
-            var task = m_SysUserDal.InsertAsync(userList);
-            await task;
-
-            string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-            Console.WriteLine("结束，耗时：" + time + "秒");
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                long count = session.QueryCount("select * from sys_user");
+                Assert.IsTrue(count >= 1000);
+            }
         }
         #endregion
 

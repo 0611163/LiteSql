@@ -33,5 +33,17 @@ namespace LiteSql
         Task<List<T>> QueryListAsync<T>(string sql, DbParameter[] cmdParms) where T : new();
         #endregion
 
+        #region 查询列表(传SqlString)
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        List<T> QueryList<T>(SqlString sql) where T : new();
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        Task<List<T>> QueryListAsync<T>(SqlString sql) where T : new();
+        #endregion
+
     }
 }

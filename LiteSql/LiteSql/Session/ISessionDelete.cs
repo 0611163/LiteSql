@@ -88,5 +88,25 @@ namespace LiteSql
         /// 根据条件删除
         /// </summary>
         Task<int> DeleteByConditionAsync(Type type, string condition, DbParameter[] cmdParms);
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        int DeleteByCondition<T>(SqlString sql);
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        Task<int> DeleteByConditionAsync<T>(SqlString sql);
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        int DeleteByCondition(Type type, SqlString sql);
+
+        /// <summary>
+        /// 根据条件删除
+        /// </summary>
+        Task<int> DeleteByConditionAsync(Type type, SqlString sql);
     }
 }

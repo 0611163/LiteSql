@@ -35,6 +35,12 @@ namespace LiteSqlTest
             long id = m_SysUserDal.Insert(user);
 
             m_SysUserDal.Delete(id);
+
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                SysUser userInfo = session.QueryById<SysUser>(id);
+                Assert.IsTrue(userInfo == null);
+            }
         }
         #endregion
 
@@ -50,6 +56,9 @@ namespace LiteSqlTest
                 };
 
                 session.DeleteByCondition<SysUser>(string.Format("id>20"));
+
+                long count = session.QueryCount("select * from sys_user where id>20");
+                Assert.IsTrue(count == 0);
             }
         }
         #endregion
@@ -62,11 +71,15 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (sql, param) => Console.WriteLine(sql); //打印SQL
 
-                SqlString deleteSql = session.CreateSqlString("id not like @Id", new { Id = "10000_" });
-                int rows = session.DeleteByCondition<BsOrder>(deleteSql.SQL, deleteSql.Params);
+                int rows = session.DeleteByCondition<BsOrder>(session.CreateSqlString("id not like @Id", new { Id = "10000_" }));
                 Console.WriteLine("BsOrder表" + rows + "行已删除");
-                rows = session.DeleteByCondition<BsOrderDetail>(string.Format("order_id not like '10000_'"));
+                rows = session.DeleteByCondition<BsOrderDetail>(session.CreateSqlString("order_id not like @OrderId", new { OrderId = "10000_" }));
                 Console.WriteLine("BsOrderDetail表" + rows + "行已删除");
+
+                long count = session.QueryCount(session.CreateSqlString("select * from bs_order where id not like @Id", new { Id = "10000_" }));
+                Assert.IsTrue(count == 0);
+                count = session.QueryCount(session.CreateSqlString("select * from bs_order_detail where order_id not like @OrderId", new { OrderId = "10000_" }));
+                Assert.IsTrue(count == 0);
             }
         }
         #endregion

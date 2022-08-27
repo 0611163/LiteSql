@@ -10,26 +10,28 @@ namespace PostgreSQLTest
         [TestMethod]
         public void Test3Update()
         {
-            try
+            SysUser oldUser = null;
+            using (var session = LiteSqlFactory.GetSession())
             {
-                using (var session = LiteSqlFactory.GetSession())
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-                    SysUser user = session.Query<SysUser>("select * from sys_user");
-                    session.AttachOld(user);
-                    user.Username = "testUser";
-                    user.Realname = "测试插入用户";
-                    user.Password = "123456";
-                    user.Updateuserid = "1";
-                    user.Updatetime = DateTime.Now;
-                    session.Update(user);
-                }
+                oldUser = session.Query<SysUser>("select * from sys_user");
             }
-            catch (Exception ex)
+
+            using (var session = LiteSqlFactory.GetSession())
             {
-                Console.WriteLine(ex.ToString());
-                throw ex;
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                session.AttachOld(oldUser);
+                SysUser user = session.Query<SysUser>("select * from sys_user");
+                user.Username = "testUser";
+                user.Realname = "测试修改用户3";
+                user.Password = "123456";
+                user.Updateuserid = "1";
+                user.Updatetime = DateTime.Now;
+                session.Update(user);
+
+                SqlString sql = session.CreateSqlString("select * from sys_user where \"RealName\" like @RealName", new { RealName = "测试修改用户%" });
+                long count = session.QueryCount(sql.SQL, sql.Params);
+                Assert.IsTrue(count > 0);
             }
         }
     }

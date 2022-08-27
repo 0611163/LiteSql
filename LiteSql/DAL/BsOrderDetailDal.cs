@@ -26,7 +26,7 @@ namespace DAL
             {
                 SqlString sql = session.CreateSqlString("select * from bs_order_detail where order_id=@orderId order by order_num", orderId);
 
-                return session.QueryList<BsOrderDetail>(sql.SQL, sql.Params);
+                return session.QueryList<BsOrderDetail>(sql);
             }
         }
         #endregion

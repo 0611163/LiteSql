@@ -374,6 +374,8 @@ namespace LiteSql
 
                 object obj = cmd.ExecuteScalar();
 
+                cmd.Parameters.Clear();
+
                 if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
                 {
                     return false;
@@ -406,6 +408,8 @@ namespace LiteSql
                 }
 
                 object obj = await cmd.ExecuteScalarAsync();
+
+                cmd.Parameters.Clear();
 
                 if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
                 {
@@ -440,6 +444,8 @@ namespace LiteSql
 
                 object obj = cmd.ExecuteScalar();
 
+                cmd.Parameters.Clear();
+
                 if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
                 {
                     return default(T);
@@ -471,6 +477,8 @@ namespace LiteSql
                 }
 
                 object obj = cmd.ExecuteScalar();
+
+                cmd.Parameters.Clear();
 
                 if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
                 {
@@ -504,6 +512,8 @@ namespace LiteSql
 
                 object obj = await cmd.ExecuteScalarAsync();
 
+                cmd.Parameters.Clear();
+
                 if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
                 {
                     return default(T);
@@ -535,6 +545,8 @@ namespace LiteSql
                 }
 
                 object obj = await cmd.ExecuteScalarAsync();
+
+                cmd.Parameters.Clear();
 
                 if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
                 {
@@ -591,17 +603,7 @@ namespace LiteSql
         {
             sql = string.Format("select count(*) from ({0}) T", sql);
 
-            using (IDbCommand cmd = _provider.GetCommand(sql, _conn))
-            {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-                long count = long.Parse(cmd.ExecuteScalar().ToString());
-                cmd.Parameters.Clear();
-
-                return count;
-            }
+            return QuerySingle<long>(sql, cmdParms);
         }
 
         /// <summary>
@@ -614,17 +616,7 @@ namespace LiteSql
         {
             sql = string.Format("select count(*) from ({0}) T", sql);
 
-            using (DbCommand cmd = _provider.GetCommand(sql, _conn))
-            {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-                long count = long.Parse((await cmd.ExecuteScalarAsync()).ToString());
-                cmd.Parameters.Clear();
-
-                return count;
-            }
+            return await QuerySingleAsync<long>(sql, cmdParms);
         }
         #endregion
 
@@ -704,6 +696,121 @@ namespace LiteSql
             }
         }
         #endregion
+
+        #endregion
+
+        #region 传SqlString
+
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="sql">SqlString</param>
+        /// <returns>影响的记录数</returns>
+        public int Execute(SqlString sql)
+        {
+            return Execute(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="sql">SqlString</param>
+        /// <returns>影响的记录数</returns>
+        public Task<int> ExecuteAsync(SqlString sql)
+        {
+            return ExecuteAsync(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 是否存在
+        /// </summary>
+        public bool Exists(SqlString sql)
+        {
+            return Exists(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 是否存在
+        /// </summary>
+        public Task<bool> ExistsAsync(SqlString sql)
+        {
+            return ExistsAsync(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public object QuerySingle(SqlString sql)
+        {
+            return QuerySingle(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public T QuerySingle<T>(SqlString sql)
+        {
+            return QuerySingle<T>(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public Task<object> QuerySingleAsync(SqlString sql)
+        {
+            return QuerySingleAsync(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public Task<T> QuerySingleAsync<T>(SqlString sql)
+        {
+            return QuerySingleAsync<T>(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        /// <param name="sql">SqlString</param>
+        /// <returns>数量</returns>
+        public long QueryCount(SqlString sql)
+        {
+            return QueryCount(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        /// <param name="sql">SqlString</param>
+        /// <returns>数量</returns>
+        public Task<long> QueryCountAsync(SqlString sql)
+        {
+            return QueryCountAsync(sql.SQL, sql.Params);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        /// <param name="sql">SqlString</param>
+        /// <param name="pageSize">每页数据条数</param>
+        /// <param name="pageCount">总页数</param>
+        /// <returns>查询结果的数量</returns>
+        public long QueryCount(SqlString sql, int pageSize, out long pageCount)
+        {
+            return QueryCount(sql.SQL, sql.Params, pageSize, out pageCount);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        /// <param name="sql">SqlString</param>
+        /// <param name="pageSize">每页数据条数</param>
+        /// <returns>查询结果的数量</returns>
+        public Task<CountResult> QueryCountAsync(SqlString sql, int pageSize)
+        {
+            return QueryCountAsync(sql.SQL, sql.Params, pageSize);
+        }
 
         #endregion
 

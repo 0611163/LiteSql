@@ -3,9 +3,11 @@ using LiteSql;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Utils;
 
@@ -30,13 +32,12 @@ namespace LiteSqlTest
         #endregion
 
         #region 插入测试
-        [TestMethod]
-        public void Test1Insert()
+        public long Test1InsertInternal(long start, long index)
         {
             SysUser user = new SysUser();
             user.UserName = "testUser";
             user.RealName = "测试插入分表数据";
-            user.Remark = "测试插入分表数据";
+            user.Remark = (start + index).ToString();
             user.Password = "123456";
             user.CreateUserid = "1";
             user.CreateTime = DateTime.Now;
@@ -51,8 +52,55 @@ namespace LiteSqlTest
 
                 user.Id = session.QuerySingle<long>("select @@IDENTITY");
                 Console.WriteLine("插入成功, user.Id=" + user.Id);
+
+                SysUser userInfo = session.Query<SysUser>(session.CreateSqlString(
+                    "select * from sys_user_202208 where id = @Id", new { user.Id }));
+                Assert.IsTrue(userInfo != null);
+
+                Assert.IsTrue(userInfo.Remark == (start + index).ToString());
+                return user.Id;
             }
 
+        }
+
+        [TestMethod]
+        public void Test1Insert()
+        {
+            long start;
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                start = session.QuerySingle<long>("select max(id) from sys_user_202208");
+            }
+
+            Test1InsertInternal(start, 0);
+        }
+
+        [TestMethod]
+        public void Test1InsertBatch()
+        {
+            ConcurrentDictionary<long, long> dict = new ConcurrentDictionary<long, long>();
+            long start;
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                start = session.QuerySingle<long>("select max(id)+1 from sys_user_202208");
+            }
+
+            ThreadPool.SetMinThreads(100, 100);
+            List<Task> taskList = new List<Task>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                Task task = Task.Factory.StartNew(obj =>
+                {
+                    int index = (int)obj;
+                    long id = Test1InsertInternal(start, index);
+                    dict.TryAdd(id, id);
+                }, i);
+                taskList.Add(task);
+            }
+
+            Task.WaitAll(taskList.ToArray());
+            Assert.IsTrue(dict.Count == 100);
         }
         #endregion
 
@@ -83,6 +131,10 @@ namespace LiteSqlTest
                     user.UpdateTime = DateTime.Now;
 
                     session.Update(user);
+
+                    SysUser userInfo = session.Query<SysUser>(session.CreateSqlString(
+                        "select * from sys_user_202208 where Remark like @Remark", new { Remark = "测试修改分表数据%" }));
+                    Assert.IsTrue(userInfo.Remark == user.Remark);
                 }
                 Console.WriteLine("用户 ID=" + user.Id + " 已修改");
             }
@@ -95,7 +147,7 @@ namespace LiteSqlTest
 
         #region 删除测试
         [TestMethod]
-        public void Test3Delete()
+        public void Test4Delete()
         {
             SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
             using (var session = LiteSqlFactory.GetSession(splitTableMapping))
@@ -112,7 +164,7 @@ namespace LiteSqlTest
 
         #region 查询测试
         [TestMethod]
-        public void Test4Query()
+        public void Test3Query()
         {
             SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
 
@@ -133,6 +185,7 @@ namespace LiteSqlTest
             {
                 Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 

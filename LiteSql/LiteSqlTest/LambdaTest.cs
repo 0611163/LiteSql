@@ -166,7 +166,7 @@ namespace LiteSqlTest
 
                 sql.Append(" order by t.order_time desc, t.id asc ");
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+                List<BsOrder> list = session.QueryList<BsOrder>(sql);
                 foreach (BsOrder item in list)
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));

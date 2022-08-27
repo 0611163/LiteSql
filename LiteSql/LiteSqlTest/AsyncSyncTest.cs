@@ -56,8 +56,8 @@ namespace LiteSqlTest
                             {
                                 Console.WriteLine(ModelToStringUtil.ToString(item));
                             }
+                            Console.WriteLine("totalRows=" + pageModel.TotalRows);
                         }
-                        Console.WriteLine("totalRows=" + pageModel.TotalRows);
                     }
                     catch (Exception ex)
                     {

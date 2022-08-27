@@ -34,5 +34,17 @@ namespace LiteSql
         Task<List<T>> QueryPageAsync<T>(string sql, string orderby, int pageSize, int currentPage, DbParameter[] cmdParms) where T : new();
         #endregion
 
+        #region 分页查询列表(传SqlString)
+        /// <summary>
+        /// 分页查询列表
+        /// </summary>
+        List<T> QueryPage<T>(SqlString sql, string orderby, int pageSize, int currentPage) where T : new();
+
+        /// <summary>
+        /// 分页查询列表
+        /// </summary>
+        Task<List<T>> QueryPageAsync<T>(SqlString sql, string orderby, int pageSize, int currentPage) where T : new();
+        #endregion
+
     }
 }

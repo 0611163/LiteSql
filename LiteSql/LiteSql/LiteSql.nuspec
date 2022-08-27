@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>LiteSql</id>
-    <version>1.5.0</version>
+    <version>1.5.1</version>
     <title>LiteSql</title>
     <authors>suxiang</authors>
     <owners></owners>
@@ -10,7 +10,7 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/0611163/LiteSql</projectUrl>
     <description>一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。</description>
-    <releaseNotes>接口名称重构</releaseNotes>
+    <releaseNotes>增加传SqlString对象作为参数的接口</releaseNotes>
     <copyright>Copyright @ 2020</copyright>
   </metadata>
   <files>

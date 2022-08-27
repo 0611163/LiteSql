@@ -56,5 +56,23 @@ namespace LiteSql
         }
         #endregion
 
+        #region 分页查询列表(传SqlString)
+        /// <summary>
+        /// 分页查询列表
+        /// </summary>
+        public List<T> QueryPage<T>(SqlString sql, string orderby, int pageSize, int currentPage) where T : new()
+        {
+            return QueryPage<T>(sql.SQL, orderby, pageSize, currentPage, sql.Params);
+        }
+
+        /// <summary>
+        /// 分页查询列表
+        /// </summary>
+        public Task<List<T>> QueryPageAsync<T>(SqlString sql, string orderby, int pageSize, int currentPage) where T : new()
+        {
+            return QueryPageAsync<T>(sql.SQL, orderby, pageSize, currentPage, sql.Params);
+        }
+        #endregion
+
     }
 }

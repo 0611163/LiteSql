@@ -29,15 +29,14 @@ namespace PostgreSQLTest
 
                 using (var session = LiteSqlFactory.GetSession())
                 {
-                    session.OnExecuting = (sql, param) =>
-                    {
-                        Console.WriteLine(sql); //打印SQL
-                    };
+                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                     user.Createtime = DateTime.Now;
                     session.Insert(user);
-                    //long id = session.GetSingle<long>("select @@IDENTITY");
-                    //user.Id = id;
+
+                    long count = session.QueryCount(session.CreateSqlString(
+                        "select * from sys_user where \"Id\" = @Id", new { Id = user.Id }));
+                    Assert.IsTrue(count > 0);
                 }
 
                 Console.WriteLine("user.Id=" + user.Id);
@@ -75,9 +74,6 @@ namespace PostgreSQLTest
                 userList.Add(user);
             }
 
-            Console.WriteLine("开始 count=" + userList.Count);
-            DateTime dt = DateTime.Now;
-
             using (var session = LiteSqlFactory.GetSession())
             {
                 try
@@ -97,9 +93,6 @@ namespace PostgreSQLTest
                     throw ex;
                 }
             }
-
-            string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-            Console.WriteLine("结束，耗时：" + time + "秒");
         }
         #endregion
 
