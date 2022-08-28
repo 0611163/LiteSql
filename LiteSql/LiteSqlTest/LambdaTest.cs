@@ -53,6 +53,7 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -82,6 +83,7 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -122,6 +124,7 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -211,6 +214,7 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -243,6 +247,7 @@ namespace LiteSqlTest
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
                 Console.WriteLine("total=" + total);
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -343,6 +348,7 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -373,6 +379,7 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
