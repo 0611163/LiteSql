@@ -45,7 +45,7 @@ namespace LiteSql
         /// <summary>
         /// 注册数据库Provider(注册的数据库Provider需要继承相应的数据库提供者基类和IDBProvider,并重写IDBProvider中的接口实现)
         /// </summary>
-        public static void RegisterDBProvider(DBType dbType, IProvider provider)
+        internal static void RegisterDBProvider(DBType dbType, IProvider provider)
         {
             _providers.TryAdd(dbType, provider);
         }
@@ -55,7 +55,7 @@ namespace LiteSql
         /// <summary>
         /// 注册数据库Provider(注册的数据库Provider必须实现IProvider接口)
         /// </summary>
-        public static void RegisterDBProvider(Type providerType, IProvider provider)
+        internal static void RegisterDBProvider(Type providerType, IProvider provider)
         {
             _providersByType.TryAdd(providerType, provider);
         }

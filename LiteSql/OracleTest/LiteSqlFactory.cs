@@ -7,14 +7,7 @@ namespace OracleTest
     public class LiteSqlFactory
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.Oracle);
-        #endregion
-
-        #region 静态构造函数
-        static LiteSqlFactory()
-        {
-            ProviderFactory.RegisterDBProvider(DBType.Oracle, new OracleProvider());
-        }
+        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.Oracle, new OracleProvider());
         #endregion
 
         #region 获取 ISession

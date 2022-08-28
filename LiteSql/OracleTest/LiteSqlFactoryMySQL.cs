@@ -7,14 +7,7 @@ namespace OracleTest
     public class LiteSqlFactoryMySQL
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["MySQLConnection"].ToString(), DBType.MySQL);
-        #endregion
-
-        #region 静态构造函数
-        static LiteSqlFactoryMySQL()
-        {
-            ProviderFactory.RegisterDBProvider(DBType.MySQL, new MySQLProvider());
-        }
+        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["MySQLConnection"].ToString(), DBType.MySQL, new MySQLProvider());
         #endregion
 
         #region 获取 ISession

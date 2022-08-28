@@ -98,7 +98,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.3
+Install-Package LiteSql -Version 1.5.5
 ```
 
 2. 安装对应的数据库引擎
@@ -151,14 +151,7 @@ namespace DAL
     public class LiteSqlFactory
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.MySQL);
-        #endregion
-
-        #region 静态构造函数
-        static LiteSqlFactory()
-        {
-            ProviderFactory.RegisterDBProvider(DBType.MySQL, new MySQLProvider());
-        }
+        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.MySQL, new MySQLProvider());
         #endregion
 
         #region 获取 ISession
@@ -730,14 +723,7 @@ namespace DAL
     public class LiteSqlFactory
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.MySQL);
-        #endregion
-
-        #region 静态构造函数
-        static LiteSqlFactory()
-        {
-            ProviderFactory.RegisterDBProvider(DBType.MySQL, new MySQLProvider());
-        }
+        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.MySQL, new MySQLProvider());
         #endregion
 
         #region 获取 ISession
@@ -1137,18 +1123,6 @@ namespace PostgreSQLTest
 
 2. 定义LiteSqlFactory类
 
-    先注册数据库提供者
-
-```C#
-ProviderFactory.RegisterDBProvider(typeof(PostgreSQLProvider), new PostgreSQLProvider());
-```
-
-    再创建LiteSqlClient对象
-
-```C#
-new LiteSqlClient(connectionString, typeof(PostgreSQLProvider))
-```
-
     下面代码是.NET 5下的代码
 
 ```C#
@@ -1167,12 +1141,10 @@ namespace PostgreSQLTest
         #region 静态构造函数
         static LiteSqlFactory()
         {
-            ProviderFactory.RegisterDBProvider(typeof(PostgreSQLProvider), new PostgreSQLProvider());
-
             var configurationBuilder = new ConfigurationBuilder().AddJsonFile("config.json");
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
-            _liteSqlClient = new LiteSqlClient(connectionString, typeof(PostgreSQLProvider));
+            _liteSqlClient = new LiteSqlClient(connectionString, typeof(PostgreSQLProvider), new PostgreSQLProvider());
         }
         #endregion
 
