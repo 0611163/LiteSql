@@ -98,7 +98,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.2
+Install-Package LiteSql -Version 1.5.3
 ```
 
 2. 安装对应的数据库引擎
@@ -953,28 +953,28 @@ namespace PostgreSQLTest
         #region ForContains
         public SqlValue ForContains(string value)
         {
-            return new SqlValue("concat('%',{0},'%')", value);
+            return new SqlValue("%" + value + "%");
         }
         #endregion
 
         #region ForStartsWith
         public SqlValue ForStartsWith(string value)
         {
-            return new SqlValue("concat({0},'%')", value);
+            return new SqlValue(value + "%");
         }
         #endregion
 
         #region ForEndsWith
         public SqlValue ForEndsWith(string value)
         {
-            return new SqlValue("concat('%',{0})", value);
+            return new SqlValue("%" + value);
         }
         #endregion
 
         #region ForDateTime
         public SqlValue ForDateTime(DateTime dateTime)
         {
-            return new SqlValue("TO_TIMESTAMP(CAST({0} as TEXT), 'yyyy-MM-dd hh24:mi:ss')", dateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            return new SqlValue(dateTime);
         }
         #endregion
 

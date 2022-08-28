@@ -34,6 +34,8 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
+                session.OnExecuting = (s, p) => Console.WriteLine(s);
+
                 SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
@@ -351,6 +353,8 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
+                session.OnExecuting = (s, p) => Console.WriteLine(s);
+
                 SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 string remark = "测试";

@@ -105,28 +105,28 @@ namespace LiteSql
         #region ForContains
         public SqlValue ForContains(string value)
         {
-            return new SqlValue("concat('%',{0},'%')", value);
+            return new SqlValue("%" + value + "%");
         }
         #endregion
 
         #region ForStartsWith
         public SqlValue ForStartsWith(string value)
         {
-            return new SqlValue("concat({0},'%')", value);
+            return new SqlValue(value + "%");
         }
         #endregion
 
         #region ForEndsWith
         public SqlValue ForEndsWith(string value)
         {
-            return new SqlValue("concat('%',{0})", value);
+            return new SqlValue("%" + value);
         }
         #endregion
 
         #region ForDateTime
         public SqlValue ForDateTime(DateTime dateTime)
         {
-            return new SqlValue("STR_TO_DATE({0}, '%Y-%m-%d %H:%i:%s')", dateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            return new SqlValue(dateTime);
         }
         #endregion
 

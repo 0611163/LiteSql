@@ -12,16 +12,7 @@ using System.Threading.Tasks;
 /* ----------------------------------------------------------------------
 * 作    者：suxiang
 * 创建日期：2016年11月23日
-* 更新日期：2022年01月08日
-* 
-* 支持Oracle、MSSQL、MySQL、SQLite、Access数据库
-* 
-* 注意引用的MySql.Data.dll、System.Data.SQLite.dll的版本，32位还是64位
-* 有的System.Data.SQLite.dll版本需要依赖SQLite.Interop.dll
-* 
-* 需要配套的PageModel、DBFieldAttribute、DBKeyAttribute类
-* 
-* 为方便使用，需要配套的Model生成器
+* 更新日期：2022年08月28日
 * ---------------------------------------------------------------------- */
 
 namespace LiteSql
