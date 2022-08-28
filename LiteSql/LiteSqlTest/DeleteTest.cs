@@ -71,14 +71,14 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (sql, param) => Console.WriteLine(sql); //打印SQL
 
-                int rows = session.DeleteByCondition<BsOrder>(session.CreateSqlString("id not like @Id", new { Id = "10000_" }));
+                int rows = session.CreateSql("id not like @Id", new { Id = "10000_" }).DeleteByCondition<BsOrder>();
                 Console.WriteLine("BsOrder表" + rows + "行已删除");
-                rows = session.DeleteByCondition<BsOrderDetail>(session.CreateSqlString("order_id not like @OrderId", new { OrderId = "10000_" }));
+                rows = session.CreateSql("order_id not like @OrderId", new { OrderId = "10000_" }).DeleteByCondition<BsOrderDetail>();
                 Console.WriteLine("BsOrderDetail表" + rows + "行已删除");
 
-                long count = session.QueryCount(session.CreateSqlString("select * from bs_order where id not like @Id", new { Id = "10000_" }));
+                long count = session.CreateSql("select * from bs_order where id not like @Id", new { Id = "10000_" }).QueryCount();
                 Assert.IsTrue(count == 0);
-                count = session.QueryCount(session.CreateSqlString("select * from bs_order_detail where order_id not like @OrderId", new { OrderId = "10000_" }));
+                count = session.CreateSql("select * from bs_order_detail where order_id not like @OrderId", new { OrderId = "10000_" }).QueryCount();
                 Assert.IsTrue(count == 0);
             }
         }

@@ -89,9 +89,14 @@ namespace LiteSql
             startRow = pageSize * (currentPage - 1) + 1;
             endRow = startRow + pageSize - 1;
 
+            if (!string.IsNullOrWhiteSpace(orderby))
+            {
+                orderby = "over(" + orderby + ")";
+            }
+
             sb.Append(string.Format(@"
                 select * from 
-                (select ROW_NUMBER() over({1}) as rowNumber, t.* from ({0}) t) tempTable
+                (select ROW_NUMBER() {1} as rowNumber, t.* from ({0}) t) tempTable
                 where rowNumber between {2} and {3} ", sql, orderby, startRow, endRow));
             #endregion
 

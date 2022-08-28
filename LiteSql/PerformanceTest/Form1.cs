@@ -301,15 +301,15 @@ namespace PerformanceTest
                 {
                     using (var session = LiteSqlFactory.GetSession())
                     {
-                        SqlString sql = session.CreateSqlString(@"
+                        SqlString sql = session.CreateSql(@"
                             select t.* 
                             from sys_user t 
                             where t.id > @id 
                             and t.real_name like concat('%',@remark,'%')", 20, "测试");
 
-                        string orderBy = " order by t.create_time desc, t.id asc";
+                        sql.Append(" order by t.create_time desc, t.id asc");
 
-                        List<SysUser> userList = session.QueryList<SysUser>(sql.SQL + orderBy, sql.Params);
+                        List<SysUser> userList = sql.QueryList<SysUser>();
                         Log("查询结果 count=" + userList.Count.ToString());
                     }
                 }
@@ -338,16 +338,16 @@ namespace PerformanceTest
                         List<SysUser> userList = new List<SysUser>();
                         for (int page = 1; page <= pageCount; page++)
                         {
-                            SqlString sql = session.CreateSqlString(@"
+                            SqlString sql = session.CreateSql(@"
                                 select t.* 
                                 from sys_user t 
                                 where 1=1 
                                 and t.id > @id 
                                 and t.real_name like concat('%',@remark,'%')", 20, "测试");
 
-                            string orderBy = " order by t.create_time desc, t.id asc";
+                            string orderby = " order by t.create_time desc, t.id asc";
 
-                            userList.AddRange(session.QueryPage<SysUser>(sql.SQL, orderBy, pageSize, page, sql.Params));
+                            userList.AddRange(sql.QueryPage<SysUser>(orderby, pageSize, page));
                         }
                         Log("分页查询结果 count=" + userList.Count.ToString());
                     }

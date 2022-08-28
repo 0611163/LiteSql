@@ -53,8 +53,9 @@ namespace LiteSqlTest
                 user.Id = session.QuerySingle<long>("select @@IDENTITY");
                 Console.WriteLine("插入成功, user.Id=" + user.Id);
 
-                SysUser userInfo = session.Query<SysUser>(session.CreateSqlString(
-                    "select * from sys_user_202208 where id = @Id", new { user.Id }));
+                SysUser userInfo = session.CreateSql(
+                    "select * from sys_user_202208 where id = @Id", new { user.Id })
+                    .Query<SysUser>();
                 Assert.IsTrue(userInfo != null);
 
                 Assert.IsTrue(userInfo.Remark == (start + index).ToString());
@@ -132,8 +133,9 @@ namespace LiteSqlTest
 
                     session.Update(user);
 
-                    SysUser userInfo = session.Query<SysUser>(session.CreateSqlString(
-                        "select * from sys_user_202208 where Remark like @Remark", new { Remark = "测试修改分表数据%" }));
+                    SysUser userInfo = session.CreateSql(
+                        "select * from sys_user_202208 where Remark like @Remark", new { Remark = "测试修改分表数据%" })
+                        .Query<SysUser>();
                     Assert.IsTrue(userInfo.Remark == user.Remark);
                 }
                 Console.WriteLine("用户 ID=" + user.Id + " 已修改");
@@ -173,7 +175,7 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SqlString<SysUser> sql = session.CreateSqlString<SysUser>();
+                SqlString<SysUser> sql = session.CreateSql<SysUser>();
 
                 list = sql.Select()
                     .Where(t => t.Id < 10)

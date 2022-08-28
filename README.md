@@ -4,6 +4,46 @@
 
 一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。
 
+## 经典示例
+
+```C#
+DateTime? startTime = null;
+
+using (var session = LiteSqlFactory.GetSession())
+{
+    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+    List<SysUser> list = session.CreateSql(@"
+        select * from sys_user t where t.id <= @Id", new { Id = 20 })
+
+        .Append(@" and t.create_userid = @CreateUserId 
+            and t.password like @Password
+            and t.id in @Ids",
+            new
+            {
+                CreateUserId = "1",
+                Password = "%345%",
+                Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
+            })
+
+        .AppendIf(startTime.HasValue, " and t.create_time < @StartTime ", () => new { StartTime = startTime.Value })
+
+        .Append(" and t.create_time < @CreateTime ", new { CreateTime = new DateTime(2022, 8, 1) })
+
+        .QueryList<SysUser>();
+
+    long id = session.CreateSql("select id from sys_user where id=@Id", new { Id = 1 })
+        .QuerySingle<long>();
+    Assert.IsTrue(id == 1);
+
+    foreach (SysUser item in list)
+    {
+        Console.WriteLine(ModelToStringUtil.ToString(item));
+    }
+    Assert.IsTrue(list.Count > 0);
+}
+```
+
 ## 特点
 
 1. 支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite五种数据库
@@ -58,7 +98,7 @@
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.0
+Install-Package LiteSql -Version 1.5.2
 ```
 
 2. 安装对应的数据库引擎
@@ -415,7 +455,7 @@ public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, Da
 
         sql.Append(" order by t.order_time desc, t.id asc ");
 
-        List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+        List<BsOrder> list = session.QueryList<BsOrder>(sql);
         return list;
     }
 }
@@ -444,7 +484,7 @@ public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, Da
 
         sql.Append(" order by t.order_time desc, t.id asc ");
 
-        List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+        List<BsOrder> list = session.QueryList<BsOrder>(sql);
         return list;
     }
 }
@@ -473,8 +513,8 @@ public List<BsOrder> GetListPage(ref PageModel pageModel, int? status, string re
 
         string orderby = " order by t.order_time desc, t.id asc ";
         
-        pageModel.TotalRows = session.QueryCount(sql.SQL, sql.Params);
-        return session.QueryPage<BsOrder>(sql.SQL, orderby, pageModel.PageSize, pageModel.CurrentPage, sql.Params);
+        pageModel.TotalRows = session.QueryCount(sql);
+        return session.QueryPage<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
     }
 }
 ```
@@ -544,9 +584,9 @@ public async Task<List<BsOrder>> GetListPageAsync(PageModel pageModel, int? stat
 
         string orderby = " order by t.order_time desc, t.id asc ";
         
-        var countResult = await session.QueryCountAsync(sql.SQL, sql.Params, pageModel.PageSize);
+        var countResult = await session.QueryCountAsync(sql, pageModel.PageSize);
         pageModel.TotalRows = countResult.Count;
-        return await session.QueryPageAsync<BsOrder>(sql.SQL, orderby, pageModel.PageSize, pageModel.CurrentPage, sql.Params);
+        return await session.QueryPageAsync<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
     }
 }
 ```
@@ -576,7 +616,7 @@ public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime,
 
         sql.Append(" order by t.order_time desc, t.id asc ");
 
-        List<BsOrder> list = session.QueryList<BsOrder>(sql.SQL, sql.Params);
+        List<BsOrder> list = session.QueryList<BsOrder>(sql);
         return list;
     }
 }

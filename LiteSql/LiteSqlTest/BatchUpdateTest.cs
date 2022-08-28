@@ -45,8 +45,8 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                long count = session.QueryCount(session.CreateSqlString(
-                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户%" }));
+                long count = session.CreateSql(
+                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户%" }).QueryCount();
                 Assert.IsTrue(count >= userList.Count);
             }
         }
@@ -70,8 +70,8 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                long count = session.QueryCount(session.CreateSqlString(
-                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户Async%" }));
+                long count = session.CreateSql(
+                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户Async%" }).QueryCount();
                 Assert.IsTrue(count >= userList.Count);
             }
         }

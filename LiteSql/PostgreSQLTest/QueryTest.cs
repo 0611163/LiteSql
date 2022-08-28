@@ -54,7 +54,7 @@ namespace PostgreSQLTest
                     pageModel.CurrentPage = 2;
                     pageModel.PageSize = 5;
 
-                    SqlString sql = session.CreateSqlString(@"
+                    SqlString sql = session.CreateSql(@"
                         select t.*
                         from sys_user t
                         where 1=1");
@@ -66,8 +66,8 @@ namespace PostgreSQLTest
                     sql.Append(@" and t.""Id"" in @ids ", sql.ForList(new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }));
 
                     string orderby = @" order by t.""Id"" ";
-                    pageModel.TotalRows = session.QueryCount(sql);
-                    List<SysUser> list = session.QueryPage<SysUser>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
+                    pageModel.TotalRows = sql.QueryCount();
+                    List<SysUser> list = sql.QueryPage<SysUser>(orderby, pageModel.PageSize, pageModel.CurrentPage);
                     foreach (SysUser item in list)
                     {
                         Console.WriteLine(ModelToStringUtil.ToString(item));
@@ -94,7 +94,7 @@ namespace PostgreSQLTest
                 {
                     session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                    SqlString<SysUser> sql = session.CreateSqlString<SysUser>();
+                    SqlString<SysUser> sql = session.CreateSql<SysUser>();
 
                     string realName = "测试";
                     DateTime now = DateTime.Now;

@@ -14,14 +14,14 @@ namespace LiteSql
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        SqlString CreateSqlString(string sql = null, params object[] args);
+        SqlString CreateSql(string sql = null, params object[] args);
         #endregion
 
         #region 创建SqlString对象
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        SqlString<T> CreateSqlString<T>(string sql = null, params object[] args) where T : new();
+        SqlString<T> CreateSql<T>(string sql = null, params object[] args) where T : new();
         #endregion
 
         #region 查询下一个ID

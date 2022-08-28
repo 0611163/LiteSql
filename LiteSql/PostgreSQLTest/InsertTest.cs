@@ -34,8 +34,9 @@ namespace PostgreSQLTest
                     user.Createtime = DateTime.Now;
                     session.Insert(user);
 
-                    long count = session.QueryCount(session.CreateSqlString(
-                        "select * from sys_user where \"Id\" = @Id", new { Id = user.Id }));
+                    long count = session.CreateSql(
+                        "select * from sys_user where \"Id\" = @Id", new { Id = user.Id })
+                        .QueryCount();
                     Assert.IsTrue(count > 0);
                 }
 

@@ -288,7 +288,7 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSqlString(@"
+                SqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -323,7 +323,7 @@ namespace DAL
         {
             using (var session = await LiteSqlFactory.GetSessionAsync())
             {
-                SqlString sql = session.CreateSqlString(@"
+                SqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -353,7 +353,9 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSqlString(@"
+                session.OnExecuting = (s, p) => Console.WriteLine(s);
+
+                SqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -367,10 +369,10 @@ namespace DAL
 
                 sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                string orderby = " order by t.order_time desc, t.id asc ";
+                sql.Append(" order by t.order_time desc, t.id asc ");
 
-                pageModel.TotalRows = session.QueryCount(sql);
-                List<BsOrder> result = session.QueryPage<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
+                pageModel.TotalRows = sql.QueryCount();
+                List<BsOrder> result = sql.QueryPage<BsOrder>(null, pageModel.PageSize, pageModel.CurrentPage);
                 return result;
             }
         }
@@ -384,7 +386,7 @@ namespace DAL
         {
             using (var session = await LiteSqlFactory.GetSessionAsync())
             {
-                SqlString sql = session.CreateSqlString(@"
+                SqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -415,7 +417,7 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSqlString(@"
+                SqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id

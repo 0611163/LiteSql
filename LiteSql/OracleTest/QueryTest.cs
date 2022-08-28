@@ -36,8 +36,38 @@ namespace OracleTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                string sql = "select * from CARINFO_MERGE where rownum<20000";
-                list = session.QueryList<CarinfoMerge>(sql);
+                list = session.CreateSql(@"
+                   select * 
+                   from CARINFO_MERGE 
+                   where rownum<20000
+                   and modify_time < @Time", new { Time = new DateTime(2022, 1, 1) }).QueryList<CarinfoMerge>();
+            }
+
+            Assert.IsTrue(list.Count > 0);
+
+            int outputCount = 0;
+            foreach (CarinfoMerge item in list)
+            {
+                if (outputCount++ < 20)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Test2Query()
+        {
+            List<CarinfoMerge> list = new List<CarinfoMerge>();
+
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                list = session.CreateSql(@"
+                   select * 
+                   from CARINFO_MERGE 
+                   where rownum<200
+                   and modify_time < @Time
+                   and license_no like @NO", new { Time = new DateTime(2022, 1, 1), NO = "%A81063%" }).QueryList<CarinfoMerge>();
             }
 
             Assert.IsTrue(list.Count > 0);
@@ -65,11 +95,11 @@ namespace OracleTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSqlString("select * from CARINFO_MERGE where rownum<1000");
+                SqlString sql = session.CreateSql("select * from CARINFO_MERGE where rownum<1000");
 
                 //sql.Append(" and id in @ids", sql.ForList(new List<long> { 715299 }));
 
-                List<CarinfoMerge> list = session.QueryList<CarinfoMerge>(sql);
+                List<CarinfoMerge> list = sql.QueryList<CarinfoMerge>();
                 Assert.IsTrue(list.Count > 0);
                 Console.WriteLine("CARINFO_MERGE：");
                 for (int i = 0; i < 20; i++)

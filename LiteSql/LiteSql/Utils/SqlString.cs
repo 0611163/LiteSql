@@ -7,13 +7,14 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace LiteSql
 {
     /// <summary>
     /// 参数化查询SQL字符串
     /// </summary>
-    public class SqlString
+    public class SqlString : ISqlString
     {
         #region 变量属性
 
@@ -40,11 +41,10 @@ namespace LiteSql
         /// </summary>
         protected HashSet<string> _dbParameterNames = new HashSet<string>();
 
-        public string _orderBySQL = string.Empty;
-
         protected ISession _session;
 
         protected DBSession _dbSession;
+
         #endregion
 
         #region 构造函数
@@ -204,10 +204,12 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数</param>
-        public void AppendFormat(string sql, params object[] args)
+        public SqlString AppendFormat(string sql, params object[] args)
         {
             if (_regex.IsMatch(sql)) throw new Exception("追加参数化SQL请使用Append");
             _sql.AppendFormat(string.Format(" {0} ", sql.Trim()), args);
+
+            return this;
         }
         #endregion
 
@@ -278,6 +280,186 @@ namespace LiteSql
         {
             return _provider.ForList(list);
         }
+        #endregion
+
+        #region 实现ISqlString接口
+
+        /// <summary>
+        /// 查询实体
+        /// </summary>
+        public T Query<T>() where T : new()
+        {
+            return _session.Query<T>(this);
+        }
+
+        /// <summary>
+        /// 查询实体
+        /// </summary>
+        public Task<T> QueryAsync<T>() where T : new()
+        {
+            return _session.QueryAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        public List<T> QueryList<T>() where T : new()
+        {
+            return _session.QueryList<T>(this);
+        }
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        public Task<List<T>> QueryListAsync<T>() where T : new()
+        {
+            return _session.QueryListAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 分页查询
+        /// </summary>
+        public List<T> QueryPage<T>(string orderby, int pageSize, int currentPage) where T : new()
+        {
+            return _session.QueryPage<T>(this, orderby, pageSize, currentPage);
+        }
+
+        /// <summary>
+        /// 分页查询
+        /// </summary>
+        public Task<List<T>> QueryPageAsync<T>(string orderby, int pageSize, int currentPage) where T : new()
+        {
+            return _session.QueryPageAsync<T>(this, orderby, pageSize, currentPage);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public int DeleteByCondition<T>()
+        {
+            return _session.DeleteByCondition<T>(this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public Task<int> DeleteByConditionAsync<T>()
+        {
+            return _session.DeleteByConditionAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public int DeleteByCondition(Type type)
+        {
+            return _session.DeleteByCondition(type, this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public Task<int> DeleteByConditionAsync(Type type)
+        {
+            return _session.DeleteByConditionAsync(type, this);
+        }
+
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        public int Execute()
+        {
+            return _session.Execute(this);
+        }
+
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        public Task<int> ExecuteAsync()
+        {
+            return _session.ExecuteAsync(this);
+        }
+
+        /// <summary>
+        /// 是否存在
+        /// </summary>
+        public bool Exists()
+        {
+            return _session.Exists(this);
+        }
+
+        /// <summary>
+        /// 是否存在
+        /// </summary>
+        public Task<bool> ExistsAsync()
+        {
+            return _session.ExistsAsync(this);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public object QuerySingle()
+        {
+            return _session.QuerySingle(this);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public T QuerySingle<T>()
+        {
+            return _session.QuerySingle<T>(this);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public Task<object> QuerySingleAsync()
+        {
+            return _session.QuerySingleAsync(this);
+        }
+
+        /// <summary>
+        /// 查询单个值
+        /// </summary>
+        public Task<T> QuerySingleAsync<T>()
+        {
+            return _session.QuerySingleAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        public long QueryCount()
+        {
+            return _session.QueryCount(this);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        public Task<long> QueryCountAsync()
+        {
+            return _session.QueryCountAsync(this);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        public long QueryCount(int pageSize, out long pageCount)
+        {
+            return _session.QueryCount(this, pageSize, out pageCount);
+        }
+
+        /// <summary>
+        /// 给定一条查询SQL，返回其查询结果的数量
+        /// </summary>
+        public Task<CountResult> QueryCountAsync(int pageSize)
+        {
+            return _session.QueryCountAsync(this, pageSize);
+        }
+
         #endregion
 
     }

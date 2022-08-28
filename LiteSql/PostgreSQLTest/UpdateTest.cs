@@ -29,8 +29,9 @@ namespace PostgreSQLTest
                 user.Updatetime = DateTime.Now;
                 session.Update(user);
 
-                SqlString sql = session.CreateSqlString("select * from sys_user where \"RealName\" like @RealName", new { RealName = "测试修改用户%" });
-                long count = session.QueryCount(sql.SQL, sql.Params);
+                SqlString sql = session.CreateSql("select * from sys_user where \"RealName\" like @RealName",
+                    new { RealName = "测试修改用户%" });
+                long count = sql.QueryCount();
                 Assert.IsTrue(count > 0);
             }
         }

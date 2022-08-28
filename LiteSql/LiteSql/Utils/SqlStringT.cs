@@ -179,13 +179,13 @@ namespace LiteSql
             DbParameter[] dbParameters;
             string sql = condition.VisitLambda(expression, out dbParameters);
 
-            if (!_orderBySQL.Contains("order by"))
+            if (!_sql.ToString().Contains("order by"))
             {
-                _orderBySQL += string.Format(" order by {0} asc ", sql);
+                _sql.AppendFormat(" order by {0} asc ", sql);
             }
             else
             {
-                _orderBySQL += string.Format(", {0} asc ", sql);
+                _sql.AppendFormat(", {0} asc ", sql);
             }
 
             return this;
@@ -202,13 +202,13 @@ namespace LiteSql
             DbParameter[] dbParameters;
             string sql = condition.VisitLambda(expression, out dbParameters);
 
-            if (!_orderBySQL.Contains("order by"))
+            if (!_sql.ToString().Contains("order by"))
             {
-                _orderBySQL += string.Format(" order by {0} desc ", sql);
+                _sql.AppendFormat(" order by {0} desc ", sql);
             }
             else
             {
-                _orderBySQL += string.Format(", {0} desc ", sql);
+                _sql.AppendFormat(", {0} desc ", sql);
             }
 
             return this;
@@ -299,7 +299,7 @@ namespace LiteSql
         /// </summary>
         public List<T> ToList()
         {
-            return _session.QueryList<T>(this.SQL + this._orderBySQL, this.Params);
+            return _session.QueryList<T>(this.SQL, this.Params);
         }
 
         /// <summary>
@@ -307,7 +307,7 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> ToListAsync()
         {
-            return await _session.QueryListAsync<T>(this.SQL + this._orderBySQL, this.Params);
+            return await _session.QueryListAsync<T>(this.SQL, this.Params);
         }
         #endregion
 
@@ -317,7 +317,11 @@ namespace LiteSql
         /// </summary>
         public List<T> ToPageList(int page, int pageSize)
         {
-            return _session.QueryPage<T>(this.SQL, this._orderBySQL, pageSize, page, this.Params);
+            string ORDER_BY = "order by";
+            string[] strArr = this.SQL.Split(new string[] { ORDER_BY }, StringSplitOptions.None);
+            string orderBy = strArr.Length > 1 ? ORDER_BY + strArr[1] : string.Empty;
+
+            return _session.QueryPage<T>(strArr[0], orderBy, pageSize, page, this.Params);
         }
 
         /// <summary>
@@ -325,7 +329,11 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> ToPageListAsync(int page, int pageSize)
         {
-            return await _session.QueryPageAsync<T>(this.SQL, this._orderBySQL, pageSize, page, this.Params);
+            string ORDER_BY = "order by";
+            string[] strArr = this.SQL.Split(new string[] { ORDER_BY }, StringSplitOptions.None);
+            string orderBy = strArr.Length > 1 ? ORDER_BY + strArr[1] : string.Empty;
+
+            return await _session.QueryPageAsync<T>(strArr[0], orderBy, pageSize, page, this.Params);
         }
         #endregion
 
@@ -335,7 +343,7 @@ namespace LiteSql
         /// </summary>
         public long Count()
         {
-            return _session.QueryCount(this.SQL + this._orderBySQL, this.Params);
+            return _session.QueryCount(this.SQL, this.Params);
         }
 
         /// <summary>
@@ -343,7 +351,7 @@ namespace LiteSql
         /// </summary>
         public long CountAsync()
         {
-            return _session.QueryCount(this.SQL + this._orderBySQL, this.Params);
+            return _session.QueryCount(this.SQL, this.Params);
         }
         #endregion
 
@@ -353,7 +361,7 @@ namespace LiteSql
         /// </summary>
         public T FirstOrDefault()
         {
-            return _session.QueryList<T>(this.SQL + this._orderBySQL, this.Params).FirstOrDefault();
+            return _session.QueryList<T>(this.SQL, this.Params).FirstOrDefault();
         }
 
         /// <summary>
@@ -361,7 +369,7 @@ namespace LiteSql
         /// </summary>
         public async Task<T> FirstOrDefaultAsync()
         {
-            return (await _session.QueryListAsync<T>(this.SQL + this._orderBySQL, this.Params)).FirstOrDefault();
+            return (await _session.QueryListAsync<T>(this.SQL, this.Params)).FirstOrDefault();
         }
         #endregion
 
@@ -371,7 +379,7 @@ namespace LiteSql
         /// </summary>
         public T First()
         {
-            return _session.QueryList<T>(this.SQL + this._orderBySQL, this.Params).First();
+            return _session.QueryList<T>(this.SQL, this.Params).First();
         }
 
         /// <summary>
@@ -379,7 +387,7 @@ namespace LiteSql
         /// </summary>
         public async Task<T> FirstAsync()
         {
-            return (await _session.QueryListAsync<T>(this.SQL + this._orderBySQL, this.Params)).First();
+            return (await _session.QueryListAsync<T>(this.SQL, this.Params)).First();
         }
         #endregion
 
@@ -389,7 +397,7 @@ namespace LiteSql
         /// </summary>
         public bool Exists()
         {
-            return _session.Exists(this.SQL + this._orderBySQL, this.Params);
+            return _session.Exists(this.SQL, this.Params);
         }
 
         /// <summary>
@@ -397,7 +405,7 @@ namespace LiteSql
         /// </summary>
         public async Task<bool> ExistsAsync()
         {
-            return await _session.ExistsAsync(this.SQL + this._orderBySQL, this.Params);
+            return await _session.ExistsAsync(this.SQL, this.Params);
         }
         #endregion
 

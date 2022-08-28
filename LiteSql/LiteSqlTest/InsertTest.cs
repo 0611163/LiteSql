@@ -69,10 +69,10 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                bool bl = session.Exists(session.CreateSqlString("select * from bs_order where id=@Id", new { Id = id }));
+                bool bl = session.CreateSql("select * from bs_order where id=@Id", new { Id = id }).Exists();
                 Assert.IsTrue(bl);
 
-                long count = session.QueryCount(session.CreateSqlString("select * from bs_order_detail where order_id=@OrderId", new { OrderId = id }));
+                long count = session.CreateSql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = id }).QueryCount();
                 Assert.IsTrue(count == 3);
             }
         }
@@ -105,8 +105,7 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString existsSql = session.CreateSqlString("select * from sys_user where id=@Id", new { Id = user.Id });
-                bool bl = session.Exists(existsSql.SQL, existsSql.Params);
+                bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = user.Id }).Exists();
                 Assert.IsTrue(bl);
             }
         }
@@ -125,8 +124,7 @@ namespace LiteSqlTest
             long id = await m_SysUserDal.InsertAsync(user);
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString existsSql = session.CreateSqlString("select * from sys_user where id=@Id", new { Id = id });
-                bool bl = session.Exists(existsSql.SQL, existsSql.Params);
+                bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = id }).Exists();
                 Assert.IsTrue(bl);
             }
         }

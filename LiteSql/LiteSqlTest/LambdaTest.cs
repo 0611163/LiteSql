@@ -34,7 +34,7 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>(@"
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -61,7 +61,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>(@"
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -102,7 +102,7 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>(@"
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -142,7 +142,7 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>(@"
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -191,7 +191,7 @@ namespace LiteSqlTest
                     Console.WriteLine(s); //打印SQL
                 };
 
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 string remark = "测试";
 
@@ -219,7 +219,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 string remark = "测试";
 
@@ -256,7 +256,7 @@ namespace LiteSqlTest
                     Console.WriteLine(s); //打印SQL
                 };
 
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 List<BsOrder> list = sql.Select()
                     .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
@@ -288,7 +288,7 @@ namespace LiteSqlTest
                     Console.WriteLine(s); //打印SQL
                 };
 
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
 
@@ -321,7 +321,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>(@"
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -351,7 +351,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 string remark = "测试";
 
@@ -386,11 +386,11 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
 
                 BsOrder order = await sql.Select("o").Where(o => o.Id == "100001").FirstOrDefaultAsync();
 
-                sql = session.CreateSqlString<BsOrder>();
+                sql = session.CreateSql<BsOrder>();
                 bool bl = await sql.Select("o").Where(o => o.Id == "100001").ExistsAsync();
                 Assert.IsTrue(bl);
 
