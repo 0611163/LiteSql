@@ -67,10 +67,10 @@ namespace LiteSql
         public virtual DbParameter GetDbParameter(string name, object value) { return null; }
         #endregion
 
-        #region GetParameterMark
-        public string GetParameterMark()
+        #region GetParameterName
+        public string GetParameterName(string parameterName, Type parameterType)
         {
-            return "@";
+            return "@" + parameterName;
         }
         #endregion
 
@@ -102,6 +102,26 @@ namespace LiteSql
             #endregion
 
             return sb.ToString();
+        }
+        #endregion
+
+        #region 删除SQL语句模板
+        /// <summary>
+        /// 删除SQL语句模板 两个值分别对应 “delete from [表名] where [查询条件]”中的“delete from”和“where”
+        /// </summary>
+        public Tuple<string, string> CreateDeleteSqlTempldate()
+        {
+            return new Tuple<string, string>("delete from", "where");
+        }
+        #endregion
+
+        #region 更新SQL语句模板
+        /// <summary>
+        /// 更新SQL语句模板 三个值分别对应 “update [表名] set [赋值语句] where [查询条件]”中的“update”、“set”和“where”
+        /// </summary>
+        public Tuple<string, string, string> CreateUpdateSqlTempldate()
+        {
+            return new Tuple<string, string, string>("update", "set", "where");
         }
         #endregion
 

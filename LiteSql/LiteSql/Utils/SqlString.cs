@@ -90,13 +90,31 @@ namespace LiteSql
 
             Dictionary<string, object> dict = new Dictionary<string, object>();
             MatchCollection mc = _regex.Matches(sql);
+            int argIndex = 0;
             foreach (Match m in mc)
             {
                 string val1 = m.Groups[1].Value;
                 if (!dict.ContainsKey(val1))
                 {
                     dict.Add(val1, null);
-                    sql = ReplaceSql(sql, m.Value, val1);
+                    Type parameterType = typeof(object);
+                    if (anonymousType)
+                    {
+                        if (dictValues.ContainsKey(val1))
+                        {
+                            object obj = dictValues[val1];
+                            if (obj != null) parameterType = obj.GetType();
+                        }
+                    }
+                    else
+                    {
+                        if (argIndex < args.Length)
+                        {
+                            object obj = args[argIndex];
+                            if (obj != null) parameterType = obj.GetType();
+                        }
+                    }
+                    sql = ReplaceSql(sql, m.Value, val1, parameterType);
                 }
             }
 
@@ -127,15 +145,16 @@ namespace LiteSql
                 if (valueType == typeof(SqlValue))
                 {
                     SqlValue sqlValue = value as SqlValue;
+                    Type parameterType = sqlValue.Value.GetType();
                     if (sqlValue.Value.GetType().Name != typeof(List<>).Name)
                     {
-                        string markKey = _provider.GetParameterMark() + key;
+                        string markKey = _provider.GetParameterName(key, parameterType);
                         sql = sql.Replace(markKey, string.Format(sqlValue.Sql, markKey));
                         _paramList.Add(_provider.GetDbParameter(key, sqlValue.Value));
                     }
                     else
                     {
-                        string markKey = _provider.GetParameterMark() + key;
+                        string markKey = _provider.GetParameterName(key, parameterType);
                         sql = sql.Replace(markKey, string.Format(sqlValue.Sql, markKey));
                         string[] keyArr = sqlValue.Sql.Replace("(", string.Empty).Replace(")", string.Empty).Replace("@", string.Empty).Split(',');
                         IList valueList = (IList)sqlValue.Value;
@@ -224,9 +243,9 @@ namespace LiteSql
         /// <summary>
         /// 调用该方法的原因：参数化查询，SQL语句中统一使用@，而有的数据库不是@
         /// </summary>
-        private string ReplaceSql(string sql, string oldStr, string name)
+        private string ReplaceSql(string sql, string oldStr, string name, Type parameterType)
         {
-            string newStr = _provider.GetParameterMark() + name;
+            string newStr = _provider.GetParameterName(name, parameterType);
             return sql.Replace(oldStr, newStr);
         }
         #endregion

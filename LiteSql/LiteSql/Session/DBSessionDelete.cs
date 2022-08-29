@@ -38,10 +38,12 @@ namespace LiteSql
             Type type = typeof(T);
             StringBuilder sbSql = new StringBuilder();
             DbParameter[] cmdParms = new DbParameter[1];
-            string idName = GetIdName(type);
+            Type idType;
+            string idName = GetIdName(type, out idType);
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
-            cmdParms[0] = _provider.GetDbParameter(_parameterMark + idName, id);
-            sbSql.Append(string.Format("delete from {0} where {3}={1}{2}", GetTableName(_provider, type), _parameterMark, idName, idNameWithQuote));
+            cmdParms[0] = _provider.GetDbParameter(_provider.GetParameterName(idName, idType), id);
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType)));
 
             return Execute(sbSql.ToString(), cmdParms);
         }
@@ -77,10 +79,12 @@ namespace LiteSql
             Type type = typeof(T);
             StringBuilder sbSql = new StringBuilder();
             DbParameter[] cmdParms = new DbParameter[1];
-            string idName = GetIdName(type);
+            Type idType;
+            string idName = GetIdName(type, out idType);
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
-            cmdParms[0] = _provider.GetDbParameter(_parameterMark + idName, id);
-            sbSql.Append(string.Format("delete from {0} where {3}={1}{2}", GetTableName(_provider, type), _parameterMark, idName, idNameWithQuote));
+            cmdParms[0] = _provider.GetDbParameter(_provider.GetParameterName(idName, idType), id);
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType)));
 
             return ExecuteAsync(sbSql.ToString(), cmdParms);
         }
@@ -99,13 +103,15 @@ namespace LiteSql
             StringBuilder sbSql = new StringBuilder();
             string[] idArr = ids.Split(',');
             DbParameter[] cmdParms = new DbParameter[idArr.Length];
-            string idName = GetIdName(type);
+            Type idType;
+            string idName = GetIdName(type, out idType);
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
-            sbSql.AppendFormat("delete from {0} where {1} in (", GetTableName(_provider, type), idNameWithQuote);
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.AppendFormat(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1} in (", GetTableName(_provider, type), idNameWithQuote);
             for (int i = 0; i < idArr.Length; i++)
             {
-                cmdParms[i] = _provider.GetDbParameter(_parameterMark + idName + i, idArr[i]);
-                sbSql.AppendFormat("{0}{1}{2},", _parameterMark, idName, i);
+                cmdParms[i] = _provider.GetDbParameter(_provider.GetParameterName(idName + i, idType), idArr[i]);
+                sbSql.AppendFormat("{0},", _provider.GetParameterName(idName + i, idType));
             }
             sbSql.Remove(sbSql.Length - 1, 1);
             sbSql.Append(")");
@@ -126,13 +132,15 @@ namespace LiteSql
             StringBuilder sbSql = new StringBuilder();
             string[] idArr = ids.Split(',');
             DbParameter[] cmdParms = new DbParameter[idArr.Length];
-            string idName = GetIdName(type);
+            Type idType;
+            string idName = GetIdName(type, out idType);
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
-            sbSql.AppendFormat("delete from {0} where {1} in (", GetTableName(_provider, type), idNameWithQuote);
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.AppendFormat(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1} in (", GetTableName(_provider, type), idNameWithQuote);
             for (int i = 0; i < idArr.Length; i++)
             {
-                cmdParms[i] = _provider.GetDbParameter(_parameterMark + idName + i, idArr[i]);
-                sbSql.AppendFormat("{0}{1}{2},", _parameterMark, idName, i);
+                cmdParms[i] = _provider.GetDbParameter(_provider.GetParameterName(idName + i, idType), idArr[i]);
+                sbSql.AppendFormat("{0},", _provider.GetParameterName(idName + i, idType));
             }
             sbSql.Remove(sbSql.Length - 1, 1);
             sbSql.Append(")");
@@ -179,7 +187,8 @@ namespace LiteSql
 
             StringBuilder sbSql = new StringBuilder();
             SqlFilter(ref condition);
-            sbSql.Append(string.Format("delete from {0} where {1}", GetTableName(_provider, type), condition));
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
             return Execute(sbSql.ToString());
         }
@@ -195,7 +204,8 @@ namespace LiteSql
 
             StringBuilder sbSql = new StringBuilder();
             SqlFilter(ref condition);
-            sbSql.Append(string.Format("delete from {0} where {1}", GetTableName(_provider, type), condition));
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
             return ExecuteAsync(sbSql.ToString());
         }
@@ -239,7 +249,8 @@ namespace LiteSql
 
             StringBuilder sbSql = new StringBuilder();
             SqlFilter(ref condition);
-            sbSql.Append(string.Format("delete from {0} where {1}", GetTableName(_provider, type), condition));
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
             return Execute(sbSql.ToString(), cmdParms);
         }
@@ -255,7 +266,8 @@ namespace LiteSql
 
             StringBuilder sbSql = new StringBuilder();
             SqlFilter(ref condition);
-            sbSql.Append(string.Format("delete from {0} where {1}", GetTableName(_provider, type), condition));
+            Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
+            sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
             return ExecuteAsync(sbSql.ToString(), cmdParms);
         }

@@ -134,16 +134,18 @@ namespace LiteSql
         /// <summary>
         /// 获取主键名称
         /// </summary>
-        public static string GetIdName(Type type)
+        public static string GetIdName(Type type, out Type idType)
         {
             PropertyInfoEx[] propertyInfoList = GetEntityProperties(type);
             foreach (PropertyInfoEx propertyInfoEx in propertyInfoList)
             {
                 if (propertyInfoEx.IsDBKey)
                 {
+                    idType = propertyInfoEx.PropertyInfo.PropertyType;
                     return propertyInfoEx.FieldName;
                 }
             }
+            idType = typeof(object);
             return "Id";
         }
         #endregion

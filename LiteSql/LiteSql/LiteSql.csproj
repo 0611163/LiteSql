@@ -5,9 +5,9 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <AssemblyVersion>1.5.5</AssemblyVersion>
-    <FileVersion>1.5.5</FileVersion>
-    <Version>1.5.5</Version>
+    <AssemblyVersion>1.5.7</AssemblyVersion>
+    <FileVersion>1.5.7</FileVersion>
+    <Version>1.5.7</Version>
   </PropertyGroup>
 
   <ItemGroup>

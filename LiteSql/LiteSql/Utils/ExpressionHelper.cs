@@ -185,17 +185,17 @@ namespace LiteSql
                     if (right.Value != null && right.Value.GetType() == typeof(DateTime))
                     {
                         SqlValue sqlValue = _provider.ForDateTime((DateTime)right.Value);
-                        string markKey = _provider.GetParameterMark() + left.MemberAliasName;
+                        Type parameterType = sqlValue.Value == null ? typeof(object) : sqlValue.Value.GetType();
+                        string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
 
                         result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
                         result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), string.Format(sqlValue.Sql, markKey));
                     }
                     else
                     {
-                        string markKey = _provider.GetParameterMark() + left.MemberAliasName;
-
                         if (right.Value != null)
                         {
+                            string markKey = _provider.GetParameterName(left.MemberAliasName, right.Value.GetType());
                             result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
                             result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), markKey);
                         }
@@ -247,7 +247,8 @@ namespace LiteSql
                     expValue.MemberAliasName = GetAliasName(expValue.MemberAliasName);
                     _dbParameterNames.Add(expValue.MemberAliasName);
 
-                    string markKey = _provider.GetParameterMark() + expValue.MemberAliasName;
+                    Type parameterType = sqlValue.Value.GetType();
+                    string markKey = _provider.GetParameterName(expValue.MemberAliasName, parameterType);
 
                     string not = string.Empty;
                     if (parent != null && parent.NodeType == ExpressionType.Not) // not like
@@ -270,7 +271,8 @@ namespace LiteSql
                         expValue.MemberAliasName = GetAliasName(expValue.MemberAliasName);
                         _dbParameterNames.Add(expValue.MemberAliasName);
 
-                        string markKey = _provider.GetParameterMark() + expValue.MemberAliasName;
+                        Type parameterType = sqlValue.Value.GetType();
+                        string markKey = _provider.GetParameterName(expValue.MemberAliasName, parameterType);
 
                         string inOrNotIn = string.Empty;
                         if (parent != null && parent.NodeType == ExpressionType.Not)

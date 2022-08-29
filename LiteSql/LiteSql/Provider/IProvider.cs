@@ -44,9 +44,9 @@ namespace LiteSql
         DbParameter GetDbParameter(string name, object vallue);
 
         /// <summary>
-        /// 带参数的SQL插入和修改语句中，参数前面的符号
+        /// 带参数的SQL插入和修改语句中，参数化的字段名称
         /// </summary>
-        string GetParameterMark();
+        string GetParameterName(string parameterName, Type parameterType);
 
         /// <summary>
         /// 创建获取最大编号SQL
@@ -57,6 +57,16 @@ namespace LiteSql
         /// 创建分页SQL
         /// </summary>
         string CreatePageSql(string sql, string orderby, int pageSize, int currentPage);
+
+        /// <summary>
+        /// 删除SQL语句模板 两个值分别对应 “delete from [表名] where [查询条件]”中的“delete from”和“where”
+        /// </summary>
+        Tuple<string, string> CreateDeleteSqlTempldate();
+
+        /// <summary>
+        /// 更新SQL语句模板 三个值分别对应 “update [表名] set [赋值语句] where [查询条件]”中的“update”、“set”和“where”
+        /// </summary>
+        Tuple<string, string, string> CreateUpdateSqlTempldate();
 
         /// <summary>
         /// 创建 Like SQL

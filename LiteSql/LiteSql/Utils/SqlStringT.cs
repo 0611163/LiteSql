@@ -65,9 +65,16 @@ namespace LiteSql
                 ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.Where);
 
                 DbParameter[] dbParameters;
-                string result = " and (" + condition.VisitLambda(expression, out dbParameters) + ")";
+                string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                _sql.Append(result);
+                if (_sql.ToString().Contains("where"))
+                {
+                    _sql.Append(" and " + result);
+                }
+                else
+                {
+                    _sql.Append(" where " + result);
+                }
                 if (dbParameters != null)
                 {
                     _paramList.AddRange(dbParameters.ToList());
@@ -94,9 +101,16 @@ namespace LiteSql
                 ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.Where);
 
                 DbParameter[] dbParameters;
-                string result = " and (" + condition.VisitLambda(expression, out dbParameters) + ")";
+                string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                _sql.Append(result);
+                if (_sql.ToString().Contains("where"))
+                {
+                    _sql.Append(" and " + result);
+                }
+                else
+                {
+                    _sql.Append(" where " + result);
+                }
                 if (dbParameters != null)
                 {
                     _paramList.AddRange(dbParameters.ToList());
@@ -123,9 +137,16 @@ namespace LiteSql
                 ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.Where);
 
                 DbParameter[] dbParameters;
-                string result = " and (" + condition.VisitLambda(expression, out dbParameters) + ")";
+                string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                _sql.Append(result);
+                if (_sql.ToString().Contains("where"))
+                {
+                    _sql.Append(" and " + result);
+                }
+                else
+                {
+                    _sql.Append(" where " + result);
+                }
                 if (dbParameters != null)
                 {
                     _paramList.AddRange(dbParameters.ToList());
@@ -152,9 +173,16 @@ namespace LiteSql
                 ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.Where);
 
                 DbParameter[] dbParameters;
-                string result = " and (" + condition.VisitLambda(expression, out dbParameters) + ")";
+                string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                _sql.Append(result);
+                if (_sql.ToString().Contains("where"))
+                {
+                    _sql.Append(" and " + result);
+                }
+                else
+                {
+                    _sql.Append(" where " + result);
+                }
                 if (dbParameters != null)
                 {
                     _paramList.AddRange(dbParameters.ToList());
@@ -229,8 +257,7 @@ namespace LiteSql
 
             string alias = sql.Split('=')[1].Split('.')[0].Trim();
 
-            _sql.Replace("where 1=1", string.Empty);
-            _sql.AppendFormat(" left join {0} {1} on {2} where 1=1 ", tableName, alias, sql);
+            _sql.AppendFormat(" left join {0} {1} on {2} ", tableName, alias, sql);
 
             return this;
         }
@@ -262,8 +289,6 @@ namespace LiteSql
             _sql.Remove(_sql.Length - 1, 1);
 
             _sql.AppendFormat(" from {0} {1}", _dbSession.GetTableName(_provider, type), alias);
-
-            _sql.Append(" where 1=1 ");
 
             return this;
         }
@@ -379,7 +404,7 @@ namespace LiteSql
         /// </summary>
         public T First()
         {
-            return _session.QueryList<T>(this.SQL, this.Params).First();
+            return _session.QueryList<T>(this.SQL, this.Params).FirstOrDefault();
         }
 
         /// <summary>
@@ -387,7 +412,7 @@ namespace LiteSql
         /// </summary>
         public async Task<T> FirstAsync()
         {
-            return (await _session.QueryListAsync<T>(this.SQL, this.Params)).First();
+            return (await _session.QueryListAsync<T>(this.SQL, this.Params)).FirstOrDefault();
         }
         #endregion
 

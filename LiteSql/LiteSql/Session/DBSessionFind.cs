@@ -20,11 +20,12 @@ namespace LiteSql
             Type type = typeof(T);
 
             DbParameter[] cmdParms = new DbParameter[1];
-            string idName = GetIdName(type);
+            Type idType;
+            string idName = GetIdName(type, out idType);
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
-            cmdParms[0] = _provider.GetDbParameter(_parameterMark + idName, id);
+            cmdParms[0] = _provider.GetDbParameter(_provider.GetParameterName(idName, idType), id);
 
-            string sql = string.Format("select * from {0} where {3}={1}{2}", GetTableName(_provider, type), _parameterMark, idName, idNameWithQuote);
+            string sql = string.Format("select * from {0} where {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType));
 
             object result = Find(type, sql, cmdParms);
 
@@ -48,11 +49,12 @@ namespace LiteSql
             Type type = typeof(T);
 
             DbParameter[] cmdParms = new DbParameter[1];
-            string idName = GetIdName(type);
+            Type idType;
+            string idName = GetIdName(type, out idType);
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
-            cmdParms[0] = _provider.GetDbParameter(_parameterMark + idName, id);
+            cmdParms[0] = _provider.GetDbParameter(_provider.GetParameterName(idName, idType), id);
 
-            string sql = string.Format("select * from {0} where {3}={1}{2}", GetTableName(_provider, type), _parameterMark, idName, idNameWithQuote);
+            string sql = string.Format("select * from {0} where {0}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType));
 
             object result = await FindAsync(type, sql, cmdParms);
 
