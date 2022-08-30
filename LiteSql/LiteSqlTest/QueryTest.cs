@@ -73,7 +73,7 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -121,7 +121,7 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select * from sys_user t where t.id <= @Id", new { Id = 20 });
 
                 sql.Append(@" and t.create_userid = @userId 
@@ -192,15 +192,13 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                List<SysUser> list = session.CreateSql<SysUser>()
-
-                    .Select()
+                List<SysUser> list = session.Queryable<SysUser>()
 
                     .Where(t => t.Id <= 20)
 
                     .Where(t => !t.UserName.Contains("管理员")) //Lambda客串
 
-                    .Append(@" and t.create_userid = @CreateUserId 
+                    .AsISqlString().Append(@" and t.create_userid = @CreateUserId 
                         and t.password like @Password
                         and t.id in @Ids",
                         new

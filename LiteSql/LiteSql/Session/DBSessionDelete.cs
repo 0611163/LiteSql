@@ -278,7 +278,7 @@ namespace LiteSql
         /// <summary>
         /// 根据条件删除
         /// </summary>
-        public int DeleteByCondition<T>(SqlString sql)
+        public int DeleteByCondition<T>(ISqlString sql)
         {
             return DeleteByCondition<T>(sql.SQL, sql.Params);
         }
@@ -286,7 +286,7 @@ namespace LiteSql
         /// <summary>
         /// 根据条件删除
         /// </summary>
-        public Task<int> DeleteByConditionAsync<T>(SqlString sql)
+        public Task<int> DeleteByConditionAsync<T>(ISqlString sql)
         {
             return DeleteByConditionAsync<T>(sql.SQL, sql.Params);
         }

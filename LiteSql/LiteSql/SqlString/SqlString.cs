@@ -67,7 +67,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public SqlString Append(string sql, params object[] args)
+        public ISqlString Append(string sql, params object[] args)
         {
             if (args == null) throw new Exception("参数args不能为null");
 
@@ -184,7 +184,7 @@ namespace LiteSql
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数</param>
-        public SqlString AppendIf(bool condition, string sql, params object[] args)
+        public ISqlString AppendIf(bool condition, string sql, params object[] args)
         {
             if (condition)
             {
@@ -200,7 +200,7 @@ namespace LiteSql
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="sql">SQL</param>
         /// <param name="argsFunc">参数</param>
-        public SqlString AppendIf(bool condition, string sql, params Func<object>[] argsFunc)
+        public ISqlString AppendIf(bool condition, string sql, params Func<object>[] argsFunc)
         {
             if (condition)
             {
@@ -223,7 +223,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数</param>
-        public SqlString AppendFormat(string sql, params object[] args)
+        public ISqlString AppendFormat(string sql, params object[] args)
         {
             if (_regex.IsMatch(sql)) throw new Exception("追加参数化SQL请使用Append");
             _sql.AppendFormat(string.Format(" {0} ", sql.Trim()), args);
@@ -301,7 +301,7 @@ namespace LiteSql
         }
         #endregion
 
-        #region 实现ISqlString接口
+        #region 实现ISqlString增删改查接口
 
         /// <summary>
         /// 查询实体

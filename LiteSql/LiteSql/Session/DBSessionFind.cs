@@ -156,7 +156,7 @@ namespace LiteSql
         /// <summary>
         /// 根据sql查询实体
         /// </summary>
-        public T Query<T>(SqlString sql) where T : new()
+        public T Query<T>(ISqlString sql) where T : new()
         {
             return Query<T>(sql.SQL, sql.Params);
         }
@@ -164,7 +164,7 @@ namespace LiteSql
         /// <summary>
         /// 根据sql查询实体
         /// </summary>
-        public Task<T> QueryAsync<T>(SqlString sql) where T : new()
+        public Task<T> QueryAsync<T>(ISqlString sql) where T : new()
         {
             return QueryAsync<T>(sql.SQL, sql.Params);
         }

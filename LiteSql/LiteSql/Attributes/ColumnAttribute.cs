@@ -19,7 +19,7 @@ namespace LiteSql
         /// <summary>
         /// 标识该属性是数据库字段
         /// </summary>
-        /// <param name="tableName">数据库字段名</param>
+        /// <param name="fieldName">数据库字段名</param>
         public ColumnAttribute(string fieldName = null)
         {
             FieldName = fieldName;

@@ -145,7 +145,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public List<T> QueryList<T>(SqlString sql) where T : new()
+        public List<T> QueryList<T>(ISqlString sql) where T : new()
         {
             return QueryList<T>(sql.SQL, sql.Params);
         }
@@ -153,7 +153,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public Task<List<T>> QueryListAsync<T>(SqlString sql) where T : new()
+        public Task<List<T>> QueryListAsync<T>(ISqlString sql) where T : new()
         {
             return QueryListAsync<T>(sql.SQL, sql.Params);
         }

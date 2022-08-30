@@ -16,14 +16,14 @@ namespace LiteSql
     public class ExpressionHelper<T>
     {
         #region 变量
-        private SqlString _sqlString;
+        private ISqlString _sqlString;
         private IProvider _provider;
         private HashSet<string> _dbParameterNames;
         private SqlStringMethod _SqlStringMethod;
         #endregion
 
         #region 构造函数
-        public ExpressionHelper(SqlString sqlString, IProvider provider, HashSet<string> dbParameterNames, SqlStringMethod sqlStringMethod)
+        public ExpressionHelper(ISqlString sqlString, IProvider provider, HashSet<string> dbParameterNames, SqlStringMethod sqlStringMethod)
         {
             _sqlString = sqlString;
             _provider = provider;

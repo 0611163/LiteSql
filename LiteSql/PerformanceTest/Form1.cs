@@ -301,7 +301,7 @@ namespace PerformanceTest
                 {
                     using (var session = LiteSqlFactory.GetSession())
                     {
-                        SqlString sql = session.CreateSql(@"
+                        ISqlString sql = session.CreateSql(@"
                             select t.* 
                             from sys_user t 
                             where t.id > @id 
@@ -338,7 +338,7 @@ namespace PerformanceTest
                         List<SysUser> userList = new List<SysUser>();
                         for (int page = 1; page <= pageCount; page++)
                         {
-                            SqlString sql = session.CreateSql(@"
+                            ISqlString sql = session.CreateSql(@"
                                 select t.* 
                                 from sys_user t 
                                 where 1=1 

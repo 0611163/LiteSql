@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace LiteSql
@@ -81,6 +82,10 @@ namespace LiteSql
         #region 创建分页SQL
         public string CreatePageSql(string sql, string orderby, int pageSize, int currentPage)
         {
+            Regex regex = new Regex("order[\\s]+by", RegexOptions.IgnoreCase);
+            orderby = regex.Replace(orderby, string.Empty);
+            string[] orderbyArray = orderby.Split(',');
+
             StringBuilder sb = new StringBuilder();
             int startRow = 0;
             int endRow = 0;
@@ -89,14 +94,14 @@ namespace LiteSql
             endRow = pageSize * currentPage;
             //startRow = pageSize * currentPage > totalRows ? totalRows - pageSize * (currentPage - 1) : pageSize; //没有totalRows无法计算
             startRow = pageSize; //最后一页数据和前一页数据有重复，且数据始终为pageSize
-            string[] orderbyArr = string.Format("{0} asc", orderby.Trim()).Split(' ');
+            string[] firstOrderbyArray = orderbyArray[0].Trim().Split(' ');
 
             sb.AppendFormat(@"
                 select * from(
                 select top {4} * from 
                 (select top {3} * from ({0}) order by {1} asc)
                 order by {1} desc
-                ) order by {1} {2}", sql, orderbyArr[0], orderbyArr[1], endRow, startRow);
+                ) order by {2}", sql, firstOrderbyArray[0], orderby, endRow, startRow);
             #endregion
 
             return sb.ToString();

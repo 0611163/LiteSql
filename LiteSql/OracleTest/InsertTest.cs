@@ -47,7 +47,7 @@ namespace OracleTest
                 info.Id = session.QueryNextId<CarinfoMerge>();
                 session.Insert(info);
 
-                SqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
+                ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
 
                 CarinfoMerge carinfo = sql.Query<CarinfoMerge>();
                 Assert.AreEqual(carinfo.High, 8);
@@ -67,7 +67,7 @@ namespace OracleTest
                 info.TotalMass = (decimal)100.66;
                 session.Update(info);
 
-                SqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
+                ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
 
                 CarinfoMerge carinfo = sql.Query<CarinfoMerge>();
                 Assert.AreEqual(carinfo.High, 9);

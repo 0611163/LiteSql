@@ -188,58 +188,58 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>影响的记录数</returns>
-        int Execute(SqlString sql);
+        int Execute(ISqlString sql);
 
         /// <summary>
         /// 执行SQL语句，返回影响的记录数
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>影响的记录数</returns>
-        Task<int> ExecuteAsync(SqlString sql);
+        Task<int> ExecuteAsync(ISqlString sql);
 
         /// <summary>
         /// 是否存在
         /// </summary>
-        bool Exists(SqlString sql);
+        bool Exists(ISqlString sql);
 
         /// <summary>
         /// 是否存在
         /// </summary>
-        Task<bool> ExistsAsync(SqlString sql);
+        Task<bool> ExistsAsync(ISqlString sql);
 
         /// <summary>
         /// 查询单个值
         /// </summary>
-        object QuerySingle(SqlString sql);
+        object QuerySingle(ISqlString sql);
 
         /// <summary>
         /// 查询单个值
         /// </summary>
-        T QuerySingle<T>(SqlString sql);
+        T QuerySingle<T>(ISqlString sql);
 
         /// <summary>
         /// 查询单个值
         /// </summary>
-        Task<object> QuerySingleAsync(SqlString sql);
+        Task<object> QuerySingleAsync(ISqlString sql);
 
         /// <summary>
         /// 查询单个值
         /// </summary>
-        Task<T> QuerySingleAsync<T>(SqlString sql);
+        Task<T> QuerySingleAsync<T>(ISqlString sql);
 
         /// <summary>
         /// 给定一条查询SQL，返回其查询结果的数量
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>数量</returns>
-        long QueryCount(SqlString sql);
+        long QueryCount(ISqlString sql);
 
         /// <summary>
         /// 给定一条查询SQL，返回其查询结果的数量
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>数量</returns>
-        Task<long> QueryCountAsync(SqlString sql);
+        Task<long> QueryCountAsync(ISqlString sql);
 
         /// <summary>
         /// 给定一条查询SQL，返回其查询结果的数量
@@ -248,7 +248,7 @@ namespace LiteSql
         /// <param name="pageSize">每页数据条数</param>
         /// <param name="pageCount">总页数</param>
         /// <returns>查询结果的数量</returns>
-        long QueryCount(SqlString sql, int pageSize, out long pageCount);
+        long QueryCount(ISqlString sql, int pageSize, out long pageCount);
 
         /// <summary>
         /// 给定一条查询SQL，返回其查询结果的数量
@@ -256,7 +256,7 @@ namespace LiteSql
         /// <param name="sql">SqlString</param>
         /// <param name="pageSize">每页数据条数</param>
         /// <returns>查询结果的数量</returns>
-        Task<CountResult> QueryCountAsync(SqlString sql, int pageSize);
+        Task<CountResult> QueryCountAsync(ISqlString sql, int pageSize);
 
         #endregion
 

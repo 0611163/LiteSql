@@ -98,7 +98,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.7
+Install-Package LiteSql -Version 1.5.10
 ```
 
 2. 安装对应的数据库引擎
@@ -434,7 +434,7 @@ public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, Da
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString sql = session.CreateSqlString(@"
+        ISqlString sql = session.CreateSql(@"
             select t.*, u.real_name as OrderUserRealName
             from bs_order t
             left join sys_user u on t.order_userid=u.id
@@ -463,7 +463,7 @@ public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, Da
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString sql = session.CreateSqlString(@"
+        ISqlString sql = session.CreateSql(@"
             select t.*, u.real_name as OrderUserRealName
             from bs_order t
             left join sys_user u on t.order_userid=u.id
@@ -492,7 +492,7 @@ public List<BsOrder> GetListPage(ref PageModel pageModel, int? status, string re
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString sql = session.CreateSqlString(@"
+        ISqlString sql = session.CreateSql(@"
             select t.*, u.real_name as OrderUserRealName
             from bs_order t
             left join sys_user u on t.order_userid=u.id
@@ -563,7 +563,7 @@ public async Task<List<BsOrder>> GetListPageAsync(PageModel pageModel, int? stat
 {
     using (var session = await LiteSqlFactory.GetSessionAsync())
     {
-        SqlString sql = session.CreateSqlString(@"
+        ISqlString sql = session.CreateSql(@"
             select t.*, u.real_name as OrderUserRealName
             from bs_order t
             left join sys_user u on t.order_userid=u.id
@@ -593,7 +593,7 @@ public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime,
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString sql = session.CreateSqlString(@"
+        ISqlString sql = session.CreateSql(@"
             select t.*, u.real_name as OrderUserRealName
             from bs_order t
             left join sys_user u on t.order_userid=u.id
@@ -626,16 +626,14 @@ public void TestQueryByLambda6()
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+        ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
         string remark = "测试";
 
-        List<BsOrder> list = sql.Select()
-
-            .WhereIf(!string.IsNullOrWhiteSpace(remark),
-                t => t.Remark.Contains(remark)
-                && t.CreateTime < DateTime.Now
-                && t.CreateUserid == "10")
+        List<BsOrder> list = sql.WhereIf(!string.IsNullOrWhiteSpace(remark),
+            t => t.Remark.Contains(remark)
+            && t.CreateTime < DateTime.Now
+            && t.CreateUserid == "10")
 
             .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
             .ToList();
@@ -655,12 +653,12 @@ public void TestQueryByLambda7()
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>();
+        ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
         int total;
         List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
 
-        List<BsOrder> list = sql.Select()
+        List<BsOrder> list = sql
             .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
             .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
             .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
@@ -687,7 +685,7 @@ public void TestQueryByLambda9()
 {
     using (var session = LiteSqlFactory.GetSession())
     {
-        SqlString<BsOrder> sql = session.CreateSqlString<BsOrder>(@"
+        ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
             select t.*, u.real_name as OrderUserRealName
             from bs_order t
             left join sys_user u on t.order_userid=u.id
@@ -811,10 +809,9 @@ using (var session = LiteSqlFactory.GetSession(splitTableMapping))
 {
     session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    SqlString<SysUser> sql = session.CreateSqlString<SysUser>();
+    ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
 
-    List<SysUser> list = sql.Select()
-        .Where(t => t.Id < 10)
+    List<SysUser> list = sql.Where(t => t.Id < 10)
         .OrderBy(t => t.Id)
         .ToList();
 }
@@ -1699,7 +1696,7 @@ namespace ClickHouseTest
             using ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
-            List<PeopleFace> list = session.CreateSql<PeopleFace>().Select()
+            List<PeopleFace> list = session.Queryable<PeopleFace>()
                 .Where(t => t.CapturedTime < DateTime.Now)
                 .OrderByDescending(t => t.CapturedTime)
                 .ToPageList(1, queryCount);
@@ -1744,7 +1741,7 @@ namespace ClickHouseTest
 
             using ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
-            long count = session.CreateSql<PeopleFace>().Select().Where(t => t.CapturedTime >= new DateTime(2022, 1, 1)).Count();
+            long count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime >= new DateTime(2022, 1, 1)).Count();
             Console.WriteLine("count=" + count);
             Assert.IsTrue(count > 0);
         }
@@ -1771,7 +1768,7 @@ namespace ClickHouseTest
             peopleFace.Event = "UPSERT";
             session.Insert(peopleFace);
 
-            long count = session.CreateSql<PeopleFace>().Select().Where(t => t.CapturedTime >= new DateTime(2022, 1, 1)).Count();
+            long count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime >= new DateTime(2022, 1, 1)).Count();
             Console.WriteLine("count=" + count);
             Assert.IsTrue(count > 0);
         }
@@ -1811,7 +1808,7 @@ namespace ClickHouseTest
                 session.Insert(peopleFaceList);
             }
 
-            long count = session.CreateSql<PeopleFace>().Select().Where(t => t.CapturedTime >= time.Value && t.CameraId.StartsWith(pre)).Count();
+            long count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime >= time.Value && t.CameraId.StartsWith(pre)).Count();
             Console.WriteLine("count=" + count);
             Assert.IsTrue(count > 0);
         }
@@ -1836,7 +1833,7 @@ namespace ClickHouseTest
 
             Thread.Sleep(100);
 
-            PeopleFace newPeopleFace = session.CreateSql<PeopleFace>().Select().Where(t => t.CameraId == "34010400000000000000").First();
+            PeopleFace newPeopleFace = session.Queryable<PeopleFace>().Where(t => t.CameraId == "34010400000000000000").First();
 
             Console.WriteLine(newExtraInfo);
             Console.WriteLine(newPeopleFace.ExtraInfo);
@@ -1867,7 +1864,7 @@ namespace ClickHouseTest
 
             Thread.Sleep(100);
 
-            long count = session.CreateSql<PeopleFace>().Select().Where(t => t.ExtraInfo == newExtraInfo).Count();
+            long count = session.Queryable<PeopleFace>().Where(t => t.ExtraInfo == newExtraInfo).Count();
 
             Console.WriteLine(count + "条已更新");
             Assert.IsTrue(count > 0);
@@ -1892,7 +1889,7 @@ namespace ClickHouseTest
 
             Thread.Sleep(100);
 
-            long count = session.CreateSql<PeopleFace>().Select().Where(t => t.ExtraInfo == newExtraInfo).Count();
+            long count = session.Queryable<PeopleFace>().Where(t => t.ExtraInfo == newExtraInfo).Count();
 
             Console.WriteLine(count + "条已更新");
             Assert.IsTrue(count > 0);
@@ -1909,14 +1906,14 @@ namespace ClickHouseTest
 
             using ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
-            long count = session.CreateSql<PeopleFace>().Select().Where(t => t.CapturedTime > DateTime.Now.AddMinutes(-1)).Count();
+            long count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime > DateTime.Now.AddMinutes(-1)).Count();
             Console.WriteLine("删除前数量=" + count);
 
             session.CreateSql("captured_time>@Time", new { Time = DateTime.Now.AddDays(-10) }).DeleteByCondition<PeopleFace>();
 
             Thread.Sleep(100);
 
-            count = session.CreateSql<PeopleFace>().Select().Where(t => t.CapturedTime > DateTime.Now.AddMinutes(-1)).Count();
+            count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime > DateTime.Now.AddMinutes(-1)).Count();
             Console.WriteLine("删除后数量=" + count);
 
             Assert.IsTrue(count == 0);

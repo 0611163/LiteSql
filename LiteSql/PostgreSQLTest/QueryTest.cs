@@ -54,7 +54,7 @@ namespace PostgreSQLTest
                     pageModel.CurrentPage = 2;
                     pageModel.PageSize = 5;
 
-                    SqlString sql = session.CreateSql(@"
+                    ISqlString sql = session.CreateSql(@"
                         select t.*
                         from sys_user t
                         where 1=1");
@@ -94,14 +94,13 @@ namespace PostgreSQLTest
                 {
                     session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                    SqlString<SysUser> sql = session.CreateSql<SysUser>();
+                    ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
 
                     string realName = "测试";
                     DateTime now = DateTime.Now;
                     int height = 160;
 
-                    sql.Select()
-                       .WhereIf(!string.IsNullOrWhiteSpace(realName),
+                    sql.WhereIf(!string.IsNullOrWhiteSpace(realName),
                            t => t.Realname.Contains(realName)
                            && t.Createtime < now
                            && t.Createtime < DateTime.Now

@@ -92,12 +92,12 @@ namespace LiteSql
         /// <summary>
         /// 根据条件删除
         /// </summary>
-        int DeleteByCondition<T>(SqlString sql);
+        int DeleteByCondition<T>(ISqlString sql);
 
         /// <summary>
         /// 根据条件删除
         /// </summary>
-        Task<int> DeleteByConditionAsync<T>(SqlString sql);
+        Task<int> DeleteByConditionAsync<T>(ISqlString sql);
 
         /// <summary>
         /// 根据条件删除

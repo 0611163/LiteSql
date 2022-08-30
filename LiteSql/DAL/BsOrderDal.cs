@@ -288,7 +288,7 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -323,7 +323,7 @@ namespace DAL
         {
             using (var session = await LiteSqlFactory.GetSessionAsync())
             {
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -355,7 +355,7 @@ namespace DAL
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s);
 
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -386,7 +386,7 @@ namespace DAL
         {
             using (var session = await LiteSqlFactory.GetSessionAsync())
             {
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -417,7 +417,7 @@ namespace DAL
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSql(@"
+                ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id

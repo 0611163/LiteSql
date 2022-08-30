@@ -14,14 +14,21 @@ namespace LiteSql
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        SqlString CreateSql(string sql = null, params object[] args);
+        ISqlString CreateSql(string sql = null, params object[] args);
         #endregion
 
         #region 创建SqlString对象
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        SqlString<T> CreateSql<T>(string sql = null, params object[] args) where T : new();
+        ISqlQueryable<T> CreateSql<T>(string sql = null, params object[] args) where T : new();
+
+        /// <summary>
+        /// 创建IQueryable
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="alias">别名，默认值t</param>
+        ISqlQueryable<T> Queryable<T>(string alias = null) where T : new();
         #endregion
 
         #region 查询下一个ID

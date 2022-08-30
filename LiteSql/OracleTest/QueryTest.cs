@@ -95,7 +95,7 @@ namespace OracleTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString sql = session.CreateSql("select * from CARINFO_MERGE where rownum<1000");
+                ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where rownum<1000");
 
                 //sql.Append(" and id in @ids", sql.ForList(new List<long> { 715299 }));
 

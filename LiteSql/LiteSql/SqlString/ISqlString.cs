@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +13,76 @@ namespace LiteSql
     /// </summary>
     public interface ISqlString
     {
-        #region 查询接口
+        /// <summary>
+        /// 参数化查询的参数
+        /// </summary>
+        DbParameter[] Params { get; }
+
+        /// <summary>
+        /// 参数化查询的SQL
+        /// </summary>
+        string SQL { get; }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlString Append(string sql, params object[] args);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数</param>
+        ISqlString AppendIf(bool condition, string sql, params object[] args);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="argsFunc">参数</param>
+        ISqlString AppendIf(bool condition, string sql, params Func<object>[] argsFunc);
+
+        /// <summary>
+        /// 封装 StringBuilder AppendFormat 追加非参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数</param>
+        ISqlString AppendFormat(string sql, params object[] args);
+
+        /// <summary>
+        /// ToString
+        /// </summary>
+        string ToString();
+
+        /// <summary>
+        /// 创建 Like SQL
+        /// </summary>
+        SqlValue ForContains(string value);
+
+        /// <summary>
+        /// 创建 Like SQL
+        /// </summary>
+        SqlValue ForStartsWith(string value);
+
+        /// <summary>
+        /// 创建 Like SQL
+        /// </summary>
+        SqlValue ForEndsWith(string value);
+
+        /// <summary>
+        /// 创建 日期时间类型转换 SQL
+        /// </summary>
+        /// <param name="dateTime">日期时间</param>
+        SqlValue ForDateTime(DateTime dateTime);
+
+        /// <summary>
+        /// 创建 in 或 not in SQL
+        /// </summary>
+        SqlValue ForList(IList list);
 
         /// <summary>
         /// 查询实体
@@ -122,8 +193,6 @@ namespace LiteSql
         /// 给定一条查询SQL，返回其查询结果的数量
         /// </summary>
         Task<CountResult> QueryCountAsync(int pageSize);
-
-        #endregion
 
     }
 }

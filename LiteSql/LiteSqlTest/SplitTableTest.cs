@@ -175,10 +175,9 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SqlString<SysUser> sql = session.CreateSql<SysUser>();
+                ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
 
-                list = sql.Select()
-                    .Where(t => t.Id < 10)
+                list = sql.Where(t => t.Id < 10)
                     .OrderBy(t => t.Id)
                     .ToList();
             }

@@ -37,12 +37,12 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        List<T> QueryList<T>(SqlString sql) where T : new();
+        List<T> QueryList<T>(ISqlString sql) where T : new();
 
         /// <summary>
         /// 查询列表
         /// </summary>
-        Task<List<T>> QueryListAsync<T>(SqlString sql) where T : new();
+        Task<List<T>> QueryListAsync<T>(ISqlString sql) where T : new();
         #endregion
 
     }

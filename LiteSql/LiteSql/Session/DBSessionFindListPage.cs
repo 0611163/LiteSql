@@ -60,7 +60,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public List<T> QueryPage<T>(SqlString sql, string orderby, int pageSize, int currentPage) where T : new()
+        public List<T> QueryPage<T>(ISqlString sql, string orderby, int pageSize, int currentPage) where T : new()
         {
             return QueryPage<T>(sql.SQL, orderby, pageSize, currentPage, sql.Params);
         }
@@ -68,7 +68,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public Task<List<T>> QueryPageAsync<T>(SqlString sql, string orderby, int pageSize, int currentPage) where T : new()
+        public Task<List<T>> QueryPageAsync<T>(ISqlString sql, string orderby, int pageSize, int currentPage) where T : new()
         {
             return QueryPageAsync<T>(sql.SQL, orderby, pageSize, currentPage, sql.Params);
         }

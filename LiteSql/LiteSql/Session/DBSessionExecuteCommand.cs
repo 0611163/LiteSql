@@ -706,7 +706,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>影响的记录数</returns>
-        public int Execute(SqlString sql)
+        public int Execute(ISqlString sql)
         {
             return Execute(sql.SQL, sql.Params);
         }
@@ -716,7 +716,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>影响的记录数</returns>
-        public Task<int> ExecuteAsync(SqlString sql)
+        public Task<int> ExecuteAsync(ISqlString sql)
         {
             return ExecuteAsync(sql.SQL, sql.Params);
         }
@@ -724,7 +724,7 @@ namespace LiteSql
         /// <summary>
         /// 是否存在
         /// </summary>
-        public bool Exists(SqlString sql)
+        public bool Exists(ISqlString sql)
         {
             return Exists(sql.SQL, sql.Params);
         }
@@ -732,7 +732,7 @@ namespace LiteSql
         /// <summary>
         /// 是否存在
         /// </summary>
-        public Task<bool> ExistsAsync(SqlString sql)
+        public Task<bool> ExistsAsync(ISqlString sql)
         {
             return ExistsAsync(sql.SQL, sql.Params);
         }
@@ -740,7 +740,7 @@ namespace LiteSql
         /// <summary>
         /// 查询单个值
         /// </summary>
-        public object QuerySingle(SqlString sql)
+        public object QuerySingle(ISqlString sql)
         {
             return QuerySingle(sql.SQL, sql.Params);
         }
@@ -748,7 +748,7 @@ namespace LiteSql
         /// <summary>
         /// 查询单个值
         /// </summary>
-        public T QuerySingle<T>(SqlString sql)
+        public T QuerySingle<T>(ISqlString sql)
         {
             return QuerySingle<T>(sql.SQL, sql.Params);
         }
@@ -756,7 +756,7 @@ namespace LiteSql
         /// <summary>
         /// 查询单个值
         /// </summary>
-        public Task<object> QuerySingleAsync(SqlString sql)
+        public Task<object> QuerySingleAsync(ISqlString sql)
         {
             return QuerySingleAsync(sql.SQL, sql.Params);
         }
@@ -764,7 +764,7 @@ namespace LiteSql
         /// <summary>
         /// 查询单个值
         /// </summary>
-        public Task<T> QuerySingleAsync<T>(SqlString sql)
+        public Task<T> QuerySingleAsync<T>(ISqlString sql)
         {
             return QuerySingleAsync<T>(sql.SQL, sql.Params);
         }
@@ -774,7 +774,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>数量</returns>
-        public long QueryCount(SqlString sql)
+        public long QueryCount(ISqlString sql)
         {
             return QueryCount(sql.SQL, sql.Params);
         }
@@ -784,7 +784,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SqlString</param>
         /// <returns>数量</returns>
-        public Task<long> QueryCountAsync(SqlString sql)
+        public Task<long> QueryCountAsync(ISqlString sql)
         {
             return QueryCountAsync(sql.SQL, sql.Params);
         }
@@ -796,7 +796,7 @@ namespace LiteSql
         /// <param name="pageSize">每页数据条数</param>
         /// <param name="pageCount">总页数</param>
         /// <returns>查询结果的数量</returns>
-        public long QueryCount(SqlString sql, int pageSize, out long pageCount)
+        public long QueryCount(ISqlString sql, int pageSize, out long pageCount)
         {
             return QueryCount(sql.SQL, sql.Params, pageSize, out pageCount);
         }
@@ -807,7 +807,7 @@ namespace LiteSql
         /// <param name="sql">SqlString</param>
         /// <param name="pageSize">每页数据条数</param>
         /// <returns>查询结果的数量</returns>
-        public Task<CountResult> QueryCountAsync(SqlString sql, int pageSize)
+        public Task<CountResult> QueryCountAsync(ISqlString sql, int pageSize)
         {
             return QueryCountAsync(sql.SQL, sql.Params, pageSize);
         }

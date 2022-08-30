@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public class SqlString<T> : SqlString where T : new()
+    public class SqlString<T> : SqlString, ISqlQueryable<T> where T : new()
     {
         #region 构造函数
         public SqlString(IProvider provider, ISession session, string sql = null, params object[] args)
@@ -19,13 +19,53 @@ namespace LiteSql
         }
         #endregion
 
+        #region AsISqlString
+        /// <summary>
+        /// 转成ISqlString接口
+        /// </summary>
+        public ISqlString AsISqlString()
+        {
+            return this;
+        }
+        #endregion
+
+        #region Queryable
+        /// <summary>
+        /// 创建单表查询SQL
+        /// </summary>
+        /// <param name="alias">别名，默认值t</param>
+        public ISqlQueryable<T> Queryable(string alias = null)
+        {
+            Type type = typeof(T);
+            alias = alias ?? "t";
+
+            _sql.AppendFormat("select ", _dbSession.GetTableName(_provider, type));
+
+            PropertyInfoEx[] propertyInfoExArray = DBSession.GetEntityProperties(type);
+            foreach (PropertyInfoEx propertyInfoEx in propertyInfoExArray)
+            {
+                PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
+                if (propertyInfo.GetCustomAttribute<ColumnAttribute>() != null)
+                {
+                    _sql.AppendFormat("{0}.{1}{2}{3},", alias, _provider.OpenQuote, propertyInfoEx.FieldName, _provider.CloseQuote);
+                }
+            }
+
+            _sql.Remove(_sql.Length - 1, 1);
+
+            _sql.AppendFormat(" from {0} {1}", _dbSession.GetTableName(_provider, type), alias);
+
+            return this;
+        }
+        #endregion
+
         #region WhereIf
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="expression">Lambda 表达式</param>
-        public SqlString<T> WhereIf(bool condition, Expression<Func<T, object>> expression)
+        public ISqlQueryable<T> WhereIf(bool condition, Expression<Func<T, object>> expression)
         {
             if (condition)
             {
@@ -42,7 +82,7 @@ namespace LiteSql
         /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="expression">Lambda 表达式</param>
-        public SqlString<T> WhereIf<U>(bool condition, Expression<Func<U, object>> expression)
+        public ISqlQueryable<T> WhereIf<U>(bool condition, Expression<Func<U, object>> expression)
         {
             if (condition)
             {
@@ -58,7 +98,7 @@ namespace LiteSql
         /// 追加参数化SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
-        public SqlString<T> Where(Expression<Func<T, object>> expression)
+        public ISqlQueryable<T> Where(Expression<Func<T, object>> expression)
         {
             try
             {
@@ -94,7 +134,7 @@ namespace LiteSql
         /// 追加参数化SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
-        public SqlString<T> Where<U>(Expression<Func<U, object>> expression)
+        public ISqlQueryable<T> Where<U>(Expression<Func<U, object>> expression)
         {
             try
             {
@@ -130,7 +170,7 @@ namespace LiteSql
         /// 追加参数化SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
-        public SqlString<T> Where<U>(Expression<Func<T, U, object>> expression)
+        public ISqlQueryable<T> Where<U>(Expression<Func<T, U, object>> expression)
         {
             try
             {
@@ -166,7 +206,7 @@ namespace LiteSql
         /// 追加参数化SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
-        public SqlString<T> Where<U, D>(Expression<Func<T, U, D, object>> expression)
+        public ISqlQueryable<T> Where<U, D>(Expression<Func<T, U, D, object>> expression)
         {
             try
             {
@@ -201,7 +241,7 @@ namespace LiteSql
         /// <summary>
         /// 追加 order by SQL
         /// </summary>
-        public SqlString<T> OrderBy(Expression<Func<T, object>> expression)
+        public ISqlQueryable<T> OrderBy(Expression<Func<T, object>> expression)
         {
             ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.OrderBy);
             DbParameter[] dbParameters;
@@ -224,7 +264,7 @@ namespace LiteSql
         /// <summary>
         /// 追加 order by SQL
         /// </summary>
-        public SqlString<T> OrderByDescending(Expression<Func<T, object>> expression)
+        public ISqlQueryable<T> OrderByDescending(Expression<Func<T, object>> expression)
         {
             ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.OrderByDescending);
             DbParameter[] dbParameters;
@@ -247,7 +287,7 @@ namespace LiteSql
         /// <summary>
         /// 追加 left join SQL
         /// </summary>
-        public SqlString<T> LeftJoin<U>(Expression<Func<T, U, object>> expression)
+        public ISqlQueryable<T> LeftJoin<U>(Expression<Func<T, U, object>> expression)
         {
             ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.LeftJoin);
             DbParameter[] dbParameters;
@@ -265,40 +305,9 @@ namespace LiteSql
 
         #region Select
         /// <summary>
-        /// 创建单表查询SQL
-        /// </summary>
-        /// <typeparam name="T">实体类型</typeparam>
-        /// <param name="alias">别名，默认值t</param>
-        public SqlString<T> Select(string alias = null)
-        {
-            Type type = typeof(T);
-            alias = alias ?? "t";
-
-            _sql.AppendFormat("select ", _dbSession.GetTableName(_provider, type));
-
-            PropertyInfoEx[] propertyInfoExArray = DBSession.GetEntityProperties(type);
-            foreach (PropertyInfoEx propertyInfoEx in propertyInfoExArray)
-            {
-                PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
-                if (propertyInfo.GetCustomAttribute<ColumnAttribute>() != null)
-                {
-                    _sql.AppendFormat("{0}.{1}{2}{3},", alias, _provider.OpenQuote, propertyInfoEx.FieldName, _provider.CloseQuote);
-                }
-            }
-
-            _sql.Remove(_sql.Length - 1, 1);
-
-            _sql.AppendFormat(" from {0} {1}", _dbSession.GetTableName(_provider, type), alias);
-
-            return this;
-        }
-        #endregion
-
-        #region Select
-        /// <summary>
         /// 追加 select SQL
         /// </summary>
-        public SqlString<T> Select<U>(Expression<Func<U, object>> expression, Expression<Func<T, object>> expression2)
+        public ISqlQueryable<T> Select<U>(Expression<Func<U, object>> expression, Expression<Func<T, object>> expression2)
         {
             DbParameter[] dbParameters;
 
@@ -374,27 +383,9 @@ namespace LiteSql
         /// <summary>
         /// 返回数量
         /// </summary>
-        public long CountAsync()
+        public async Task<long> CountAsync()
         {
-            return _session.QueryCount(this.SQL, this.Params);
-        }
-        #endregion
-
-        #region FirstOrDefault
-        /// <summary>
-        /// 返回数量
-        /// </summary>
-        public T FirstOrDefault()
-        {
-            return _session.QueryList<T>(this.SQL, this.Params).FirstOrDefault();
-        }
-
-        /// <summary>
-        /// 返回数量
-        /// </summary>
-        public async Task<T> FirstOrDefaultAsync()
-        {
-            return (await _session.QueryListAsync<T>(this.SQL, this.Params)).FirstOrDefault();
+            return await _session.QueryCountAsync(this.SQL, this.Params);
         }
         #endregion
 
@@ -420,7 +411,7 @@ namespace LiteSql
         /// <summary>
         /// 是否存在
         /// </summary>
-        public bool Exists()
+        public new bool Exists()
         {
             return _session.Exists(this.SQL, this.Params);
         }
@@ -428,7 +419,7 @@ namespace LiteSql
         /// <summary>
         /// 返回数量
         /// </summary>
-        public async Task<bool> ExistsAsync()
+        public new async Task<bool> ExistsAsync()
         {
             return await _session.ExistsAsync(this.SQL, this.Params);
         }

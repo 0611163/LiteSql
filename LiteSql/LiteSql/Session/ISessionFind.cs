@@ -49,12 +49,12 @@ namespace LiteSql
         /// <summary>
         /// 根据sql查询实体
         /// </summary>
-        T Query<T>(SqlString sql) where T : new();
+        T Query<T>(ISqlString sql) where T : new();
 
         /// <summary>
         /// 根据sql查询实体
         /// </summary>
-        Task<T> QueryAsync<T>(SqlString sql) where T : new();
+        Task<T> QueryAsync<T>(ISqlString sql) where T : new();
         #endregion
 
     }

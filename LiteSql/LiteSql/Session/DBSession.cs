@@ -151,7 +151,7 @@ namespace LiteSql
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        public SqlString CreateSql(string sql = null, params object[] args)
+        public ISqlString CreateSql(string sql = null, params object[] args)
         {
             return new SqlString(_provider, this, sql, args);
         }
@@ -161,9 +161,20 @@ namespace LiteSql
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        public SqlString<T> CreateSql<T>(string sql = null, params object[] args) where T : new()
+        public ISqlQueryable<T> CreateSql<T>(string sql = null, params object[] args) where T : new()
         {
             return new SqlString<T>(_provider, this, sql, args);
+        }
+
+        /// <summary>
+        /// 创建IQueryable
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="alias">别名，默认值t</param>
+        public ISqlQueryable<T> Queryable<T>(string alias = null) where T : new()
+        {
+            SqlString<T> sqlString = new SqlString<T>(_provider, this, null);
+            return sqlString.Queryable(alias);
         }
         #endregion
 

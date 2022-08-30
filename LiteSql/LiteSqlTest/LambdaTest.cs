@@ -36,7 +36,7 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s);
 
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -64,7 +64,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -106,7 +106,7 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -147,7 +147,7 @@ namespace LiteSqlTest
 
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -196,11 +196,11 @@ namespace LiteSqlTest
                     Console.WriteLine(s); //打印SQL
                 };
 
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
+                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
                 string remark = "测试";
 
-                List<BsOrder> list = sql.Select()
+                List<BsOrder> list = sql
 
                     .WhereIf(!string.IsNullOrWhiteSpace(remark),
                         t => t.Remark.Contains(remark)
@@ -225,16 +225,14 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
+                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
                 string remark = "测试";
 
-                sql.Select()
-
-                    .WhereIf(!string.IsNullOrWhiteSpace(remark),
-                        t => t.Remark.Contains(remark)
-                        && t.CreateTime < DateTime.Now
-                        && t.CreateUserid == "10")
+                sql.WhereIf(!string.IsNullOrWhiteSpace(remark),
+                    t => t.Remark.Contains(remark)
+                    && t.CreateTime < DateTime.Now
+                    && t.CreateUserid == "10")
 
                     .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id);
 
@@ -263,9 +261,9 @@ namespace LiteSqlTest
                     Console.WriteLine(s); //打印SQL
                 };
 
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
+                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
-                List<BsOrder> list = sql.Select()
+                List<BsOrder> list = sql
                     .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
                     .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
                     .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
@@ -295,12 +293,11 @@ namespace LiteSqlTest
                     Console.WriteLine(s); //打印SQL
                 };
 
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
+                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
                 List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
 
-                sql.Select()
-                    .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
+                sql.Select<SysUser>(u => u.UserName, t => t.OrderUserName)
                     .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
                     .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
                     .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
@@ -328,7 +325,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
                     left join sys_user u on t.order_userid=u.id
@@ -361,12 +358,11 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s);
 
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
+                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
                 string remark = "测试";
 
-                List<BsOrder> list = sql.Select()
-
+                List<BsOrder> list = sql
                     .WhereIf(!string.IsNullOrWhiteSpace(remark),
                         t => t.Remark.Contains(remark)
                         && t.CreateTime < DateTime.Now
@@ -397,12 +393,12 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SqlString<BsOrder> sql = session.CreateSql<BsOrder>();
+                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>("o");
 
-                BsOrder order = await sql.Select("o").Where(o => o.Id == "100001").FirstOrDefaultAsync();
+                BsOrder order = await sql.Where(o => o.Id == "100001").FirstAsync();
 
                 sql = session.CreateSql<BsOrder>();
-                bool bl = await sql.Select("o").Where(o => o.Id == "100001").ExistsAsync();
+                bool bl = await sql.Where(o => o.Id == "100001").ExistsAsync();
                 Assert.IsTrue(bl);
 
                 if (order != null)
