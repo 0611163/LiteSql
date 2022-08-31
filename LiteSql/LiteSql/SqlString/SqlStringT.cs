@@ -9,23 +9,19 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
+    /// <summary>
+    /// SQL字符串类
+    /// </summary>
     public class SqlString<T> : SqlString, ISqlQueryable<T> where T : new()
     {
         #region 构造函数
+        /// <summary>
+        /// SQL字符串类
+        /// </summary>
         public SqlString(IProvider provider, ISession session, string sql = null, params object[] args)
             : base(provider, session, sql, args)
         {
 
-        }
-        #endregion
-
-        #region AsISqlString
-        /// <summary>
-        /// 转成ISqlString接口
-        /// </summary>
-        public ISqlString AsISqlString()
-        {
-            return this;
         }
         #endregion
 

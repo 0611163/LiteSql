@@ -179,9 +179,9 @@ namespace LiteSql
         {
             Type type = obj.GetType();
 
-            string sql = string.Format("select * from {0} where {1}", GetTableName(_provider, type), CreatePkCondition(_provider, obj.GetType(), obj));
+            string sql = string.Format("select * from {0} where {1}", GetTableName(_provider, type), CreatePkCondition(_provider, obj.GetType(), obj, 0, out DbParameter[] cmdParams));
 
-            return Find(type, sql, null);
+            return Find(type, sql, cmdParams);
         }
         #endregion
 
@@ -193,9 +193,9 @@ namespace LiteSql
         {
             Type type = obj.GetType();
 
-            string sql = string.Format("select * from {0} where {1}", GetTableName(_provider, type), CreatePkCondition(_provider, obj.GetType(), obj));
+            string sql = string.Format("select * from {0} where {1}", GetTableName(_provider, type), CreatePkCondition(_provider, obj.GetType(), obj, 0, out DbParameter[] cmdParams));
 
-            return FindAsync(type, sql, null);
+            return FindAsync(type, sql, cmdParams);
         }
         #endregion
 

@@ -33,10 +33,25 @@ namespace LiteSql
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlQueryable<T> Append<T>(string sql, params object[] args) where T : new();
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数</param>
         ISqlString AppendIf(bool condition, string sql, params object[] args);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        ///  <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params object[] args) where T : new();
 
         /// <summary>
         /// 追加参数化SQL
@@ -47,11 +62,26 @@ namespace LiteSql
         ISqlString AppendIf(bool condition, string sql, params Func<object>[] argsFunc);
 
         /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="argsFunc">参数</param>
+        ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params Func<object>[] argsFunc) where T : new();
+
+        /// <summary>
         /// 封装 StringBuilder AppendFormat 追加非参数化SQL
         /// </summary>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数</param>
         ISqlString AppendFormat(string sql, params object[] args);
+
+        /// <summary>
+        /// 封装 StringBuilder AppendFormat 追加非参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数</param>
+        ISqlQueryable<T> AppendFormat<T>(string sql, params object[] args) where T : new();
 
         /// <summary>
         /// ToString

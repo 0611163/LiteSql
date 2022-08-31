@@ -397,7 +397,7 @@ namespace LiteSqlTest
 
                 BsOrder order = await sql.Where(o => o.Id == "100001").FirstAsync();
 
-                sql = session.CreateSql<BsOrder>();
+                sql = session.Queryable<BsOrder>("o");
                 bool bl = await sql.Where(o => o.Id == "100001").ExistsAsync();
                 Assert.IsTrue(bl);
 

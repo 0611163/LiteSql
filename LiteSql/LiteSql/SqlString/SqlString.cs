@@ -67,6 +67,16 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> Append<T>(string sql, params object[] args) where T : new()
+        {
+            return Append(sql, args) as ISqlQueryable<T>;
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlString Append(string sql, params object[] args)
         {
             if (args == null) throw new Exception("参数args不能为null");
@@ -183,6 +193,28 @@ namespace LiteSql
         /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params object[] args) where T : new()
+        {
+            return AppendIf(condition, sql, args) as ISqlQueryable<T>;
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="argsFunc">参数</param>
+        public ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params Func<object>[] argsFunc) where T : new()
+        {
+            return AppendIf(condition, sql, argsFunc) as ISqlQueryable<T>;
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
         /// <param name="args">参数</param>
         public ISqlString AppendIf(bool condition, string sql, params object[] args)
         {
@@ -218,6 +250,16 @@ namespace LiteSql
         #endregion
 
         #region AppendFormat
+        /// <summary>
+        /// 封装 StringBuilder AppendFormat 追加非参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数</param>
+        public ISqlQueryable<T> AppendFormat<T>(string sql, params object[] args) where T : new()
+        {
+            return AppendFormat(sql, args) as ISqlQueryable<T>;
+        }
+
         /// <summary>
         /// 封装 StringBuilder AppendFormat 追加非参数化SQL
         /// </summary>

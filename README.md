@@ -26,9 +26,9 @@ using (var session = LiteSqlFactory.GetSession())
                 Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
             })
 
-        .AppendIf(startTime.HasValue, " and t.create_time < @StartTime ", () => new { StartTime = startTime.Value })
+        .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
 
-        .Append(" and t.create_time < @CreateTime ", new { CreateTime = new DateTime(2022, 8, 1) })
+        .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) })
 
         .QueryList<SysUser>();
 
@@ -98,7 +98,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.10
+Install-Package LiteSql -Version 1.5.12
 ```
 
 2. 安装对应的数据库引擎
@@ -706,6 +706,48 @@ public void TestQueryByLambda9()
             Console.WriteLine(ModelToStringUtil.ToString(item));
         }
     }
+}
+```
+
+```C#
+DateTime? startTime = null;
+
+using (var session = LiteSqlFactory.GetSession())
+{
+    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+    List<SysUser> list = session.Queryable<SysUser>()
+
+        .Append<SysUser>(@" where t.create_userid = @CreateUserId 
+            and t.password like @Password
+            and t.id in @Ids",
+            new
+            {
+                CreateUserId = "1",
+                Password = "%345%",
+                Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
+            })
+
+        .Where(t => !t.UserName.Contains("管理员"))
+
+        .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
+
+        .Where<SysUser>(t => t.Id <= 20)
+
+        .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
+
+        .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) })
+
+        .QueryList<SysUser>();
+
+    long id = session.Queryable<SysUser>().Where(t => t.Id == 1).First().Id;
+    Assert.IsTrue(id == 1);
+
+    foreach (SysUser item in list)
+    {
+        Console.WriteLine(ModelToStringUtil.ToString(item));
+    }
+    Assert.IsTrue(list.Count > 0);
 }
 ```
 

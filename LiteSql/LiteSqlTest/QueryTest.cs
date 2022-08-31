@@ -28,7 +28,7 @@ namespace LiteSqlTest
         public void TestQuery()
         {
             List<BsOrder> list = m_BsOrderDal.GetList(0, "订单", DateTime.MinValue, DateTime.Now.AddDays(1), "100001,100002,100003");
-
+            Assert.IsTrue(list.Count > 0);
             foreach (BsOrder item in list)
             {
                 Console.WriteLine(ModelToStringUtil.ToString(item));
@@ -106,6 +106,7 @@ namespace LiteSqlTest
         {
             List<BsOrder> list = m_BsOrderDal.GetListExt(0, "订单", DateTime.MinValue, DateTime.Now.AddDays(1), "100001,100002,100003");
 
+            Assert.IsTrue(list.Count > 0);
             foreach (BsOrder item in list)
             {
                 Console.WriteLine(ModelToStringUtil.ToString(item));
@@ -163,9 +164,9 @@ namespace LiteSqlTest
                             Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
                         })
 
-                    .AppendIf(startTime.HasValue, " and t.create_time < @StartTime ", () => new { StartTime = startTime.Value })
+                    .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
 
-                    .Append(" and t.create_time < @CreateTime ", new { CreateTime = new DateTime(2022, 8, 1) })
+                    .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) })
 
                     .QueryList<SysUser>();
 
@@ -194,11 +195,7 @@ namespace LiteSqlTest
 
                 List<SysUser> list = session.Queryable<SysUser>()
 
-                    .Where(t => t.Id <= 20)
-
-                    .Where(t => !t.UserName.Contains("管理员")) //Lambda客串
-
-                    .AsISqlString().Append(@" and t.create_userid = @CreateUserId 
+                    .Append<SysUser>(@" where t.create_userid = @CreateUserId 
                         and t.password like @Password
                         and t.id in @Ids",
                         new
@@ -208,14 +205,19 @@ namespace LiteSqlTest
                             Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
                         })
 
-                    .AppendIf(startTime.HasValue, " and t.create_time < @StartTime ", () => new { StartTime = startTime.Value })
+                    .Where(t => !t.UserName.Contains("管理员"))
 
-                    .Append(" and t.create_time < @CreateTime ", new { CreateTime = new DateTime(2022, 8, 1) })
+                    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
+
+                    .Where<SysUser>(t => t.Id <= 20)
+
+                    .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
+
+                    .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) })
 
                     .QueryList<SysUser>();
 
-                long id = session.CreateSql("select id from sys_user where id=@Id", new { Id = 1 })
-                    .QuerySingle<long>();
+                long id = session.Queryable<SysUser>().Where(t => t.Id == 1).First().Id;
                 Assert.IsTrue(id == 1);
 
                 foreach (SysUser item in list)

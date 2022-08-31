@@ -15,11 +15,6 @@ namespace LiteSql
     public interface ISqlQueryable<T> : ISqlString where T : new()
     {
         /// <summary>
-        /// 转成ISqlString接口
-        /// </summary>
-        ISqlString AsISqlString();
-
-        /// <summary>
         /// 追加参数化SQL
         /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>

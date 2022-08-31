@@ -211,12 +211,13 @@ namespace LiteSql
             Tuple<string, string, string> updateTmpl = _provider.CreateUpdateSqlTempldate();
             strSql.Append(string.Format(updateTmpl.Item1 + " {0} ", GetTableName(_provider, type)));
             strSql.Append(string.Format(updateTmpl.Item2 + " "));
-            parameters = paramList.ToArray();
             if (sbPros.Length > 0)
             {
                 strSql.Append(sbPros.ToString(0, sbPros.Length - 1));
             }
-            strSql.Append(string.Format(" " + updateTmpl.Item3 + " {0}", CreatePkCondition(_provider, obj.GetType(), obj)));
+            strSql.Append(string.Format(" " + updateTmpl.Item3 + " {0}", CreatePkCondition(_provider, obj.GetType(), obj, 0, out DbParameter[] cmdParams)));
+            paramList.AddRange(cmdParams);
+            parameters = paramList.ToArray();
         }
         #endregion
 
@@ -266,11 +267,11 @@ namespace LiteSql
                     {
                         strSql.Append(sbPros.ToString(0, sbPros.Length - 1));
                     }
-                    strSql.Append(string.Format(" " + updateTmpl.Item3 + " {0}; ", CreatePkCondition(_provider, obj.GetType(), obj)));
+                    strSql.Append(string.Format(" " + updateTmpl.Item3 + " {0}; ", CreatePkCondition(_provider, obj.GetType(), obj, n, out DbParameter[] cmdParams)));
+                    paramList.AddRange(cmdParams);
+                    parameters = paramList.ToArray();
                 }
             }
-
-            parameters = paramList.ToArray();
         }
         #endregion
 
