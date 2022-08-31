@@ -64,8 +64,7 @@ namespace DAL
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                 info.CreateTime = DateTime.Now;
-                session.Insert(info);
-                long id = session.QuerySingle<long>("select @@IDENTITY");
+                long id = session.InsertReturnId(info, "select @@IDENTITY");
                 return id;
             }
         }
@@ -82,8 +81,7 @@ namespace DAL
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                 info.CreateTime = DateTime.Now;
-                await session.InsertAsync(info);
-                long id = await session.QuerySingleAsync<long>("select @@IDENTITY");
+                long id = await session.InsertReturnIdAsync(info, "select @@IDENTITY");
                 return id;
             }
         }

@@ -98,7 +98,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.12
+Install-Package LiteSql -Version 1.5.13
 ```
 
 2. 安装对应的数据库引擎
@@ -305,6 +305,18 @@ public void Insert(SysUser info)
     using (var session = LiteSqlFactory.GetSession())
     {
         session.Insert(info);
+    }
+}
+```
+
+### 添加并返回ID
+
+```C#
+public void Insert(SysUser info)
+{
+    using (var session = LiteSqlFactory.GetSession())
+    {
+        long id = session.InsertReturnId(info, "select @@IDENTITY");
     }
 }
 ```

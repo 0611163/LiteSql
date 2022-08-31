@@ -48,9 +48,7 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                session.Insert(user);
-
-                user.Id = session.QuerySingle<long>("select @@IDENTITY");
+                user.Id = session.InsertReturnId(user, "select @@IDENTITY");
                 Console.WriteLine("插入成功, user.Id=" + user.Id);
 
                 SysUser userInfo = session.CreateSql(

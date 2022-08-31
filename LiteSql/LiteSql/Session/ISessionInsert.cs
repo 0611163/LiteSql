@@ -14,9 +14,19 @@ namespace LiteSql
         void Insert(object obj);
 
         /// <summary>
+        /// 添加并返回ID
+        /// </summary>
+        long InsertReturnId(object obj, string selectIdSql);
+
+        /// <summary>
         /// 添加
         /// </summary>
         Task InsertAsync(object obj);
+
+        /// <summary>
+        /// 添加并返回ID
+        /// </summary>
+        Task<long> InsertReturnIdAsync(object obj, string selectIdSql);
 
         /// <summary>
         /// 批量添加

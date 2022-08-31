@@ -356,6 +356,48 @@ namespace LiteSql
         #endregion
 
 
+        #region Execute 执行SQL语句，返回一个值
+        /// <summary>
+        /// 执行SQL语句，返回一个值
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <param name="cmdParms">参数</param>
+        /// <returns>影响的记录数</returns>
+        public object ExecuteScalar(string SQLString, DbParameter[] cmdParms)
+        {
+            OnExecuting?.Invoke(SQLString, cmdParms);
+            using (DbCommand cmd = _provider.GetCommand(_conn))
+            {
+                PrepareCommand(cmd, _conn, _tran, SQLString, cmdParms);
+                object result = cmd.ExecuteScalar();
+                cmd.Parameters.Clear();
+                return result;
+            }
+        }
+        #endregion
+
+        #region ExecuteAsync 执行SQL语句，返回影响的记录数
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <param name="cmdParms">参数</param>
+        /// <returns>影响的记录数</returns>
+        public async Task<object> ExecuteScalarAsync(string SQLString, DbParameter[] cmdParms)
+        {
+            OnExecuting?.Invoke(SQLString, cmdParms);
+            using (DbCommand cmd = _provider.GetCommand(_conn))
+            {
+                await PrepareCommandAsync(cmd, _conn, _tran, SQLString, cmdParms);
+                var task = cmd.ExecuteScalarAsync();
+                object result = await task;
+                cmd.Parameters.Clear();
+                return result;
+            }
+        }
+        #endregion
+
+
         #region Exists 是否存在
         /// <summary>
         /// 是否存在

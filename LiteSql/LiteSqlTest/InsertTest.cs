@@ -102,6 +102,7 @@ namespace LiteSqlTest
 
             user.Id = m_SysUserDal.Insert(user);
             Console.WriteLine("user.Id=" + user.Id);
+            Assert.IsTrue(user.Id > 0);
 
             using (var session = LiteSqlFactory.GetSession())
             {
@@ -122,6 +123,8 @@ namespace LiteSqlTest
             user.CreateUserid = "1";
 
             long id = await m_SysUserDal.InsertAsync(user);
+            Console.WriteLine("user.Id=" + id);
+            Assert.IsTrue(id > 0);
             using (var session = LiteSqlFactory.GetSession())
             {
                 bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = id }).Exists();

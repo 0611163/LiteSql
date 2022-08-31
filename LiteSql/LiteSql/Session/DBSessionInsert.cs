@@ -24,6 +24,24 @@ namespace LiteSql
 
             Execute(strSql.ToString(), parameters);
         }
+
+        /// <summary>
+        /// 添加并返回ID
+        /// </summary>
+        public long InsertReturnId(object obj, string selectIdSql)
+        {
+            StringBuilder strSql = new StringBuilder();
+            int savedCount = 0;
+            DbParameter[] parameters = null;
+
+            PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
+            strSql.Append(";" + selectIdSql + ";");
+
+            OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+            object id = ExecuteScalar(strSql.ToString(), parameters);
+            return Convert.ToInt64(id);
+        }
         #endregion
 
         #region InsertAsync 添加
@@ -39,6 +57,24 @@ namespace LiteSql
             PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
 
             return ExecuteAsync(strSql.ToString(), parameters);
+        }
+
+        /// <summary>
+        /// 添加并返回ID
+        /// </summary>
+        public async Task<long> InsertReturnIdAsync(object obj, string selectIdSql)
+        {
+            StringBuilder strSql = new StringBuilder();
+            int savedCount = 0;
+            DbParameter[] parameters = null;
+
+            PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
+            strSql.Append(";" + selectIdSql + ";");
+
+            OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+            object id = await ExecuteScalarAsync(strSql.ToString(), parameters);
+            return Convert.ToInt64(id);
         }
         #endregion
 
