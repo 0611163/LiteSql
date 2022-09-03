@@ -281,9 +281,9 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                var subSql = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => !t.RealName.Contains("管理员"));
+                var subSql = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => !t.RealName.Contains("管理员"));
 
-                var subSql2 = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => t.Id <= 20);
+                var subSql2 = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => t.Id <= 20);
 
                 List<SysUser> list = session.Queryable<SysUser>()
 
@@ -318,9 +318,9 @@ namespace LiteSqlTest
             {
                 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                var subSql = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => !t.RealName.Contains("管理员"));
+                var subSql = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => !t.RealName.Contains("管理员"));
 
-                var subSql2 = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => t.Id <= 20);
+                var subSql2 = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => t.Id <= 20);
 
                 var sql = session.Queryable<SysUser>()
 
