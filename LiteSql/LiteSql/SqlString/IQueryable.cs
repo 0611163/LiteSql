@@ -70,6 +70,28 @@ namespace LiteSql
         /// <summary>
         /// 追加 select SQL
         /// </summary>
+        /// <param name="subSql">子SQL</param>
+        /// <param name="alias">表别名，默认值t</param>
+        ISqlQueryable<T> Select(ISqlString subSql, string alias = null);
+
+        /// <summary>
+        /// 追加 select SQL
+        /// </summary>
+        /// <param name="sql">SQL，插入到子SQL的前面</param>
+        /// <param name="subSql">子SQL</param>
+        /// <param name="alias">表别名，默认值t</param>
+        ISqlQueryable<T> Select(string sql, ISqlString subSql = null, string alias = null);
+
+        /// <summary>
+        /// 追加 select SQL
+        /// </summary>
+        /// <typeparam name="U">实体类型</typeparam>
+        /// <param name="expression">返回匿名对象的表达式</param>
+        ISqlQueryable<T> Select(Expression<Func<T, object>> expression);
+
+        /// <summary>
+        /// 追加 select SQL
+        /// </summary>
         ISqlQueryable<T> Select<U>(Expression<Func<U, object>> expression, Expression<Func<T, object>> expression2);
 
         /// <summary>

@@ -103,17 +103,18 @@ namespace LiteSql
                 DbParameter[] dbParameters;
                 string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                if (_sql.ToString().Contains("where"))
+                if (dbParameters != null)
+                {
+                    result = ParamsAddRange(dbParameters, result);
+                }
+
+                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
                 {
                     _sql.Append(" and " + result);
                 }
                 else
                 {
                     _sql.Append(" where " + result);
-                }
-                if (dbParameters != null)
-                {
-                    _paramList.AddRange(dbParameters.ToList());
                 }
             }
             catch (Exception ex)
@@ -139,17 +140,18 @@ namespace LiteSql
                 DbParameter[] dbParameters;
                 string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                if (_sql.ToString().Contains("where"))
+                if (dbParameters != null)
+                {
+                    result = ParamsAddRange(dbParameters, result);
+                }
+
+                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
                 {
                     _sql.Append(" and " + result);
                 }
                 else
                 {
                     _sql.Append(" where " + result);
-                }
-                if (dbParameters != null)
-                {
-                    _paramList.AddRange(dbParameters.ToList());
                 }
             }
             catch (Exception ex)
@@ -175,17 +177,18 @@ namespace LiteSql
                 DbParameter[] dbParameters;
                 string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                if (_sql.ToString().Contains("where"))
+                if (dbParameters != null)
+                {
+                    result = ParamsAddRange(dbParameters, result);
+                }
+
+                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
                 {
                     _sql.Append(" and " + result);
                 }
                 else
                 {
                     _sql.Append(" where " + result);
-                }
-                if (dbParameters != null)
-                {
-                    _paramList.AddRange(dbParameters.ToList());
                 }
             }
             catch (Exception ex)
@@ -211,17 +214,18 @@ namespace LiteSql
                 DbParameter[] dbParameters;
                 string result = " (" + condition.VisitLambda(expression, out dbParameters) + ")";
 
-                if (_sql.ToString().Contains("where"))
+                if (dbParameters != null)
+                {
+                    result = ParamsAddRange(dbParameters, result);
+                }
+
+                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
                 {
                     _sql.Append(" and " + result);
                 }
                 else
                 {
                     _sql.Append(" where " + result);
-                }
-                if (dbParameters != null)
-                {
-                    _paramList.AddRange(dbParameters.ToList());
                 }
             }
             catch (Exception ex)
@@ -303,6 +307,103 @@ namespace LiteSql
         /// <summary>
         /// 追加 select SQL
         /// </summary>
+        /// <param name="subSql">子SQL</param>
+        /// <param name="alias">别名，默认值t</param>
+        public ISqlQueryable<T> Select(ISqlString subSql = null, string alias = null)
+        {
+            return Select(null, subSql, alias);
+        }
+
+        /// <summary>
+        /// 追加 select SQL
+        /// </summary>
+        /// <param name="sql">SQL，插入到子SQL的前面</param>
+        /// <param name="subSql">子SQL</param>
+        /// <param name="alias">别名，默认值t</param>
+        public ISqlQueryable<T> Select(string sql, ISqlString subSql = null, string alias = null)
+        {
+            alias = alias ?? "t";
+            if (sql == null) sql = string.Empty;
+            if (subSql == null) subSql = _session.CreateSql();
+            if (_sql.ToString().Contains("from"))
+            {
+                string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
+                string left = leftRigth[0];
+                string right = leftRigth[1];
+
+                if (left.Trim().EndsWith("select"))
+                {
+                    _sql = new StringBuilder(string.Format("{0} {1} from {2}", left, sql + subSql.SQL, right));
+                }
+                else
+                {
+                    _sql = new StringBuilder(string.Format("{0}, {1} from {2}", left, sql + subSql.SQL, right));
+                }
+            }
+            else
+            {
+                _sql = new StringBuilder(string.Format("select {0} from {1} {2}", sql + subSql.SQL, _dbSession.GetTableName(_provider, typeof(T)), alias));
+            }
+
+            string newSubSql = ParamsAddRange(subSql.Params, subSql.SQL);
+
+            if (!string.IsNullOrWhiteSpace(newSubSql)
+                && newSubSql.Contains("select ")
+                && newSubSql.Contains(" from "))
+            {
+                _subSqls.Add(newSubSql);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 追加 select SQL
+        /// </summary>
+        /// <param name="expression">返回匿名对象的表达式</param>
+        public ISqlQueryable<T> Select(Expression<Func<T, object>> expression)
+        {
+            Type type = expression.Body.Type;
+            PropertyInfo[] props = type.GetProperties();
+            Dictionary<string, string> dict = DBSession.GetEntityProperties(typeof(T)).ToLookup(a => a.PropertyInfo.Name).ToDictionary(a => a.Key, a => a.First().FieldName);
+            int i = 0;
+            StringBuilder fields = new StringBuilder();
+            foreach (PropertyInfo propInfo in props)
+            {
+                i++;
+                fields.AppendFormat("{0}.{1}", expression.Parameters[0].Name, _provider.OpenQuote + dict[propInfo.Name] + _provider.CloseQuote);
+                if (i < props.Length) fields.Append(", ");
+            }
+
+            if (_sql.ToString().Contains("from"))
+            {
+                string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
+                string left = leftRigth[0];
+                string right = leftRigth[1];
+
+                if (left.Trim().EndsWith("select"))
+                {
+                    _sql = new StringBuilder(string.Format("{0} {1} from {2}", left, fields.ToString(), right));
+                }
+                else
+                {
+                    _sql = new StringBuilder(string.Format("{0}, {1} from {2}", left, fields.ToString(), right));
+                }
+            }
+            else
+            {
+                _sql.AppendFormat("select {0} from {1} {2}", fields.ToString(), _dbSession.GetTableName(_provider, typeof(T)), expression.Parameters[0].Name);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 追加 select SQL
+        /// </summary>
+        /// <typeparam name="U">实体类型</typeparam>
+        /// <param name="expression">属性名表达式</param>
+        /// <param name="expression2">别名表达式</param>
         public ISqlQueryable<T> Select<U>(Expression<Func<U, object>> expression, Expression<Func<T, object>> expression2)
         {
             DbParameter[] dbParameters;
@@ -313,11 +414,18 @@ namespace LiteSql
             ExpressionHelper<U> condition2 = new ExpressionHelper<U>(this, _provider, _dbParameterNames, SqlStringMethod.Select);
             string sql2 = condition.VisitLambda(expression2, out dbParameters);
 
-            string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
-            string left = leftRigth[0];
-            string right = leftRigth[1];
+            if (_sql.ToString().Contains("from"))
+            {
+                string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
+                string left = leftRigth[0];
+                string right = leftRigth[1];
 
-            _sql = new StringBuilder(string.Format("{0}, {1} as {2} from {3}", left, sql, sql2.Split('.')[1].Trim(), right));
+                _sql = new StringBuilder(string.Format("{0}, {1} as {2} from {3}", left, sql, sql2.Split('.')[1].Trim(), right));
+            }
+            else
+            {
+                _sql = new StringBuilder(string.Format("select {0} as {1} from {2} {3}", sql, sql2.Split('.')[1].Trim(), _dbSession.GetTableName(_provider, typeof(T)), expression2.Parameters[0].Name));
+            }
 
             return this;
         }

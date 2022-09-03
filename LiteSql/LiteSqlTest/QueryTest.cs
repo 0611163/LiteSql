@@ -205,7 +205,7 @@ namespace LiteSqlTest
                             Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
                         })
 
-                    .Where(t => !t.UserName.Contains("管理员"))
+                    .Where(t => !t.RealName.Contains("管理员"))
 
                     .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
 
@@ -225,6 +225,128 @@ namespace LiteSqlTest
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
                 Assert.IsTrue(list.Count > 0);
+                Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) == 0);
+            }
+        }
+        #endregion
+
+        #region 测试相同参数名称问题
+        [TestMethod]
+        public void TestSameParam()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                var subSql = session.CreateSql<SysUser>("select t.Id from sys_user t")
+                    .Where(t => t.RealName.Contains("李四") || t.RealName.Contains("王五"));
+
+                var subSql2 = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => t.Id <= 20);
+
+                var sql = session.Queryable<SysUser>()
+
+                    .Where(t => t.Password.Contains("345"))
+
+                    .Append(" and id in ", subSql)
+
+                    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
+
+                    .Append<SysUser>(" and id in ", subSql2)
+
+                    .Where(t => t.Password.Contains("234"));
+
+                var sql2 = session.Queryable<SysUser>()
+                    .Where(t => t.RealName.Contains("管理员") || t.RealName.Contains("张三"));
+
+                sql.Append(" union all ", sql2);
+
+                List<SysUser> list = sql.QueryList<SysUser>();
+
+                foreach (SysUser item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
+                Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) > 0);
+                Assert.IsTrue(list.Count(t => t.Id > 20) == 0);
+            }
+        }
+        #endregion
+
+        #region 测试子查询
+        [TestMethod]
+        public void TestSubQuery()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                var subSql = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => !t.RealName.Contains("管理员"));
+
+                var subSql2 = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => t.Id <= 20);
+
+                List<SysUser> list = session.Queryable<SysUser>()
+
+                    .Where(t => t.Password.Contains("345"))
+
+                    .Append(" and id in ", subSql)
+
+                    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
+
+                    .Append<SysUser>(" and id in ", subSql2)
+
+                    .Where(t => t.Password.Contains("234"))
+
+                    .QueryList<SysUser>();
+
+                foreach (SysUser item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
+                Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) == 0);
+                Assert.IsTrue(list.Count(t => t.Id > 20) == 0);
+            }
+        }
+        #endregion
+
+        #region 测试子查询
+        [TestMethod]
+        public void TestSubQuery2()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                var subSql = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => !t.RealName.Contains("管理员"));
+
+                var subSql2 = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => t.Id <= 20);
+
+                var sql = session.Queryable<SysUser>()
+
+                    .Where(t => t.Password.Contains("345"))
+
+                    .Append(" and id in ", subSql)
+
+                    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
+
+                    .Append<SysUser>(" and id in ", subSql2)
+
+                    .Where(t => t.Password.Contains("234"));
+
+                var sql2 = session.Queryable<SysUser>().Where(t => t.RealName.Contains("管理员"));
+
+                sql.Append(" union all ", sql2);
+
+                List<SysUser> list = sql.QueryList<SysUser>();
+
+                foreach (SysUser item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
+                Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) > 0);
+                Assert.IsTrue(list.Count(t => t.Id > 20) == 0);
             }
         }
         #endregion

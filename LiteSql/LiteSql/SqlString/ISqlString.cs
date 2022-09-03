@@ -70,6 +70,20 @@ namespace LiteSql
         ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params Func<object>[] argsFunc) where T : new();
 
         /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="subSql">子SQL</param>
+        ISqlString Append(string sql, ISqlString subSql);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="subSql">子SQL</param>
+        ISqlQueryable<T> Append<T>(string sql, ISqlString subSql) where T : new();
+
+        /// <summary>
         /// 封装 StringBuilder AppendFormat 追加非参数化SQL
         /// </summary>
         /// <param name="sql">SQL</param>

@@ -384,6 +384,10 @@ namespace LiteSql
                     throw new Exception("不支持");
                 }
             }
+            else if (exp.NodeType == ExpressionType.Convert) //例：exp = t.OrderTime >= startTime (startTime的类型是可空类型DateTime?)
+            {
+                return VisitMember((exp as UnaryExpression).Operand);
+            }
             else
             {
                 throw new Exception("不支持");

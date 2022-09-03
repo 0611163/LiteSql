@@ -27,7 +27,7 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda1()
         {
-            int status = 0;
+            int? status = 0;
             string remark = "订单";
             DateTime? startTime = new DateTime(2010, 1, 1);
             DateTime? endTime = DateTime.Now.AddDays(1);
@@ -44,8 +44,8 @@ namespace LiteSqlTest
 
                 List<BsOrder> list = sql.Where(t => t.Status == status
                     && t.Remark.Contains(remark.ToString())
-                    && t.OrderTime >= startTime.Value
-                    && t.OrderTime <= endTime.Value)
+                    && t.OrderTime >= startTime
+                    && t.OrderTime <= endTime)
                     .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
                     .ToList();
 
@@ -256,10 +256,7 @@ namespace LiteSqlTest
         {
             using (var session = LiteSqlFactory.GetSession())
             {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                 ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
@@ -278,6 +275,35 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Assert.IsTrue(list.Count > 0);
+            }
+        }
+
+        [TestMethod]
+        public void TestQueryByLambda5_2()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>();
+
+                List<BsOrder> list = sql
+                    .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
+                    .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
+                    .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
+                    .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
+                    .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName == "电脑")
+                    .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
+                    .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
+                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                    .ToList();
+
+                foreach (BsOrder item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
@@ -405,6 +431,100 @@ namespace LiteSqlTest
                 {
                     Console.WriteLine(ModelToStringUtil.ToString(order));
                 }
+            }
+        }
+        #endregion
+
+        #region 测试查询订单集合(使用 Lambda 表达式)(Select匿名对象)
+        [TestMethod]
+        public void TestQueryByLambda12()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                List<SysUser> list = session.CreateSql<SysUser>()
+                    .Select(session.CreateSql("count(id) as Count"))
+                    .Select(t => new
+                    {
+                        t.RealName,
+                        t.CreateUserid
+                    })
+                    .Where(t => t.Id >= 0)
+                    .Append<SysUser>("group by t.real_name, t.create_userid")
+                    .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+                    {
+                        Name1 = "%管理员%",
+                        Name2 = "%测试%"
+                    })
+                    .ToList();
+
+                foreach (SysUser item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
+            }
+        }
+
+        [TestMethod]
+        public void TestQueryByLambda13()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                List<SysUser> list = session.CreateSql<SysUser>()
+                    .Select(t => new
+                    {
+                        t.RealName,
+                        t.CreateUserid
+                    })
+                    .Select("count(id) as Count")
+                    .Where(t => t.Id >= 0)
+                    .Append<SysUser>("group by t.real_name, t.create_userid")
+                    .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+                    {
+                        Name1 = "%管理员%",
+                        Name2 = "%测试%"
+                    })
+                    .ToList();
+
+                foreach (SysUser item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
+            }
+        }
+
+        [TestMethod]
+        public void TestQueryByLambda14()
+        {
+            using (var session = LiteSqlFactory.GetSession())
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                List<SysUser> list = session.CreateSql<SysUser>()
+                    .Select(t => new
+                    {
+                        t.RealName,
+                        t.CreateUserid
+                    })
+                    .Select(session.CreateSql(@"(
+                            select count(1) 
+                            from bs_order o 
+                            where o.order_userid = t.id
+                            and o.status = @Status
+                        ) as OrderCount", new { Status = 0 }))
+                    .Where(t => t.Id >= 0)
+                    .ToList();
+
+                foreach (SysUser item in list)
+                {
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                }
+                Assert.IsTrue(list.Count > 0);
             }
         }
         #endregion
