@@ -81,8 +81,8 @@ namespace PerformanceTest
                 }
                 catch (Exception ex)
                 {
-                    Log(ex.Message + "\r\n" + ex.StackTrace);
-                    throw ex;
+                    Log(ex.ToString());
+                    throw;
                 }
             });
         }
@@ -135,10 +135,10 @@ namespace PerformanceTest
                         session.Update(userList);
                         session.CommitTransaction();
                     }
-                    catch (Exception ex)
+                    catch
                     {
                         session.RollbackTransaction();
-                        throw ex;
+                        throw;
                     }
                 }
 
@@ -181,10 +181,10 @@ namespace PerformanceTest
                         session.Insert(userList);
                         session.CommitTransaction();
                     }
-                    catch (Exception ex)
+                    catch
                     {
                         session.RollbackTransaction();
-                        throw ex;
+                        throw;
                     }
                 }
 
@@ -228,10 +228,10 @@ namespace PerformanceTest
                         }
                         session.CommitTransaction();
                     }
-                    catch (Exception ex)
+                    catch
                     {
                         session.RollbackTransaction();
-                        throw ex;
+                        throw;
                     }
                 }
 
@@ -276,10 +276,10 @@ namespace PerformanceTest
                         }
                         session.CommitTransaction();
                     }
-                    catch (Exception ex)
+                    catch
                     {
                         session.RollbackTransaction();
-                        throw ex;
+                        throw;
                     }
                 }
 

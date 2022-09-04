@@ -275,7 +275,7 @@ namespace LiteSqlTest
 
         #region 测试子查询
         [TestMethod]
-        public void TestSubQuery()
+        public void TestSubQuery() //拼接子查询
         {
             using (var session = LiteSqlFactory.GetSession())
             {
@@ -312,7 +312,7 @@ namespace LiteSqlTest
 
         #region 测试子查询
         [TestMethod]
-        public void TestSubQuery2()
+        public void TestSubQuery2() //拼接子查询 union all
         {
             using (var session = LiteSqlFactory.GetSession())
             {

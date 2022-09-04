@@ -30,10 +30,10 @@ namespace LiteSql
             {
                 _tran.Commit();
             }
-            catch (Exception ex)
+            catch
             {
                 _tran.Rollback();
-                throw ex;
+                throw;
             }
             finally
             {

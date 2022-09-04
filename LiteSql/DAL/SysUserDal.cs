@@ -105,10 +105,10 @@ namespace DAL
                     session.Insert(list);
                     session.CommitTransaction();
                 }
-                catch (Exception ex)
+                catch
                 {
                     session.RollbackTransaction();
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -181,10 +181,10 @@ namespace DAL
                     session.Update(list);
                     session.CommitTransaction();
                 }
-                catch (Exception ex)
+                catch
                 {
                     session.RollbackTransaction();
-                    throw ex;
+                    throw;
                 }
             }
         }

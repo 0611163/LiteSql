@@ -45,7 +45,7 @@ namespace PostgreSQLTest
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
-                throw ex;
+                throw;
             }
         }
 
@@ -88,10 +88,10 @@ namespace PostgreSQLTest
                     int count = session.QuerySingle<int>("select count(*) from sys_user");
                     Assert.IsTrue(count >= 1000);
                 }
-                catch (Exception ex)
+                catch
                 {
                     session.RollbackTransaction();
-                    throw ex;
+                    throw;
                 }
             }
         }

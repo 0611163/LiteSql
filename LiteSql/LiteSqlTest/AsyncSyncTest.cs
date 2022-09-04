@@ -61,8 +61,8 @@ namespace LiteSqlTest
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-                        throw ex;
+                        Console.WriteLine(ex.ToString());
+                        throw;
                     }
                 }, i);
                 taskList.Add(tsk);
@@ -97,8 +97,8 @@ namespace LiteSqlTest
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-                    throw ex;
+                    Console.WriteLine(ex.ToString());
+                    throw;
                 }
             }
         }

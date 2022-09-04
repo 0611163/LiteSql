@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>LiteSql</id>
-    <version>1.5.17</version>
+    <version>1.5.19</version>
     <title>LiteSql</title>
     <authors>suxiang</authors>
     <owners></owners>
@@ -10,20 +10,9 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/0611163/LiteSql</projectUrl>
     <description>一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。</description>
-    <releaseNotes>ISqlQueryable&lt;T&gt;增加接口：
-ISqlQueryable&lt;T&gt; Select(ISqlString subSql, string alias = null);
-ISqlQueryable&lt;T&gt; Select(string sql, ISqlString subSql = null, string alias = null);
-ISqlString增加接口：
-ISqlString Append(string sql, ISqlString subSql);
-ISqlQueryable&lt;T&gt; Append&lt;T&gt;(string sql, ISqlString subSql) where T : new();
-用于支持拼接子SQL、子查询。
-
-ISqlQueryable&lt;T&gt;增加接口：
-ISqlQueryable&lt;T&gt; Select(Expression&lt;Func&lt;T, object&gt;&gt; expression);
-用于支持Select传匿名对象。
-
-Lambda表达式可空类型不需要写.Value。</releaseNotes>
-    <copyright>Copyright @ 2020</copyright>
+    <releaseNotes>接口无变化，仅优化：
+优化同名参数处理；优化Lambda表达式解析逻辑；Lambda表达式支持new List和数组Contains以及取反；throw ex;修改为throw;。</releaseNotes>
+    <copyright>Copyright @ 2022</copyright>
   </metadata>
   <files>
     <file src="lib\net45\LiteSql.dll" target="lib\net45\LiteSql.dll" />

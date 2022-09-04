@@ -193,31 +193,47 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlQueryable<T> Append<T>(string sql, params object[] args) where T : new()
         {
-            return Append(sql, args) as ISqlQueryable<T>;
+            return ConvertToQueryable<T>(Append(sql, args), "Append<T>");
         }
 
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
-        /// <param name="sql">SQL</param>
+        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
         /// <param name="subSql">子SQL</param>
         public ISqlString Append(string sql, ISqlString subSql)
         {
             string newSubSql = ParamsAddRange(subSql.Params, subSql.SQL);
-            _sql.Append(sql + " (" + newSubSql + ")");
+            if (sql.Contains("{0}"))
+            {
+                sql = sql.Replace("{0}", newSubSql);
+            }
+            else
+            {
+                sql = sql + " (" + newSubSql + ")";
+            }
+            _sql.Append(sql);
             return this;
         }
 
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
-        /// <param name="sql">SQL</param>
+        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
         /// <param name="subSql">子SQL</param>
         public ISqlQueryable<T> Append<T>(string sql, ISqlString subSql) where T : new()
         {
             string newSubSql = ParamsAddRange(subSql.Params, subSql.SQL);
-            _sql.Append(sql + " (" + newSubSql + ")");
-            return this as ISqlQueryable<T>; ;
+            if (sql.Contains("{0}"))
+            {
+                sql = sql.Replace("{0}", newSubSql);
+            }
+            else
+            {
+                sql = sql + " (" + newSubSql + ")";
+            }
+            _sql.Append(sql);
+            return ConvertToQueryable<T>(this, "Append<T>");
         }
         #endregion
 
@@ -230,7 +246,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params object[] args) where T : new()
         {
-            return AppendIf(condition, sql, args) as ISqlQueryable<T>;
+            return ConvertToQueryable<T>(AppendIf(condition, sql, args), "AppendIf<T>");
         }
 
         /// <summary>
@@ -241,7 +257,7 @@ namespace LiteSql
         /// <param name="argsFunc">参数</param>
         public ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params Func<object>[] argsFunc) where T : new()
         {
-            return AppendIf(condition, sql, argsFunc) as ISqlQueryable<T>;
+            return ConvertToQueryable<T>(AppendIf(condition, sql, argsFunc), "AppendIf<T>");
         }
 
         /// <summary>
@@ -291,7 +307,7 @@ namespace LiteSql
         /// <param name="args">参数</param>
         public ISqlQueryable<T> AppendFormat<T>(string sql, params object[] args) where T : new()
         {
-            return AppendFormat(sql, args) as ISqlQueryable<T>;
+            return ConvertToQueryable<T>(AppendFormat(sql, args), "AppendFormat<T>");
         }
 
         /// <summary>
@@ -406,11 +422,12 @@ namespace LiteSql
                 }
                 else
                 {
-                    string newName = param.ParameterName + "A";
-                    while (_params.ContainsKey(newName))
+                    int index = 0;
+                    while (_params.ContainsKey(param.ParameterName + (index == 0 ? "" : index.ToString())))
                     {
-                        newName += "A";
+                        index++;
                     }
+                    string newName = param.ParameterName + (index == 0 ? "" : index.ToString());
                     DbParameter newParam = _provider.GetDbParameter(newName, param.Value);
                     _params.Add(newParam.ParameterName, newParam);
                     string oldParamName = _provider.GetParameterName(param.ParameterName, param.Value.GetType());
@@ -418,17 +435,45 @@ namespace LiteSql
                     int pos = sql.IndexOf(oldParamName);
                     Regex regex = new Regex(oldParamName + "[)]{1}", RegexOptions.None);
                     Regex regex2 = new Regex(oldParamName + "[\\s]{1}", RegexOptions.None);
+                    Regex regex3 = new Regex(oldParamName + "[,]{1}", RegexOptions.None);
                     if (regex.IsMatch(sql))
                     {
                         sql = regex.Replace(sql, newParamName + ")", 1);
                     }
-                    else
+                    else if (regex2.IsMatch(sql))
                     {
                         sql = regex2.Replace(sql, newParamName + " ", 1);
+                    }
+                    else
+                    {
+                        sql = regex3.Replace(sql, newParamName + " ", 1);
                     }
                 }
             }
             return sql;
+        }
+        #endregion
+
+        #region ConvertToQueryable<T>
+        /// <summary>
+        /// 转成ISqlQueryable
+        /// </summary>
+        private ISqlQueryable<T> ConvertToQueryable<T>(ISqlString sqlString, string message) where T : new()
+        {
+            if (sqlString is ISqlQueryable<T>)
+            {
+                return sqlString as ISqlQueryable<T>;
+            }
+            else
+            {
+                string typeName = string.Empty;
+                Type[] genericArgs = sqlString.GetType().GetGenericArguments();
+                if (genericArgs.Length > 0)
+                {
+                    typeName = genericArgs[0].Name;
+                }
+                throw new Exception(message + "泛型类型不匹配，应为：" + typeName + "，实际为：" + typeof(T).Name);
+            }
         }
         #endregion
 

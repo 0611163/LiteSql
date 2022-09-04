@@ -222,9 +222,9 @@ namespace LiteSql
 
                 DataReaderToEntity(type, rd, ref result, ref hasValue);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
             finally
             {
@@ -269,9 +269,9 @@ namespace LiteSql
 
                 DataReaderToEntity(type, rd, ref result, ref hasValue);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
             finally
             {

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace LiteSql
@@ -43,13 +44,16 @@ namespace LiteSql
             {
                 UnaryExpression unaryExp = lambdaExp.Body as UnaryExpression;
 
-                return VisitLevel1(unaryExp, out dbParameters);
+                ExpValue expValue = VisitConditions(unaryExp.Operand);
+
+                dbParameters = expValue.DbParameters.ToArray();
+                return expValue.Sql;
             }
             else if (lambdaExp.Body is MemberExpression)
             {
                 MemberExpression MemberExp = lambdaExp.Body as MemberExpression;
 
-                ExpValue expValue = VisitLevel3(MemberExp);
+                ExpValue expValue = VisitConditions(MemberExp);
 
                 dbParameters = expValue.DbParameters.ToArray();
                 return expValue.Sql;
@@ -61,33 +65,81 @@ namespace LiteSql
         }
         #endregion
 
-        #region VisitLevel1 第一级
+        #region VisitConditions 访问查询条件(可能是单个查询条件或多个查询条件)
         /// <summary>
-        /// 第一级
+        /// 访问查询条件(可能是单个查询条件或多个查询条件)
         /// </summary>
-        public string VisitLevel1(UnaryExpression exp, out DbParameter[] dbParameters)
+        public ExpValue VisitConditions(Expression exp)
         {
-            string result = string.Empty;
+            ExpValue result = new ExpValue();
 
-            ExpValue expValue = VisitLevel3(exp.Operand);
-
-            result = expValue.Sql;
-            dbParameters = expValue.DbParameters.ToArray();
+            if (exp.NodeType == ExpressionType.AndAlso ||
+                exp.NodeType == ExpressionType.And ||
+                exp.NodeType == ExpressionType.OrElse ||
+                exp.NodeType == ExpressionType.Or)
+            {
+                BinaryExpression binaryExp = exp as BinaryExpression;
+                result = VisitBinaryConditionArray(binaryExp);
+            }
+            else
+            {
+                result = VisitCondition(exp);
+            }
 
             return result;
         }
         #endregion
 
-        #region VisitLevel2 第二级 条件集合
+        #region VisitCondition 访问单个查询条件
         /// <summary>
-        /// 第一级
+        /// 访问单个查询条件
         /// </summary>
-        public ExpValue VisitLevel2(BinaryExpression exp)
+        public ExpValue VisitCondition(Expression exp)
         {
             ExpValue result = new ExpValue();
 
-            ExpValue left = VisitLevel3(exp.Left);
-            ExpValue right = VisitLevel3(exp.Right);
+            if (exp.NodeType == ExpressionType.Call) // 例: t => t.Remark.Contains("订单")
+            {
+                result = VisitMethodCall(exp as MethodCallExpression);
+            }
+            else if (exp.NodeType == ExpressionType.MemberAccess) // 支持 order by
+            {
+                ExpValue expValue = VisitMember(exp as MemberExpression, null);
+                result.Sql = string.Format("{0}.{1}", expValue.MemberParentName, expValue.MemberDBField);
+            }
+            else if (exp.NodeType == ExpressionType.NotEqual ||
+                 exp.NodeType == ExpressionType.GreaterThan ||
+                 exp.NodeType == ExpressionType.GreaterThanOrEqual ||
+                 exp.NodeType == ExpressionType.LessThan ||
+                 exp.NodeType == ExpressionType.LessThanOrEqual ||
+                 exp.NodeType == ExpressionType.Equal)
+            {
+                result = VisitBinaryCondition(exp as BinaryExpression); // 例: t => t.Status == 0 例: t => t.OrderTime >= new DateTime(2020,1,1)
+            }
+            else if (exp.NodeType == ExpressionType.Not) //支持 not in
+            {
+                UnaryExpression unaryExp = exp as UnaryExpression;
+                result = VisitMethodCall(unaryExp.Operand as MethodCallExpression, exp);
+            }
+            else
+            {
+                throw new Exception("不支持");
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region VisitBinaryConditionArray 访问多个查询条件
+        /// <summary>
+        /// 访问多个查询条件 
+        /// </summary>
+        public ExpValue VisitBinaryConditionArray(BinaryExpression exp) //例：t.`remark` like @Remark AND t.`create_time` < @CreateTime 
+        {
+            ExpValue result = new ExpValue();
+
+            ExpValue left = VisitConditions(exp.Left);
+            ExpValue right = VisitConditions(exp.Right);
 
             result.Sql = string.Format(" {0} {1} {2} ", left.Sql, ToSqlOperator(exp.NodeType), right.Sql);
             result.Type = ExpValueType.SqlAndDbParameter;
@@ -99,62 +151,11 @@ namespace LiteSql
         }
         #endregion
 
-        #region VisitLevel3 第三级 单个条件
+        #region VisitBinaryCondition 访问单个查询条件
         /// <summary>
-        /// 第二级
+        /// 访问单个查询条件 
         /// </summary>
-        public ExpValue VisitLevel3(Expression exp)
-        {
-            ExpValue result = new ExpValue();
-
-            if (exp.NodeType == ExpressionType.AndAlso ||
-                exp.NodeType == ExpressionType.And ||
-                exp.NodeType == ExpressionType.OrElse ||
-                exp.NodeType == ExpressionType.Or) //多条件，回到Level2
-            {
-                BinaryExpression binaryExp = exp as BinaryExpression;
-                result = VisitLevel2(binaryExp);
-            }
-            else
-            {
-                if (exp.NodeType == ExpressionType.Call) // 例: t => t.Remark.Contains("订单")
-                {
-                    result = VisitMethodCall(exp as MethodCallExpression);
-                }
-                else if (exp.NodeType == ExpressionType.MemberAccess) // 支持 order by
-                {
-                    ExpValue expValue = VisitMember(exp as MemberExpression, null);
-                    result.Sql = string.Format("{0}.{1}", expValue.MemberParentName, expValue.MemberDBField);
-                }
-                else if (exp.NodeType == ExpressionType.NotEqual ||
-                     exp.NodeType == ExpressionType.GreaterThan ||
-                     exp.NodeType == ExpressionType.GreaterThanOrEqual ||
-                     exp.NodeType == ExpressionType.LessThan ||
-                     exp.NodeType == ExpressionType.LessThanOrEqual ||
-                     exp.NodeType == ExpressionType.Equal)
-                {
-                    result = VisitLevel3Binary(exp as BinaryExpression); // 例: t => t.Status == 0 例: t => t.OrderTime >= new DateTime(2020,1,1)
-                }
-                else if (exp.NodeType == ExpressionType.Not) //支持 not in
-                {
-                    UnaryExpression unaryExp = exp as UnaryExpression;
-                    result = VisitMethodCall(unaryExp.Operand as MethodCallExpression, exp);
-                }
-                else
-                {
-                    throw new Exception("不支持");
-                }
-            }
-
-            return result;
-        }
-        #endregion
-
-        #region VisitLevel3Binary 第三级的 二元表达式
-        /// <summary>
-        /// 第三级的 二元表达式
-        /// </summary>
-        public ExpValue VisitLevel3Binary(BinaryExpression exp)
+        public ExpValue VisitBinaryCondition(BinaryExpression exp) //例：t.`status` = @Status 
         {
             ExpValue result = new ExpValue();
 
@@ -182,38 +183,38 @@ namespace LiteSql
                     left.MemberAliasName = GetAliasName(left.MemberAliasName);
                     _dbParameterNames.Add(left.MemberAliasName);
 
-                    if (right.Value != null && right.Value.GetType() == typeof(DateTime))
+                    if (right.Value == null)
                     {
-                        SqlValue sqlValue = _provider.ForDateTime((DateTime)right.Value);
-                        Type parameterType = sqlValue.Value == null ? typeof(object) : sqlValue.Value.GetType();
-                        string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
-
-                        result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
-                        result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), string.Format(sqlValue.Sql, markKey));
+                        if (exp.NodeType == ExpressionType.Not ||
+                            exp.NodeType == ExpressionType.NotEqual)
+                        {
+                            result.Sql = string.Format(" {0}.{1} is not null ", left.MemberParentName, left.MemberDBField);
+                        }
+                        else if (exp.NodeType == ExpressionType.Equal)
+                        {
+                            result.Sql = string.Format(" {0}.{1} is null ", left.MemberParentName, left.MemberDBField);
+                        }
+                        else
+                        {
+                            throw new Exception("不支持");
+                        }
                     }
                     else
                     {
-                        if (right.Value != null)
+                        if (right.Value.GetType() == typeof(DateTime))
+                        {
+                            SqlValue sqlValue = _provider.ForDateTime((DateTime)right.Value);
+                            Type parameterType = sqlValue.Value == null ? typeof(object) : sqlValue.Value.GetType();
+                            string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
+
+                            result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
+                            result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), string.Format(sqlValue.Sql, markKey));
+                        }
+                        else
                         {
                             string markKey = _provider.GetParameterName(left.MemberAliasName, right.Value.GetType());
                             result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
                             result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), markKey);
-                        }
-                        else
-                        {
-                            if (exp.NodeType == ExpressionType.Not ||
-                                exp.NodeType == ExpressionType.NotEqual)
-                            {
-                                result.Sql = string.Format(" {0}.{1} is not null ", left.MemberParentName, left.MemberDBField);
-                            }
-                            else if (exp.NodeType == ExpressionType.Equal)
-                            {
-                                result.Sql = string.Format(" {0}.{1} is null ", left.MemberParentName, left.MemberDBField);
-                            }
-                            else
-                            {
-                                throw new Exception("不支持");
-                            }
                         }
                     }
                 }
@@ -235,8 +236,8 @@ namespace LiteSql
                 exp.Method.Name == "StartsWith" ||
                 exp.Method.Name == "EndsWith")
             {
-                MemberExpression memberExp = exp.Object as MemberExpression;
-                if (memberExp.Type.Name != typeof(List<>).Name)
+                if (exp.Object is MemberExpression
+                    && (exp.Object as MemberExpression).Type.Name != typeof(List<>).Name)
                 {
                     SqlValue sqlValue = null;
                     if (exp.Method.Name == "Contains") sqlValue = _sqlString.ForContains(InvokeValue(exp.Arguments[0]).ToString());
@@ -264,9 +265,21 @@ namespace LiteSql
                     if (exp.Method.Name == "Contains")
                     {
                         SqlValue sqlValue = null;
-                        sqlValue = _sqlString.ForList((IList)InvokeValue(exp.Object));
+                        ExpValue expValue = null;
+                        if (exp.Object != null) //List
+                        {
+                            sqlValue = _sqlString.ForList((IList)InvokeValue(exp.Object));
 
-                        ExpValue expValue = VisitMember(exp.Arguments[0], null);
+                            expValue = VisitMember(exp.Arguments[0], null);
+
+
+                        }
+                        else //数组
+                        {
+                            sqlValue = _sqlString.ForList((IList)InvokeValue(exp.Arguments[0]));
+
+                            expValue = VisitMember(exp.Arguments[1], null);
+                        }
 
                         expValue.MemberAliasName = GetAliasName(expValue.MemberAliasName);
                         _dbParameterNames.Add(expValue.MemberAliasName);
@@ -293,6 +306,11 @@ namespace LiteSql
                             object item = valueList[k];
                             result.DbParameters.Add(_provider.GetDbParameter(keyArr[k], item));
                         }
+
+                        //处理同名参数
+                        var processedParams = ProcessParams(result.DbParameters, result.Sql);
+                        result.Sql = processedParams.Item1;
+                        result.DbParameters = processedParams.Item2;
                     }
                     else
                     {
@@ -384,7 +402,7 @@ namespace LiteSql
                     throw new Exception("不支持");
                 }
             }
-            else if (exp.NodeType == ExpressionType.Convert) //例：exp = t.OrderTime >= startTime (startTime的类型是可空类型DateTime?)
+            else if (exp.NodeType == ExpressionType.Convert) //例：exp = t.OrderTime >= startTime (表达式左边OrderTime的类型是可空类型DateTime?)
             {
                 return VisitMember((exp as UnaryExpression).Operand);
             }
@@ -562,15 +580,63 @@ namespace LiteSql
         /// </summary>
         private string GetAliasName(string aliasName)
         {
-            if (!_dbParameterNames.Contains(aliasName))
+            int index = 0;
+            while (_dbParameterNames.Contains(aliasName + (index == 0 ? "" : index.ToString())))
             {
-                _dbParameterNames.Add(aliasName);
-                return aliasName;
+                index++;
             }
-            else
+            aliasName += (index == 0 ? "" : index.ToString());
+            _dbParameterNames.Add(aliasName);
+            return aliasName;
+        }
+        #endregion
+
+        #region ProcessParams
+        /// <summary>
+        /// 处理同名参数
+        /// </summary>
+        protected Tuple<string, List<DbParameter>> ProcessParams(List<DbParameter> cmdParams, string sql)
+        {
+            List<DbParameter> newParamList = new List<DbParameter>();
+            foreach (DbParameter param in cmdParams)
             {
-                return GetAliasName(aliasName + "A");
+                if (!_dbParameterNames.Contains(param.ParameterName))
+                {
+                    _dbParameterNames.Add(param.ParameterName);
+                    newParamList.Add(param);
+                }
+                else
+                {
+                    int index = 0;
+                    while (_dbParameterNames.Contains(param.ParameterName + (index == 0 ? "" : index.ToString())))
+                    {
+                        index++;
+                    }
+                    string newName = param.ParameterName + (index == 0 ? "" : index.ToString());
+                    DbParameter newParam = _provider.GetDbParameter(newName, param.Value);
+                    _dbParameterNames.Add(newParam.ParameterName);
+                    newParamList.Add(newParam);
+                    string oldParamName = _provider.GetParameterName(param.ParameterName, param.Value.GetType());
+                    string newParamName = _provider.GetParameterName(newParam.ParameterName, param.Value.GetType());
+                    int pos = sql.IndexOf(oldParamName);
+                    Regex regex = new Regex(oldParamName + "[)]{1}", RegexOptions.None);
+                    Regex regex2 = new Regex(oldParamName + "[\\s]{1}", RegexOptions.None);
+                    Regex regex3 = new Regex(oldParamName + "[,]{1}", RegexOptions.None);
+                    if (regex.IsMatch(sql))
+                    {
+                        sql = regex.Replace(sql, newParamName + ")", 1);
+                    }
+                    else if (regex2.IsMatch(sql))
+                    {
+                        sql = regex2.Replace(sql, newParamName + " ", 1);
+                    }
+                    else
+                    {
+                        sql = regex3.Replace(sql, newParamName + ",", 1);
+                    }
+                }
             }
+            return new Tuple<string, List<DbParameter>>(sql, newParamList);
         }
         #endregion
 

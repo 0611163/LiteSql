@@ -67,8 +67,8 @@ namespace DAL
                 catch (Exception ex)
                 {
                     session.RollbackTransaction();
-                    Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-                    throw ex;
+                    Console.WriteLine(ex.ToString());
+                    throw;
                 }
             }
         }
@@ -109,8 +109,8 @@ namespace DAL
                 catch (Exception ex)
                 {
                     session.RollbackTransaction();
-                    Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-                    throw ex;
+                    Console.WriteLine(ex.ToString());
+                    throw;
                 }
             }
         }
@@ -173,8 +173,8 @@ namespace DAL
                 catch (Exception ex)
                 {
                     session.RollbackTransaction();
-                    Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-                    throw ex;
+                    Console.WriteLine(ex.ToString());
+                    throw;
                 }
             }
         }
@@ -232,8 +232,8 @@ namespace DAL
                 catch (Exception ex)
                 {
                     session.RollbackTransaction();
-                    Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-                    throw ex;
+                    Console.WriteLine(ex.ToString());
+                    throw;
                 }
             }
         }

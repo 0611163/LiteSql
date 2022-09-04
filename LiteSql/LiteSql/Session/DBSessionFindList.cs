@@ -26,9 +26,9 @@ namespace LiteSql
 
                 DataReaderToList(rd, ref list);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
             finally
             {
@@ -58,9 +58,9 @@ namespace LiteSql
 
                 DataReaderToList(rd, ref list);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
             finally
             {
@@ -91,9 +91,9 @@ namespace LiteSql
 
                 DataReaderToList(rd, ref list);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
             finally
             {
@@ -123,9 +123,9 @@ namespace LiteSql
 
                 DataReaderToList(rd, ref list);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
             finally
             {

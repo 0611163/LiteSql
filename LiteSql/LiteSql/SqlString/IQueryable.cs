@@ -68,6 +68,11 @@ namespace LiteSql
         ISqlQueryable<T> LeftJoin<U>(Expression<Func<T, U, object>> expression);
 
         /// <summary>
+        /// Where 连表
+        /// </summary>
+        ISqlQueryable<T> WhereJoin<U>(Expression<Func<T, U, object>> expression);
+
+        /// <summary>
         /// 追加 select SQL
         /// </summary>
         /// <param name="subSql">子SQL</param>
@@ -77,7 +82,7 @@ namespace LiteSql
         /// <summary>
         /// 追加 select SQL
         /// </summary>
-        /// <param name="sql">SQL，插入到子SQL的前面</param>
+        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
         /// <param name="subSql">子SQL</param>
         /// <param name="alias">表别名，默认值t</param>
         ISqlQueryable<T> Select(string sql, ISqlString subSql = null, string alias = null);
@@ -85,7 +90,6 @@ namespace LiteSql
         /// <summary>
         /// 追加 select SQL
         /// </summary>
-        /// <typeparam name="U">实体类型</typeparam>
         /// <param name="expression">返回匿名对象的表达式</param>
         ISqlQueryable<T> Select(Expression<Func<T, object>> expression);
 

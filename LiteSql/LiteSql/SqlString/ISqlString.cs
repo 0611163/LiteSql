@@ -72,14 +72,14 @@ namespace LiteSql
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
-        /// <param name="sql">SQL</param>
+        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
         /// <param name="subSql">子SQL</param>
         ISqlString Append(string sql, ISqlString subSql);
 
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
-        /// <param name="sql">SQL</param>
+        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
         /// <param name="subSql">子SQL</param>
         ISqlQueryable<T> Append<T>(string sql, ISqlString subSql) where T : new();
 

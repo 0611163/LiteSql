@@ -57,7 +57,7 @@ namespace LiteSql
 
         #region WhereIf
         /// <summary>
-        /// 追加参数化SQL
+        /// 追加参数化查询条件SQL
         /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="expression">Lambda 表达式</param>
@@ -74,7 +74,7 @@ namespace LiteSql
 
         #region WhereIf
         /// <summary>
-        /// 追加参数化SQL
+        /// 追加参数化查询条件SQL
         /// </summary>
         /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
         /// <param name="expression">Lambda 表达式</param>
@@ -91,7 +91,7 @@ namespace LiteSql
 
         #region Where
         /// <summary>
-        /// 追加参数化SQL
+        /// 追加参数化查询条件SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
         public ISqlQueryable<T> Where(Expression<Func<T, object>> expression)
@@ -117,9 +117,9 @@ namespace LiteSql
                     _sql.Append(" where " + result);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
 
             return this;
@@ -128,7 +128,7 @@ namespace LiteSql
 
         #region Where
         /// <summary>
-        /// 追加参数化SQL
+        /// 追加参数化查询条件SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
         public ISqlQueryable<T> Where<U>(Expression<Func<U, object>> expression)
@@ -154,9 +154,9 @@ namespace LiteSql
                     _sql.Append(" where " + result);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
 
             return this;
@@ -165,7 +165,7 @@ namespace LiteSql
 
         #region Where
         /// <summary>
-        /// 追加参数化SQL
+        /// 追加参数化查询条件SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
         public ISqlQueryable<T> Where<U>(Expression<Func<T, U, object>> expression)
@@ -191,9 +191,9 @@ namespace LiteSql
                     _sql.Append(" where " + result);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
 
             return this;
@@ -202,7 +202,7 @@ namespace LiteSql
 
         #region Where
         /// <summary>
-        /// 追加参数化SQL
+        /// 追加参数化查询条件SQL
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
         public ISqlQueryable<T> Where<U, D>(Expression<Func<T, U, D, object>> expression)
@@ -228,9 +228,9 @@ namespace LiteSql
                     _sql.Append(" where " + result);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
 
             return this;
@@ -303,6 +303,22 @@ namespace LiteSql
         }
         #endregion
 
+        #region WhereJoin
+        /// <summary>
+        /// Where 连表
+        /// </summary>
+        public ISqlQueryable<T> WhereJoin<U>(Expression<Func<T, U, object>> expression)
+        {
+            ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.LeftJoin);
+            DbParameter[] dbParameters;
+            string sql = condition.VisitLambda(expression, out dbParameters);
+
+            _sql.AppendFormat(" where {0} ", sql);
+
+            return this;
+        }
+        #endregion
+
         #region Select
         /// <summary>
         /// 追加 select SQL
@@ -317,7 +333,7 @@ namespace LiteSql
         /// <summary>
         /// 追加 select SQL
         /// </summary>
-        /// <param name="sql">SQL，插入到子SQL的前面</param>
+        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
         /// <param name="subSql">子SQL</param>
         /// <param name="alias">别名，默认值t</param>
         public ISqlQueryable<T> Select(string sql, ISqlString subSql = null, string alias = null)
@@ -325,6 +341,14 @@ namespace LiteSql
             alias = alias ?? "t";
             if (sql == null) sql = string.Empty;
             if (subSql == null) subSql = _session.CreateSql();
+            if (sql.Contains("{0}"))
+            {
+                sql = sql.Replace("{0}", subSql.SQL);
+            }
+            else
+            {
+                sql = sql + subSql.SQL;
+            }
             if (_sql.ToString().Contains("from"))
             {
                 string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
@@ -333,16 +357,16 @@ namespace LiteSql
 
                 if (left.Trim().EndsWith("select"))
                 {
-                    _sql = new StringBuilder(string.Format("{0} {1} from {2}", left, sql + subSql.SQL, right));
+                    _sql = new StringBuilder(string.Format("{0} {1} from {2}", left, sql, right));
                 }
                 else
                 {
-                    _sql = new StringBuilder(string.Format("{0}, {1} from {2}", left, sql + subSql.SQL, right));
+                    _sql = new StringBuilder(string.Format("{0}, {1} from {2}", left, sql, right));
                 }
             }
             else
             {
-                _sql = new StringBuilder(string.Format("select {0} from {1} {2}", sql + subSql.SQL, _dbSession.GetTableName(_provider, typeof(T)), alias));
+                _sql = new StringBuilder(string.Format("select {0} from {1} {2}", sql, _dbSession.GetTableName(_provider, typeof(T)), alias));
             }
 
             string newSubSql = ParamsAddRange(subSql.Params, subSql.SQL);
@@ -368,11 +392,25 @@ namespace LiteSql
             Dictionary<string, string> dict = DBSession.GetEntityProperties(typeof(T)).ToLookup(a => a.PropertyInfo.Name).ToDictionary(a => a.Key, a => a.First().FieldName);
             int i = 0;
             StringBuilder fields = new StringBuilder();
-            foreach (PropertyInfo propInfo in props)
+            if (type != typeof(string))
             {
-                i++;
-                fields.AppendFormat("{0}.{1}", expression.Parameters[0].Name, _provider.OpenQuote + dict[propInfo.Name] + _provider.CloseQuote);
-                if (i < props.Length) fields.Append(", ");
+                foreach (PropertyInfo propInfo in props)
+                {
+                    i++;
+                    fields.AppendFormat("{0}.{1}", expression.Parameters[0].Name, _provider.OpenQuote + dict[propInfo.Name] + _provider.CloseQuote);
+                    if (i < props.Length) fields.Append(", ");
+                }
+            }
+            else
+            {
+                if (expression.Body is ConstantExpression)
+                {
+                    fields.Append((expression.Body as ConstantExpression).Value.ToString());
+                }
+                else
+                {
+                    throw new Exception("不支持");
+                }
             }
 
             if (_sql.ToString().Contains("from"))

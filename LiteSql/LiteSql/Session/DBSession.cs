@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -155,9 +156,7 @@ namespace LiteSql
         {
             return new SqlString(_provider, this, sql, args);
         }
-        #endregion
 
-        #region 创建SqlString对象
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
@@ -165,7 +164,9 @@ namespace LiteSql
         {
             return new SqlString<T>(_provider, this, sql, args);
         }
+        #endregion
 
+        #region 创建ISqlQueryable<T>
         /// <summary>
         /// 创建IQueryable
         /// </summary>
@@ -175,6 +176,17 @@ namespace LiteSql
         {
             SqlString<T> sqlString = new SqlString<T>(_provider, this, null);
             return sqlString.Queryable(alias);
+        }
+
+        /// <summary>
+        /// 创建IQueryable
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="expression">返回匿名对象的表达式</param>
+        public ISqlQueryable<T> Queryable<T>(Expression<Func<T, object>> expression) where T : new()
+        {
+            SqlString<T> sqlString = new SqlString<T>(_provider, this, null);
+            return sqlString.Select(expression);
         }
         #endregion
 

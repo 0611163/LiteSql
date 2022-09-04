@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,6 +30,13 @@ namespace LiteSql
         /// <typeparam name="T">实体类型</typeparam>
         /// <param name="alias">别名，默认值t</param>
         ISqlQueryable<T> Queryable<T>(string alias = null) where T : new();
+
+        /// <summary>
+        /// 创建IQueryable
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="expression">返回匿名对象的表达式</param>
+        ISqlQueryable<T> Queryable<T>(Expression<Func<T, object>> expression) where T : new();
         #endregion
 
         #region 查询下一个ID

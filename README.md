@@ -109,7 +109,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.17
+Install-Package LiteSql -Version 1.5.18
 ```
 
 2. 安装对应的数据库引擎

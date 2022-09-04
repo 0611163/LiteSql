@@ -41,7 +41,7 @@ namespace LiteSql
         /// <summary>
         /// 生成 DbParameter
         /// </summary>
-        DbParameter GetDbParameter(string name, object vallue);
+        DbParameter GetDbParameter(string name, object value);
 
         /// <summary>
         /// 带参数的SQL插入和修改语句中，参数化的字段名称
