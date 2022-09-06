@@ -41,14 +41,13 @@ namespace LiteSqlTest
             }
             m_SysUserDal.Update(userList);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                long count = session.CreateSql(
-                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户%" }).QueryCount();
-                Assert.IsTrue(count >= userList.Count);
-            }
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            long count = session.CreateSql(
+                "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户%" }).QueryCount();
+            Assert.IsTrue(count >= userList.Count);
         }
         #endregion
 
@@ -66,14 +65,13 @@ namespace LiteSqlTest
             }
             await m_SysUserDal.UpdateAsync(userList);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                long count = session.CreateSql(
-                    "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户Async%" }).QueryCount();
-                Assert.IsTrue(count >= userList.Count);
-            }
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            long count = session.CreateSql(
+                "select * from sys_user where Remark like @Remark", new { Remark = "测试修改用户Async%" }).QueryCount();
+            Assert.IsTrue(count >= userList.Count);
         }
         #endregion
 

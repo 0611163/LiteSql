@@ -20,10 +20,9 @@ namespace DAL
         /// </summary>
         public SysUser Get(long id)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                return session.QueryById<SysUser>(id);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            return session.QueryById<SysUser>(id);
         }
         #endregion
 
@@ -33,10 +32,9 @@ namespace DAL
         /// </summary>
         public int GetTotalCount()
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                return session.QuerySingle<int>("select count(*) from sys_user");
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            return session.QuerySingle<int>("select count(*) from sys_user");
         }
         #endregion
 
@@ -46,10 +44,9 @@ namespace DAL
         /// </summary>
         public List<SysUser> GetList(string sql)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                return session.QueryList<SysUser>(sql);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            return session.QueryList<SysUser>(sql);
         }
         #endregion
 
@@ -59,14 +56,13 @@ namespace DAL
         /// </summary>
         public long Insert(SysUser info)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                info.CreateTime = DateTime.Now;
-                long id = session.InsertReturnId(info, "select @@IDENTITY");
-                return id;
-            }
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            info.CreateTime = DateTime.Now;
+            long id = session.InsertReturnId(info, "select @@IDENTITY");
+            return id;
         }
         #endregion
 
@@ -76,14 +72,13 @@ namespace DAL
         /// </summary>
         public async Task<long> InsertAsync(SysUser info)
         {
-            using (var session = await LiteSqlFactory.GetSessionAsync())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                info.CreateTime = DateTime.Now;
-                long id = await session.InsertReturnIdAsync(info, "select @@IDENTITY");
-                return id;
-            }
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            info.CreateTime = DateTime.Now;
+            long id = await session.InsertReturnIdAsync(info, "select @@IDENTITY");
+            return id;
         }
         #endregion
 
@@ -95,21 +90,20 @@ namespace DAL
         {
             list.ForEach(item => item.CreateTime = DateTime.Now);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                try
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                    session.BeginTransaction();
-                    session.Insert(list);
-                    session.CommitTransaction();
-                }
-                catch
-                {
-                    session.RollbackTransaction();
-                    throw;
-                }
+            try
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                session.BeginTransaction();
+                session.Insert(list);
+                session.CommitTransaction();
+            }
+            catch
+            {
+                session.RollbackTransaction();
+                throw;
             }
         }
         #endregion
@@ -122,10 +116,9 @@ namespace DAL
         {
             list.ForEach(item => item.CreateTime = DateTime.Now);
 
-            using (var session = await LiteSqlFactory.GetSessionAsync())
-            {
-                await session.InsertAsync(list);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            await session.InsertAsync(list);
         }
         #endregion
 
@@ -135,11 +128,10 @@ namespace DAL
         /// </summary>
         public void Update(SysUser info)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                info.UpdateTime = DateTime.Now;
-                session.Update(info);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            info.UpdateTime = DateTime.Now;
+            session.Update(info);
         }
         #endregion
 
@@ -149,17 +141,13 @@ namespace DAL
         /// </summary>
         public async Task UpdateAsync(SysUser info)
         {
-            using (var session = await LiteSqlFactory.GetSessionAsync())
-            {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+            var session = LiteSqlFactory.GetSession();
 
-                info.UpdateTime = DateTime.Now;
-                var task = session.UpdateAsync(info);
-                await task;
-            }
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            info.UpdateTime = DateTime.Now;
+            var task = session.UpdateAsync(info);
+            await task;
         }
         #endregion
 
@@ -171,21 +159,20 @@ namespace DAL
         {
             list.ForEach(item => item.UpdateTime = DateTime.Now);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                try
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                    session.BeginTransaction();
-                    session.Update(list);
-                    session.CommitTransaction();
-                }
-                catch
-                {
-                    session.RollbackTransaction();
-                    throw;
-                }
+            try
+            {
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                session.BeginTransaction();
+                session.Update(list);
+                session.CommitTransaction();
+            }
+            catch
+            {
+                session.RollbackTransaction();
+                throw;
             }
         }
         #endregion
@@ -198,11 +185,10 @@ namespace DAL
         {
             list.ForEach(item => item.UpdateTime = DateTime.Now);
 
-            using (var session = await LiteSqlFactory.GetSessionAsync())
-            {
-                var task = session.UpdateAsync(list);
-                await task;
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            var task = session.UpdateAsync(list);
+            await task;
         }
         #endregion
 
@@ -212,15 +198,14 @@ namespace DAL
         /// </summary>
         public void Delete(long id)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+            var session = LiteSqlFactory.GetSession();
 
-                session.DeleteById<SysUser>(id);
-            }
+            session.OnExecuting = (s, p) =>
+            {
+                Console.WriteLine(s); //打印SQL
+            };
+
+            session.DeleteById<SysUser>(id);
         }
         #endregion
 

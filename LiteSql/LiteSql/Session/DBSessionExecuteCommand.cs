@@ -27,19 +27,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
-            {
-                object obj = cmd.ExecuteScalar();
 
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+            object obj = ExecuteScalar(sqlString);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
         #endregion
@@ -52,22 +49,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open)
-            {
-                await _conn.OpenAsync();
-            }
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
-            {
-                object obj = await cmd.ExecuteScalarAsync();
 
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+            object obj = await ExecuteScalarAsync(sqlString);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
         #endregion
@@ -83,12 +74,15 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                if (_tran != null) cmd.Transaction = _tran;
-                int rows = cmd.ExecuteNonQuery();
-                return rows;
+                using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
+                {
+                    if (_tran != null) cmd.Transaction = _tran.Tran;
+                    int rows = cmd.ExecuteNonQuery();
+                    return rows;
+                }
             }
         }
         #endregion
@@ -103,15 +97,65 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open)
+
+            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
             {
-                await _conn.OpenAsync();
+                using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
+                {
+                    if (_tran != null) cmd.Transaction = _tran.Tran;
+                    int rows = await cmd.ExecuteNonQueryAsync();
+                    return rows;
+                }
             }
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+        }
+        #endregion
+
+
+        #region ExecuteScalar 执行SQL语句，返回一个值
+        /// <summary>
+        /// 执行SQL语句，返回一个值
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <returns>影响的记录数</returns>
+        public object ExecuteScalar(string sqlString)
+        {
+            SqlFilter(ref sqlString);
+            OnExecuting?.Invoke(sqlString, null);
+
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                if (_tran != null) cmd.Transaction = _tran;
-                int rows = await cmd.ExecuteNonQueryAsync();
-                return rows;
+                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+                {
+                    PrepareCommand(cmd, _conn.Conn, _tran, sqlString, null);
+                    object result = cmd.ExecuteScalar();
+                    cmd.Parameters.Clear();
+                    return result;
+                }
+            }
+        }
+        #endregion
+
+        #region ExecuteScalarAsync 执行SQL语句，返回影响的记录数
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <returns>影响的记录数</returns>
+        public async Task<object> ExecuteScalarAsync(string sqlString)
+        {
+            SqlFilter(ref sqlString);
+            OnExecuting?.Invoke(sqlString, null);
+
+            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
+            {
+                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+                {
+                    await PrepareCommandAsync(cmd, _conn.Conn, _tran, sqlString, null);
+                    var task = cmd.ExecuteScalarAsync();
+                    object result = await task;
+                    cmd.Parameters.Clear();
+                    return result;
+                }
             }
         }
         #endregion
@@ -126,19 +170,17 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
-            {
-                object obj = cmd.ExecuteScalar();
 
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return default(T);
-                }
-                else
-                {
-                    return (T)Convert.ChangeType(obj, typeof(T));
-                }
+
+            object obj = ExecuteScalar(sqlString);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+            {
+                return default(T);
+            }
+            else
+            {
+                return (T)Convert.ChangeType(obj, typeof(T));
             }
         }
         #endregion
@@ -152,19 +194,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
-            {
-                object obj = cmd.ExecuteScalar();
 
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return null;
-                }
-                else
-                {
-                    return obj;
-                }
+            object obj = ExecuteScalar(sqlString);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+            {
+                return null;
+            }
+            else
+            {
+                return obj;
             }
         }
         #endregion
@@ -178,19 +217,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
-            {
-                object obj = await cmd.ExecuteScalarAsync();
 
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return default(T);
-                }
-                else
-                {
-                    return (T)Convert.ChangeType(obj, typeof(T));
-                }
+            object obj = await ExecuteScalarAsync(sqlString);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+            {
+                return default(T);
+            }
+            else
+            {
+                return (T)Convert.ChangeType(obj, typeof(T));
             }
         }
         #endregion
@@ -204,19 +240,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
-            {
-                object obj = await cmd.ExecuteScalarAsync();
 
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return null;
-                }
-                else
-                {
-                    return obj;
-                }
+            object obj = await ExecuteScalarAsync(sqlString);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+            {
+                return null;
+            }
+            else
+            {
+                return obj;
             }
         }
         #endregion
@@ -280,15 +313,15 @@ namespace LiteSql
         /// <summary>
         /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
         /// </summary>
-        private DbDataReader ExecuteReader(string sqlString)
+        private Tuple<DbDataReader, DbConnectionExt> ExecuteReader(string sqlString)
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+            _conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran);
+            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
             {
                 DbDataReader myReader = cmd.ExecuteReader();
-                return myReader;
+                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
             }
         }
         #endregion
@@ -297,15 +330,15 @@ namespace LiteSql
         /// <summary>
         /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
         /// </summary>
-        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString)
+        private async Task<Tuple<DbDataReader, DbConnectionExt>> ExecuteReaderAsync(string sqlString)
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) await _conn.OpenAsync();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+            _conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran);
+            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
             {
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
-                return myReader;
+                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
             }
         }
         #endregion
@@ -324,12 +357,16 @@ namespace LiteSql
         public int Execute(string SQLString, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
-            using (DbCommand cmd = _provider.GetCommand(_conn))
+
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                PrepareCommand(cmd, _conn, _tran, SQLString, cmdParms);
-                int rows = cmd.ExecuteNonQuery();
-                cmd.Parameters.Clear();
-                return rows;
+                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+                {
+                    PrepareCommand(cmd, _conn.Conn, _tran, SQLString, cmdParms);
+                    int rows = cmd.ExecuteNonQuery();
+                    cmd.Parameters.Clear();
+                    return rows;
+                }
             }
         }
         #endregion
@@ -344,19 +381,23 @@ namespace LiteSql
         public async Task<int> ExecuteAsync(string SQLString, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
-            using (DbCommand cmd = _provider.GetCommand(_conn))
+
+            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
             {
-                await PrepareCommandAsync(cmd, _conn, _tran, SQLString, cmdParms);
-                var task = cmd.ExecuteNonQueryAsync();
-                int rows = await task;
-                cmd.Parameters.Clear();
-                return rows;
+                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+                {
+                    await PrepareCommandAsync(cmd, _conn.Conn, _tran, SQLString, cmdParms);
+                    var task = cmd.ExecuteNonQueryAsync();
+                    int rows = await task;
+                    cmd.Parameters.Clear();
+                    return rows;
+                }
             }
         }
         #endregion
 
 
-        #region Execute 执行SQL语句，返回一个值
+        #region ExecuteScalar 执行SQL语句，返回一个值
         /// <summary>
         /// 执行SQL语句，返回一个值
         /// </summary>
@@ -366,17 +407,21 @@ namespace LiteSql
         public object ExecuteScalar(string SQLString, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
-            using (DbCommand cmd = _provider.GetCommand(_conn))
+
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                PrepareCommand(cmd, _conn, _tran, SQLString, cmdParms);
-                object result = cmd.ExecuteScalar();
-                cmd.Parameters.Clear();
-                return result;
+                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+                {
+                    PrepareCommand(cmd, _conn.Conn, _tran, SQLString, cmdParms);
+                    object result = cmd.ExecuteScalar();
+                    cmd.Parameters.Clear();
+                    return result;
+                }
             }
         }
         #endregion
 
-        #region ExecuteAsync 执行SQL语句，返回影响的记录数
+        #region ExecuteScalarAsync 执行SQL语句，返回影响的记录数
         /// <summary>
         /// 执行SQL语句，返回影响的记录数
         /// </summary>
@@ -386,13 +431,17 @@ namespace LiteSql
         public async Task<object> ExecuteScalarAsync(string SQLString, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
-            using (DbCommand cmd = _provider.GetCommand(_conn))
+
+            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
             {
-                await PrepareCommandAsync(cmd, _conn, _tran, SQLString, cmdParms);
-                var task = cmd.ExecuteScalarAsync();
-                object result = await task;
-                cmd.Parameters.Clear();
-                return result;
+                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+                {
+                    await PrepareCommandAsync(cmd, _conn.Conn, _tran, SQLString, cmdParms);
+                    var task = cmd.ExecuteScalarAsync();
+                    object result = await task;
+                    cmd.Parameters.Clear();
+                    return result;
+                }
             }
         }
         #endregion
@@ -404,28 +453,17 @@ namespace LiteSql
         /// </summary>
         public bool Exists(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+
+            object obj = ExecuteScalar(sqlString, cmdParms);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
             {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-
-                object obj = cmd.ExecuteScalar();
-
-                cmd.Parameters.Clear();
-
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
         #endregion
@@ -438,29 +476,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open)
+
+            object obj = await ExecuteScalarAsync(sqlString, cmdParms);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
             {
-                await _conn.OpenAsync();
+                return false;
             }
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+            else
             {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-
-                object obj = await cmd.ExecuteScalarAsync();
-
-                cmd.Parameters.Clear();
-
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+                return true;
             }
         }
         #endregion
@@ -476,26 +501,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+
+            object obj = ExecuteScalar(sqlString, cmdParms);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
             {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-
-                object obj = cmd.ExecuteScalar();
-
-                cmd.Parameters.Clear();
-
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return default(T);
-                }
-                else
-                {
-                    return (T)Convert.ChangeType(obj, typeof(T));
-                }
+                return default(T);
+            }
+            else
+            {
+                return (T)Convert.ChangeType(obj, typeof(T));
             }
         }
         #endregion
@@ -510,26 +525,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+
+            object obj = ExecuteScalar(sqlString, cmdParms);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
             {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-
-                object obj = cmd.ExecuteScalar();
-
-                cmd.Parameters.Clear();
-
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return null;
-                }
-                else
-                {
-                    return obj;
-                }
+                return null;
+            }
+            else
+            {
+                return obj;
             }
         }
         #endregion
@@ -544,26 +549,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+
+            object obj = await ExecuteScalarAsync(sqlString, cmdParms);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
             {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-
-                object obj = await cmd.ExecuteScalarAsync();
-
-                cmd.Parameters.Clear();
-
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return default(T);
-                }
-                else
-                {
-                    return (T)Convert.ChangeType(obj, typeof(T));
-                }
+                return default(T);
+            }
+            else
+            {
+                return (T)Convert.ChangeType(obj, typeof(T));
             }
         }
         #endregion
@@ -578,26 +573,16 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            if (_conn.State != ConnectionState.Open) _conn.Open();
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn))
+
+            object obj = await ExecuteScalarAsync(sqlString, cmdParms);
+
+            if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
             {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-
-                object obj = await cmd.ExecuteScalarAsync();
-
-                cmd.Parameters.Clear();
-
-                if ((Object.Equals(obj, null)) || (Object.Equals(obj, System.DBNull.Value)))
-                {
-                    return null;
-                }
-                else
-                {
-                    return obj;
-                }
+                return null;
+            }
+            else
+            {
+                return obj;
             }
         }
         #endregion
@@ -670,15 +655,17 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         ///  <param name="cmdParms">参数</param>
         /// <returns>IDataReader</returns>
-        private DbDataReader ExecuteReader(string sqlString, DbParameter[] cmdParms)
+        private Tuple<DbDataReader, DbConnectionExt> ExecuteReader(string sqlString, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(sqlString, cmdParms);
-            using (DbCommand cmd = _provider.GetCommand(_conn))
+
+            _conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran);
+            using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
             {
-                PrepareCommand(cmd, _conn, null, sqlString, cmdParms);
+                PrepareCommand(cmd, _conn.Conn, null, sqlString, cmdParms);
                 DbDataReader myReader = cmd.ExecuteReader();
                 cmd.Parameters.Clear();
-                return myReader;
+                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
             }
         }
         #endregion
@@ -690,26 +677,28 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         ///  <param name="cmdParms">参数</param>
         /// <returns>IDataReader</returns>
-        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbParameter[] cmdParms)
+        private async Task<Tuple<DbDataReader, DbConnectionExt>> ExecuteReaderAsync(string sqlString, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(sqlString, cmdParms);
-            using (DbCommand cmd = _provider.GetCommand(_conn))
+
+            _conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran);
+            using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
             {
-                await PrepareCommandAsync(cmd, _conn, null, sqlString, cmdParms);
+                await PrepareCommandAsync(cmd, _conn.Conn, null, sqlString, cmdParms);
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
                 cmd.Parameters.Clear();
-                return myReader;
+                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
             }
         }
         #endregion
 
         #region PrepareCommand
-        private static void PrepareCommand(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
+        private static void PrepareCommand(DbCommand cmd, DbConnection conn, DbTransactionExt trans, string cmdText, DbParameter[] cmdParms)
         {
             if (conn.State != ConnectionState.Open) conn.Open();
             cmd.Connection = conn;
             cmd.CommandText = cmdText;
-            if (trans != null) cmd.Transaction = trans;
+            if (trans != null) cmd.Transaction = trans.Tran;
             cmd.CommandType = CommandType.Text;
             if (cmdParms != null)
             {
@@ -722,12 +711,12 @@ namespace LiteSql
         #endregion
 
         #region PrepareCommandAsync
-        private static async Task PrepareCommandAsync(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
+        private static async Task PrepareCommandAsync(DbCommand cmd, DbConnection conn, DbTransactionExt trans, string cmdText, DbParameter[] cmdParms)
         {
             if (conn.State != ConnectionState.Open) await conn.OpenAsync();
             cmd.Connection = conn;
             cmd.CommandText = cmdText;
-            if (trans != null) cmd.Transaction = trans;
+            if (trans != null) cmd.Transaction = trans.Tran;
             cmd.CommandType = CommandType.Text;
             if (cmdParms != null)
             {

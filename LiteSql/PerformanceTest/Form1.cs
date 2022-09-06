@@ -71,9 +71,9 @@ namespace PerformanceTest
         #endregion
 
         #region RunTask
-        private void RunTask(Action action)
+        private Task RunTask(Action action)
         {
-            Task.Run(() =>
+            return Task.Run(() =>
             {
                 try
                 {
@@ -135,7 +135,7 @@ namespace PerformanceTest
                         session.Update(userList);
                         session.CommitTransaction();
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         session.RollbackTransaction();
                         throw;
@@ -305,7 +305,7 @@ namespace PerformanceTest
                             select t.* 
                             from sys_user t 
                             where t.id > @id 
-                            and t.real_name like concat('%',@remark,'%')", 20, "测试");
+                            and t.real_name like @remark", 20, "%测试%");
 
                         sql.Append(" order by t.create_time desc, t.id asc");
 
@@ -343,7 +343,7 @@ namespace PerformanceTest
                                 from sys_user t 
                                 where 1=1 
                                 and t.id > @id 
-                                and t.real_name like concat('%',@remark,'%')", 20, "测试");
+                                and t.real_name like @remark", 20, "%测试%");
 
                             string orderby = " order by t.create_time desc, t.id asc";
 
@@ -355,6 +355,43 @@ namespace PerformanceTest
 
                 string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
                 Log("分页查询 完成，耗时：" + time + "秒");
+            });
+        }
+        #endregion
+
+        #region 并发查询
+        private void button8_Click(object sender, EventArgs e)
+        {
+            RunTask(() =>
+            {
+                Log("查询 开始");
+                DateTime dt = DateTime.Now;
+
+                List<Task> tasks = new List<Task>();
+                for (int i = 0; i < 200; i++)
+                {
+                    Task task = RunTask(() =>
+                    {
+                        using (var session = LiteSqlFactory.GetSession())
+                        {
+                            ISqlString sql = session.CreateSql(@"
+                            select t.* 
+                            from sys_user t 
+                            where t.id > @id 
+                            and t.real_name like @remark", 20, "%测试%");
+
+                            sql.Append(" order by t.create_time desc, t.id asc");
+
+                            List<SysUser> userList = sql.QueryList<SysUser>();
+                            Log("查询结果 count=" + userList.Count.ToString());
+                        }
+                    });
+                    tasks.Add(task);
+                }
+                Task.WaitAll(tasks.ToArray());
+
+                string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
+                Log("查询 完成，耗时：" + time + "秒");
             });
         }
         #endregion

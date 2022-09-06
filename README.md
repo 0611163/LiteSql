@@ -9,39 +9,38 @@
 ```C#
 DateTime? startTime = null;
 
-using (var session = LiteSqlFactory.GetSession())
+var session = LiteSqlFactory.GetSession();
+
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+List<SysUser> list = session.CreateSql(@"
+    select * from sys_user t where t.id <= @Id", new { Id = 20 })
+
+    .Append(@" and t.create_userid = @CreateUserId 
+        and t.password like @Password
+        and t.id in @Ids",
+        new
+        {
+            CreateUserId = "1",
+            Password = "%345%",
+            Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
+        })
+
+    .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
+
+    .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) })
+
+    .QueryList<SysUser>();
+
+long id = session.CreateSql("select id from sys_user where id=@Id", new { Id = 1 })
+    .QuerySingle<long>();
+Assert.IsTrue(id == 1);
+
+foreach (SysUser item in list)
 {
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-    List<SysUser> list = session.CreateSql(@"
-        select * from sys_user t where t.id <= @Id", new { Id = 20 })
-
-        .Append(@" and t.create_userid = @CreateUserId 
-            and t.password like @Password
-            and t.id in @Ids",
-            new
-            {
-                CreateUserId = "1",
-                Password = "%345%",
-                Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
-            })
-
-        .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
-
-        .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) })
-
-        .QueryList<SysUser>();
-
-    long id = session.CreateSql("select id from sys_user where id=@Id", new { Id = 1 })
-        .QuerySingle<long>();
-    Assert.IsTrue(id == 1);
-
-    foreach (SysUser item in list)
-    {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-    Assert.IsTrue(list.Count > 0);
+    Console.WriteLine(ModelToStringUtil.ToString(item));
 }
+Assert.IsTrue(list.Count > 0);
 ```
 
 ## 特点
@@ -109,7 +108,7 @@ using (var session = LiteSqlFactory.GetSession())
 1. 安装LiteSql
 
 ```text
-Install-Package LiteSql -Version 1.5.18
+Install-Package LiteSql -Version 1.5.19
 ```
 
 2. 安装对应的数据库引擎
@@ -313,10 +312,8 @@ public partial class BsOrder
 ```C#
 public void Insert(SysUser info)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        session.Insert(info);
-    }
+    var session = LiteSqlFactory.GetSession();
+    session.Insert(info);  
 }
 ```
 
@@ -325,10 +322,8 @@ public void Insert(SysUser info)
 ```C#
 public void Insert(SysUser info)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        long id = session.InsertReturnId(info, "select @@IDENTITY");
-    }
+    var session = LiteSqlFactory.GetSession();
+    long id = session.InsertReturnId(info, "select @@IDENTITY");   
 }
 ```
 
@@ -337,10 +332,8 @@ public void Insert(SysUser info)
 ```C#
 public void Insert(List<SysUser> list)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        session.Insert(list);
-    }
+    var session = LiteSqlFactory.GetSession();
+    session.Insert(list);   
 }
 ```
 
@@ -349,10 +342,8 @@ public void Insert(List<SysUser> list)
 ```C#
 public void Update(SysUser info)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        session.Update(info);
-    }
+    var session = LiteSqlFactory.GetSession();
+    session.Update(info);
 }
 ```
 
@@ -361,42 +352,38 @@ public void Update(SysUser info)
 ```C#
 public void Update(List<SysUser> list)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        session.Update(list);
-    }
+    var session = LiteSqlFactory.GetSession();
+    session.Update(list);
 }
 ```
 
 ### 修改时只更新数据有变化的字段
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
-{
-    session.AttachOld(user); //附加更新前的旧数据，只更新数据发生变化的字段，提升更新性能
+var session = LiteSqlFactory.GetSession();
 
-    user.UpdateUserid = "1";
-    user.Remark = "测试修改用户" + _rnd.Next(1, 100);
-    user.UpdateTime = DateTime.Now;
+session.AttachOld(user); //附加更新前的旧数据，只更新数据发生变化的字段，提升更新性能
 
-    session.Update(user);
-}
+user.UpdateUserid = "1";
+user.Remark = "测试修改用户" + _rnd.Next(1, 100);
+user.UpdateTime = DateTime.Now;
+
+session.Update(user);
 ```
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
+var session = LiteSqlFactory.GetSession();
+
+session.AttachOld(userList); //附加更新前的旧数据，只更新数据发生变化的字段，提升更新性能
+
+foreach (SysUser user in userList)
 {
-    session.AttachOld(userList); //附加更新前的旧数据，只更新数据发生变化的字段，提升更新性能
-
-    foreach (SysUser user in userList)
-    {
-        user.Remark = "测试修改用户" + _rnd.Next(1, 10000);
-        user.UpdateUserid = "1";
-        user.UpdateTime = DateTime.Now;
-    }
-
-    session.Update(userList);
+    user.Remark = "测试修改用户" + _rnd.Next(1, 10000);
+    user.UpdateUserid = "1";
+    user.UpdateTime = DateTime.Now;
 }
+
+session.Update(userList);
 ```
 
 ### 删除
@@ -405,20 +392,16 @@ using (var session = LiteSqlFactory.GetSession())
 ```C#
 public void Delete(string id)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        session.DeleteById<SysUser>(id);
-    }
+    var session = LiteSqlFactory.GetSession();
+    session.DeleteById<SysUser>(id);
 }
 ```
 
 ### 条件删除
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
-{
-    session.DeleteByCondition<SysUser>(string.Format("id>=12"));
-}
+var session = LiteSqlFactory.GetSession();
+session.DeleteByCondition<SysUser>(string.Format("id>=12"));
 ```
 
 ### 查询单个记录
@@ -426,28 +409,22 @@ using (var session = LiteSqlFactory.GetSession())
 ```C#
 public SysUser Get(string id)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        return session.QueryById<SysUser>(id);
-    }
+    var session = LiteSqlFactory.GetSession();
+    return session.QueryById<SysUser>(id);
 }
 ```
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
-{
-    return session.Query<SysUser>("select * from sys_user");
-}
+var session = LiteSqlFactory.GetSession();
+SysUser user = session.Query<SysUser>("select * from sys_user");
 ```
 
 ### 简单查询
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
-{
-    string sql = "select * from CARINFO_MERGE";
-    List<CarinfoMerge> result = session.QueryList<CarinfoMerge>(sql);
-}
+var session = LiteSqlFactory.GetSession();
+string sql = "select * from CARINFO_MERGE";
+List<CarinfoMerge> result = session.QueryList<CarinfoMerge>(sql);
 ```
 
 ### 条件查询
@@ -455,27 +432,26 @@ using (var session = LiteSqlFactory.GetSession())
 ```C#
 public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, DateTime? endTime)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        ISqlString sql = session.CreateSql(@"
-            select t.*, u.real_name as OrderUserRealName
-            from bs_order t
-            left join sys_user u on t.order_userid=u.id
-            where 1=1");
+    var session = LiteSqlFactory.GetSession();
 
-        sql.AppendIf(status.HasValue, " and t.status=@status", status);
+    ISqlString sql = session.CreateSql(@"
+        select t.*, u.real_name as OrderUserRealName
+        from bs_order t
+        left join sys_user u on t.order_userid=u.id
+        where 1=1");
 
-        sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
+    sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-        sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
+    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
 
-        sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
+    sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
 
-        sql.Append(" order by t.order_time desc, t.id asc ");
+    sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
 
-        List<BsOrder> list = session.QueryList<BsOrder>(sql);
-        return list;
-    }
+    sql.Append(" order by t.order_time desc, t.id asc ");
+
+    List<BsOrder> list = session.QueryList<BsOrder>(sql);
+    return list;
 }
 ```
 
@@ -484,27 +460,26 @@ public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, Da
 ```C#
 public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, DateTime? endTime)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        ISqlString sql = session.CreateSql(@"
-            select t.*, u.real_name as OrderUserRealName
-            from bs_order t
-            left join sys_user u on t.order_userid=u.id
-            where 1=1");
+    var session = LiteSqlFactory.GetSession();
 
-        sql.AppendIf(status.HasValue, " and t.status=@Status", new { Status = status });
+    ISqlString sql = session.CreateSql(@"
+        select t.*, u.real_name as OrderUserRealName
+        from bs_order t
+        left join sys_user u on t.order_userid=u.id
+        where 1=1");
 
-        sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @Remark", new { Remark = "%" + remark + "%" });
+    sql.AppendIf(status.HasValue, " and t.status=@Status", new { Status = status });
 
-        sql.AppendIf(startTime.HasValue, " and t.order_time >= @StartTime ", new { StartTime = startTime } });
+    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @Remark", new { Remark = "%" + remark + "%" });
 
-        sql.AppendIf(endTime.HasValue, " and t.order_time <= @EndTime ", endTime });
+    sql.AppendIf(startTime.HasValue, " and t.order_time >= @StartTime ", new { StartTime = startTime } });
 
-        sql.Append(" order by t.order_time desc, t.id asc ");
+    sql.AppendIf(endTime.HasValue, " and t.order_time <= @EndTime ", endTime });
 
-        List<BsOrder> list = session.QueryList<BsOrder>(sql);
-        return list;
-    }
+    sql.Append(" order by t.order_time desc, t.id asc ");
+
+    List<BsOrder> list = session.QueryList<BsOrder>(sql);
+    return list;
 }
 ```
 
@@ -513,27 +488,26 @@ public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, Da
 ```C#
 public List<BsOrder> GetListPage(ref PageModel pageModel, int? status, string remark, DateTime? startTime, DateTime? endTime)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        ISqlString sql = session.CreateSql(@"
-            select t.*, u.real_name as OrderUserRealName
-            from bs_order t
-            left join sys_user u on t.order_userid=u.id
-            where 1=1");
+    var session = LiteSqlFactory.GetSession();
 
-        sql.AppendIf(status.HasValue, " and t.status=@status", status);
+    ISqlString sql = session.CreateSql(@"
+        select t.*, u.real_name as OrderUserRealName
+        from bs_order t
+        left join sys_user u on t.order_userid=u.id
+        where 1=1");
 
-        sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
+    sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-        sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
+    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
 
-        sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
+    sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
 
-        string orderby = " order by t.order_time desc, t.id asc ";
-        
-        pageModel.TotalRows = session.QueryCount(sql);
-        return session.QueryPage<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
-    }
+    sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
+
+    string orderby = " order by t.order_time desc, t.id asc ";
+    
+    pageModel.TotalRows = session.QueryCount(sql);
+    return session.QueryPage<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
 }
 ```
 
@@ -543,38 +517,37 @@ public List<BsOrder> GetListPage(ref PageModel pageModel, int? status, string re
 ```C#
 public string Insert(BsOrder order, List<BsOrderDetail> detailList)
 {
-    using (var session = LiteSqlFactory.GetSession())
+    var session = LiteSqlFactory.GetSession();
+
+    try
     {
-        try
+        session.BeginTransaction();
+
+        order.Id = Guid.NewGuid().ToString("N");
+        order.CreateTime = DateTime.Now;
+
+        decimal amount = 0;
+        foreach (BsOrderDetail detail in detailList)
         {
-            session.BeginTransaction();
-
-            order.Id = Guid.NewGuid().ToString("N");
-            order.CreateTime = DateTime.Now;
-
-            decimal amount = 0;
-            foreach (BsOrderDetail detail in detailList)
-            {
-                detail.Id = Guid.NewGuid().ToString("N");
-                detail.OrderId = order.Id;
-                detail.CreateTime = DateTime.Now;
-                amount += detail.Price * detail.Quantity;
-                session.Insert(detail);
-            }
-            order.Amount = amount;
-
-            session.Insert(order);
-
-            session.CommitTransaction();
-
-            return order.Id;
+            detail.Id = Guid.NewGuid().ToString("N");
+            detail.OrderId = order.Id;
+            detail.CreateTime = DateTime.Now;
+            amount += detail.Price * detail.Quantity;
+            session.Insert(detail);
         }
-        catch (Exception ex)
-        {
-            session.RollbackTransaction();
-            Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
-            throw ex;
-        }
+        order.Amount = amount;
+
+        session.Insert(order);
+
+        session.CommitTransaction();
+
+        return order.Id;
+    }
+    catch (Exception ex)
+    {
+        session.RollbackTransaction();
+        Console.WriteLine(ex.Message + "\r\n" + ex.StackTrace);
+        throw ex;
     }
 }
 ```
@@ -584,28 +557,27 @@ public string Insert(BsOrder order, List<BsOrderDetail> detailList)
 ```C#
 public async Task<List<BsOrder>> GetListPageAsync(PageModel pageModel, int? status, string remark, DateTime? startTime, DateTime? endTime)
 {
-    using (var session = await LiteSqlFactory.GetSessionAsync())
-    {
-        ISqlString sql = session.CreateSql(@"
-            select t.*, u.real_name as OrderUserRealName
-            from bs_order t
-            left join sys_user u on t.order_userid=u.id
-            where 1=1");
+    var session = LiteSqlFactory.GetSession();
 
-        sql.AppendIf(status.HasValue, " and t.status=@status", status);
+    ISqlString sql = session.CreateSql(@"
+        select t.*, u.real_name as OrderUserRealName
+        from bs_order t
+        left join sys_user u on t.order_userid=u.id
+        where 1=1");
 
-        sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
+    sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-        sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
+    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
 
-        sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
+    sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
 
-        string orderby = " order by t.order_time desc, t.id asc ";
-        
-        var countResult = await session.QueryCountAsync(sql, pageModel.PageSize);
-        pageModel.TotalRows = countResult.Count;
-        return await session.QueryPageAsync<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
-    }
+    sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
+
+    string orderby = " order by t.order_time desc, t.id asc ";
+    
+    var countResult = await session.QueryCountAsync(sql, pageModel.PageSize);
+    pageModel.TotalRows = countResult.Count;
+    return await session.QueryPageAsync<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
 }
 ```
 
@@ -614,29 +586,28 @@ public async Task<List<BsOrder>> GetListPageAsync(PageModel pageModel, int? stat
 ```C#
 public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime, DateTime? endTime, string ids)
 {
-    using (var session = LiteSqlFactory.GetSession())
-    {
-        ISqlString sql = session.CreateSql(@"
-            select t.*, u.real_name as OrderUserRealName
-            from bs_order t
-            left join sys_user u on t.order_userid=u.id
-            where 1=1");
+    var session = LiteSqlFactory.GetSession();
 
-        sql.AppendIf(status.HasValue, " and t.status=@status", status);
+    ISqlString sql = session.CreateSql(@"
+        select t.*, u.real_name as OrderUserRealName
+        from bs_order t
+        left join sys_user u on t.order_userid=u.id
+        where 1=1");
 
-        sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", sql.ForContains(remark));
+    sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-        sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => sql.ForDateTime(startTime.Value));
+    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", sql.ForContains(remark));
 
-        sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => sql.ForDateTime(endTime.Value));
+    sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => sql.ForDateTime(startTime.Value));
 
-        sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
+    sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => sql.ForDateTime(endTime.Value));
 
-        sql.Append(" order by t.order_time desc, t.id asc ");
+    sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
 
-        List<BsOrder> list = session.QueryList<BsOrder>(sql);
-        return list;
-    }
+    sql.Append(" order by t.order_time desc, t.id asc ");
+
+    List<BsOrder> list = session.QueryList<BsOrder>(sql);
+    return list;
 }
 ```
 
@@ -647,24 +618,23 @@ public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime,
 ```C#
 public void TestQueryByLambda6()
 {
-    using (var session = LiteSqlFactory.GetSession())
+    var session = LiteSqlFactory.GetSession();
+
+    ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+
+    string remark = "测试";
+
+    List<BsOrder> list = sql.WhereIf(!string.IsNullOrWhiteSpace(remark),
+        t => t.Remark.Contains(remark)
+        && t.CreateTime < DateTime.Now
+        && t.CreateUserid == "10")
+
+        .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+        .ToList();
+
+    foreach (BsOrder item in list)
     {
-        ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
-
-        string remark = "测试";
-
-        List<BsOrder> list = sql.WhereIf(!string.IsNullOrWhiteSpace(remark),
-            t => t.Remark.Contains(remark)
-            && t.CreateTime < DateTime.Now
-            && t.CreateUserid == "10")
-
-            .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-            .ToList();
-
-        foreach (BsOrder item in list)
-        {
-            Console.WriteLine(ModelToStringUtil.ToString(item));
-        }
+        Console.WriteLine(ModelToStringUtil.ToString(item));
     }
 }
 ```
@@ -674,29 +644,28 @@ public void TestQueryByLambda6()
 ```C#
 public void TestQueryByLambda7()
 {
-    using (var session = LiteSqlFactory.GetSession())
+    var session = LiteSqlFactory.GetSession();
+
+    ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+
+    int total;
+    List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
+
+    List<BsOrder> list = sql
+        .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
+        .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
+        .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
+        .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
+        .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName != null)
+        .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
+        .WhereIf<BsOrder>(true, t => !idsNotIn.Contains(t.Id))
+        .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
+        .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+        .ToPageList(1, 20, out total);
+
+    foreach (BsOrder item in list)
     {
-        ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
-
-        int total;
-        List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
-
-        List<BsOrder> list = sql
-            .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
-            .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
-            .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
-            .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
-            .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName != null)
-            .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
-            .WhereIf<BsOrder>(true, t => !idsNotIn.Contains(t.Id))
-            .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
-            .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-            .ToPageList(1, 20, out total);
-
-        foreach (BsOrder item in list)
-        {
-            Console.WriteLine(ModelToStringUtil.ToString(item));
-        }
+        Console.WriteLine(ModelToStringUtil.ToString(item));
     }
 }
 ```
@@ -706,28 +675,27 @@ public void TestQueryByLambda7()
 ```C#
 public void TestQueryByLambda9()
 {
-    using (var session = LiteSqlFactory.GetSession())
+    var session = LiteSqlFactory.GetSession();
+
+    ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+        select t.*, u.real_name as OrderUserRealName
+        from bs_order t
+        left join sys_user u on t.order_userid=u.id
+        where 1=1");
+
+    List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
+        && t.Status == new BsOrder().Status
+        && t.Remark.Contains("订单")
+        && t.Remark != null
+        && t.OrderTime >= new DateTime(2010, 1, 1)
+        && t.OrderTime <= DateTime.Now.AddDays(1))
+        .WhereIf<SysUser>(true, u => u.CreateTime < DateTime.Now)
+        .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+        .ToList();
+
+    foreach (BsOrder item in list)
     {
-        ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-            select t.*, u.real_name as OrderUserRealName
-            from bs_order t
-            left join sys_user u on t.order_userid=u.id
-            where 1=1");
-
-        List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
-            && t.Status == new BsOrder().Status
-            && t.Remark.Contains("订单")
-            && t.Remark != null
-            && t.OrderTime >= new DateTime(2010, 1, 1)
-            && t.OrderTime <= DateTime.Now.AddDays(1))
-            .WhereIf<SysUser>(true, u => u.CreateTime < DateTime.Now)
-            .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-            .ToList();
-
-        foreach (BsOrder item in list)
-        {
-            Console.WriteLine(ModelToStringUtil.ToString(item));
-        }
+        Console.WriteLine(ModelToStringUtil.ToString(item));
     }
 }
 ```
@@ -735,143 +703,139 @@ public void TestQueryByLambda9()
 ```C#
 DateTime? startTime = null;
 
-using (var session = LiteSqlFactory.GetSession())
+var session = LiteSqlFactory.GetSession();
+
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+List<SysUser> list = session.Queryable<SysUser>() //Lambda写法
+
+    //拼SQL写法
+    .Append<SysUser>(@" where t.create_userid = @CreateUserId 
+        and t.password like @Password
+        and t.id in @Ids",
+        new
+        {
+            CreateUserId = "1",
+            Password = "%345%",
+            Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
+        })
+
+    .Where(t => !t.RealName.Contains("管理员")) //Lambda写法
+
+    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) }) //拼SQL写法
+
+    .Where<SysUser>(t => t.Id <= 20) //Lambda写法
+
+    .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime }) //拼SQL写法
+
+    .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) }) //拼SQL写法
+
+    .QueryList<SysUser>(); //如果上一句是拼SQL写法，就用QueryList
+    //.ToList(); //如果上一句是Lambda写法，就用ToList
+
+long id = session.Queryable<SysUser>().Where(t => t.Id == 1).First().Id;
+Assert.IsTrue(id == 1);
+
+foreach (SysUser item in list)
 {
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-    List<SysUser> list = session.Queryable<SysUser>() //Lambda写法
-
-        //拼SQL写法
-        .Append<SysUser>(@" where t.create_userid = @CreateUserId 
-            and t.password like @Password
-            and t.id in @Ids",
-            new
-            {
-                CreateUserId = "1",
-                Password = "%345%",
-                Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
-            })
-
-        .Where(t => !t.RealName.Contains("管理员")) //Lambda写法
-
-        .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) }) //拼SQL写法
-
-        .Where<SysUser>(t => t.Id <= 20) //Lambda写法
-
-        .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime }) //拼SQL写法
-
-        .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) }) //拼SQL写法
-
-        .QueryList<SysUser>(); //如果上一句是拼SQL写法，就用QueryList
-        //.ToList(); //如果上一句是Lambda写法，就用ToList
-
-    long id = session.Queryable<SysUser>().Where(t => t.Id == 1).First().Id;
-    Assert.IsTrue(id == 1);
-
-    foreach (SysUser item in list)
-    {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-    Assert.IsTrue(list.Count > 0);
+    Console.WriteLine(ModelToStringUtil.ToString(item));
 }
+Assert.IsTrue(list.Count > 0);
 ```
 
 ### 拼接子SQL
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
+var session = LiteSqlFactory.GetSession();
+
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+var subSql = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => !t.RealName.Contains("管理员"));
+
+var subSql2 = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => t.Id <= 20);
+
+var sql = session.Queryable<SysUser>()
+
+    .Where(t => t.Password.Contains("345"))
+
+    .Append(" and id in ", subSql)
+
+    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
+
+    .Append<SysUser>(" and id in ", subSql2)
+
+    .Where(t => t.Password.Contains("234"));
+
+var sql2 = session.Queryable<SysUser>().Where(t => t.RealName.Contains("管理员"));
+
+sql.Append(" union all ", sql2);
+
+List<SysUser> list = sql.QueryList<SysUser>();
+
+foreach (SysUser item in list)
 {
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-    var subSql = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => !t.RealName.Contains("管理员"));
-
-    var subSql2 = session.CreateSql<SysUser>("select t.Id from sys_user t").Where(t => t.Id <= 20);
-
-    var sql = session.Queryable<SysUser>()
-
-        .Where(t => t.Password.Contains("345"))
-
-        .Append(" and id in ", subSql)
-
-        .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
-
-        .Append<SysUser>(" and id in ", subSql2)
-
-        .Where(t => t.Password.Contains("234"));
-
-    var sql2 = session.Queryable<SysUser>().Where(t => t.RealName.Contains("管理员"));
-
-    sql.Append(" union all ", sql2);
-
-    List<SysUser> list = sql.QueryList<SysUser>();
-
-    foreach (SysUser item in list)
-    {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-    Assert.IsTrue(list.Count > 0);
-    Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) > 0);
-    Assert.IsTrue(list.Count(t => t.Id > 20) == 0);
+    Console.WriteLine(ModelToStringUtil.ToString(item));
 }
+Assert.IsTrue(list.Count > 0);
+Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) > 0);
+Assert.IsTrue(list.Count(t => t.Id > 20) == 0);
 ```
 
 ### 拼接子查询
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
-{
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+var session = LiteSqlFactory.GetSession();
 
-    List<SysUser> list = session.CreateSql<SysUser>()
-        .Select(session.CreateSql("count(id) as Count"))
-        .Select(t => new
-        {
-            t.RealName,
-            t.CreateUserid
-        })
-        .Where(t => t.Id >= 0)
-        .Append<SysUser>("group by t.real_name, t.create_userid")
-        .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
-        {
-            Name1 = "%管理员%",
-            Name2 = "%测试%"
-        })
-        .ToList();
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    foreach (SysUser item in list)
+List<SysUser> list = session.Queryable<SysUser>(
+    t => new
     {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-    Assert.IsTrue(list.Count > 0);
+        t.RealName,
+        t.CreateUserid
+    })
+    .Select("count(id) as Count")
+    .Where(t => t.Id >= 0)
+    .Append<SysUser>("group by t.real_name, t.create_userid")
+    .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+    {
+        Name1 = "%管理员%",
+        Name2 = "%测试%"
+    })
+    .ToList();
+
+foreach (SysUser item in list)
+{
+    Console.WriteLine(ModelToStringUtil.ToString(item));
 }
+Assert.IsTrue(list.Count > 0);
 ```
 
 ```C#
-using (var session = LiteSqlFactory.GetSession())
-{
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+var session = LiteSqlFactory.GetSession();
 
-    List<SysUser> list = session.CreateSql<SysUser>()
-        .Select(t => new
-        {
-            t.RealName,
-            t.CreateUserid
-        })
-        .Select(session.CreateSql(@"(
-                select count(1) 
-                from bs_order o 
-                where o.order_userid = t.id
-                and o.status = @Status
-            ) as OrderCount", new { Status = 0 }))
-        .Where(t => t.Id >= 0)
-        .ToList();
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    foreach (SysUser item in list)
+List<SysUser> list = session.CreateSql<SysUser>()
+    .Select(t => new
     {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-    Assert.IsTrue(list.Count > 0);
+        t.RealName,
+        t.CreateUserid
+    })
+    .Select(session.CreateSql(@"(
+            select count(1) 
+            from bs_order o 
+            where o.order_userid = t.id
+            and o.status = @Status
+        ) as OrderCount", new { Status = 0 }))
+    .Where(t => t.Id >= 0)
+    .ToList();
+
+foreach (SysUser item in list)
+{
+    Console.WriteLine(ModelToStringUtil.ToString(item));
 }
+Assert.IsTrue(list.Count > 0);
 ```
 
 ## 手动分表
@@ -922,15 +886,14 @@ namespace DAL
 ```C#
 SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
 
-using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-{
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+var session = LiteSqlFactory.GetSession(splitTableMapping);
 
-    session.Insert(user);
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    user.Id = session.QuerySingle<long>("select @@IDENTITY");
-    Console.WriteLine("插入成功, user.Id=" + user.Id);
-}
+session.Insert(user);
+
+user.Id = session.QuerySingle<long>("select @@IDENTITY");
+Console.WriteLine("插入成功, user.Id=" + user.Id);
 ```
 
 ### 数据更新
@@ -938,48 +901,46 @@ using (var session = LiteSqlFactory.GetSession(splitTableMapping))
 ```C#
 SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
 
-using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-{
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+var session = LiteSqlFactory.GetSession(splitTableMapping);
 
-    session.AttachOld(user); //附加更新前的旧数据，只更新数据发生变化的字段，提升更新性能
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    user.UpdateUserid = "1";
-    user.Remark = "测试修改分表数据" + _rnd.Next(1, 100);
-    user.UpdateTime = DateTime.Now;
+session.AttachOld(user); //附加更新前的旧数据，只更新数据发生变化的字段，提升更新性能
 
-    session.Update(user);
-}
+user.UpdateUserid = "1";
+user.Remark = "测试修改分表数据" + _rnd.Next(1, 100);
+user.UpdateTime = DateTime.Now;
+
+session.Update(user);
 ```
 
 ### 数据删除
 
 ```C#
 SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-{
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    int deleteCount = session.DeleteByCondition<SysUser>(string.Format("id>20"));
-    Console.WriteLine(deleteCount + "条数据已删除");
-    int deleteCount2 = session.DeleteById<SysUser>(10000);
-    Console.WriteLine(deleteCount2 + "条数据已删除");
-}
+var session = LiteSqlFactory.GetSession(splitTableMapping);
+
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+int deleteCount = session.DeleteByCondition<SysUser>(string.Format("id>20"));
+Console.WriteLine(deleteCount + "条数据已删除");
+int deleteCount2 = session.DeleteById<SysUser>(10000);
+Console.WriteLine(deleteCount2 + "条数据已删除");
 ```
 
 ### 数据查询
 
 ```C#
-using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-{
-    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+var session = LiteSqlFactory.GetSession(splitTableMapping);
 
-    ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
+session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-    List<SysUser> list = sql.Where(t => t.Id < 10)
-        .OrderBy(t => t.Id)
-        .ToList();
-}
+ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
+
+List<SysUser> list = sql.Where(t => t.Id < 10)
+    .OrderBy(t => t.Id)
+    .ToList();
 ```
 
 ## 支持更多数据库
@@ -1555,7 +1516,7 @@ namespace ClickHouseTest
         [TestMethod]
         public void Test1Count()
         {
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             long count = session.Queryable<PeopleFace>().Count();
@@ -1604,7 +1565,7 @@ namespace ClickHouseTest
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             PeopleFace peopleFace = new PeopleFace();
@@ -1631,31 +1592,28 @@ namespace ClickHouseTest
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             Random rnd = new Random();
             string pre = rnd.NextInt64(0, 10000000000).ToString();
             DateTime? time = null;
-            for (int k = 0; k < 2; k++)
+            List<PeopleFace> peopleFaceList = new List<PeopleFace>();
+            for (int i = 0; i < 10; i++)
             {
-                List<PeopleFace> peopleFaceList = new List<PeopleFace>();
-                for (int i = 0; i < 5; i++)
-                {
-                    PeopleFace peopleFace = new PeopleFace();
-                    peopleFace.CapturedTime = DateTime.Now;
-                    peopleFace.CameraId = pre + "_" + i;
-                    peopleFace.FaceId = "340104490011903" + i;
-                    peopleFace.CameraFunType = "2";
-                    peopleFace.PanoramicImageUrl = "PanoramicImageUrl";
-                    peopleFace.PortraitImageUrl = "PortraitImageUrl";
-                    peopleFace.Event = "UPSERT";
-                    peopleFaceList.Add(peopleFace);
+                PeopleFace peopleFace = new PeopleFace();
+                peopleFace.CapturedTime = DateTime.Now;
+                peopleFace.CameraId = pre + "_" + i;
+                peopleFace.FaceId = "340104490011903" + i;
+                peopleFace.CameraFunType = "2";
+                peopleFace.PanoramicImageUrl = "PanoramicImageUrl";
+                peopleFace.PortraitImageUrl = "PortraitImageUrl";
+                peopleFace.Event = "UPSERT";
+                peopleFaceList.Add(peopleFace);
 
-                    if (time == null) time = peopleFace.CapturedTime;
-                }
-                session.Insert(peopleFaceList);
+                if (time == null) time = peopleFace.CapturedTime;
             }
+            session.Insert(peopleFaceList, 100); //设置合理的pageSize
 
             long count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime >= time && t.CameraId.StartsWith(pre)).Count();
             Console.WriteLine("count=" + count);
@@ -1671,7 +1629,7 @@ namespace ClickHouseTest
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             PeopleFace old = session.Queryable<PeopleFace>().Where(t => t.CameraId == "34010400000000000000").First();
@@ -1699,7 +1657,7 @@ namespace ClickHouseTest
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             List<PeopleFace> oldList = session.Queryable<PeopleFace>().Where(t => t.CapturedTime > DateTime.Now.AddMinutes(-1)).QueryList<PeopleFace>();
@@ -1730,7 +1688,7 @@ namespace ClickHouseTest
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             string newExtraInfo = DateTime.Now.AddYears(-1).ToString("yyyyMMddHHmmss");
@@ -1755,7 +1713,7 @@ namespace ClickHouseTest
             var configuration = configurationBuilder.Build();
             string connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
             long count = session.Queryable<PeopleFace>().Where(t => t.CapturedTime > DateTime.Now.AddMinutes(-1)).Count();
             Console.WriteLine("删除前数量=" + count);
@@ -1776,7 +1734,7 @@ namespace ClickHouseTest
         public void Test5Query()
         {
             int queryCount = 10;
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             List<PeopleFace> list = session.CreateSql("select * from people_face_replica t")
@@ -1804,7 +1762,7 @@ namespace ClickHouseTest
         public void Test5Query2()
         {
             int queryCount = 10;
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             List<PeopleFace> list = session.CreateSql("select * from people_face_replica t")
@@ -1832,7 +1790,7 @@ namespace ClickHouseTest
         public void Test6QueryByLambda()
         {
             int queryCount = 10;
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             List<PeopleFace> list = session.Queryable<PeopleFace>()
@@ -1858,7 +1816,7 @@ namespace ClickHouseTest
         [TestMethod]
         public void Test6QueryByLambda2()
         {
-            using ISession session = LiteSqlFactory.GetSession();
+            ISession session = LiteSqlFactory.GetSession();
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
             var sql = session.Queryable<PeopleFace>()

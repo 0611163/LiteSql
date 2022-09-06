@@ -15,18 +15,17 @@ namespace PostgreSQLTest
         {
             try
             {
-                using (var session = LiteSqlFactory.GetSession())
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                var session = LiteSqlFactory.GetSession();
 
-                    int count1 = session.QuerySingle<int>("select count(*) from sys_user");
-                    Assert.IsTrue(count1 > 0);
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                    session.DeleteByCondition<SysUser>("1=1");
+                int count1 = session.QuerySingle<int>("select count(*) from sys_user");
+                Assert.IsTrue(count1 > 0);
 
-                    int count2 = session.QuerySingle<int>("select count(*) from sys_user");
-                    Assert.AreEqual(0, count2);
-                }
+                session.DeleteByCondition<SysUser>("1=1");
+
+                int count2 = session.QuerySingle<int>("select count(*) from sys_user");
+                Assert.AreEqual(0, count2);
             }
             catch (Exception ex)
             {

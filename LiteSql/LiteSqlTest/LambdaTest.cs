@@ -33,28 +33,27 @@ namespace LiteSqlTest
             DateTime? startTime = new DateTime(2010, 1, 1);
             DateTime? endTime = DateTime.Now.AddDays(1);
 
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s);
+
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id");
+
+            List<BsOrder> list = sql.Where(t => t.Status == status
+                && t.Remark.Contains(remark.ToString())
+                && t.OrderTime >= startTime
+                && t.OrderTime <= endTime)
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
             {
-                session.OnExecuting = (s, p) => Console.WriteLine(s);
-
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id");
-
-                List<BsOrder> list = sql.Where(t => t.Status == status
-                    && t.Remark.Contains(remark.ToString())
-                    && t.OrderTime >= startTime
-                    && t.OrderTime <= endTime)
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -62,28 +61,27 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda2()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id");
+
+            List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
+                && t.Status == new BsOrder().Status
+                && t.Remark.Contains("订单")
+                && t.Remark != null
+                && t.OrderTime >= new DateTime(2010, 1, 1)
+                && t.OrderTime <= DateTime.Now.AddDays(1))
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
             {
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id");
-
-                List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
-                    && t.Status == new BsOrder().Status
-                    && t.Remark.Contains("订单")
-                    && t.Remark != null
-                    && t.OrderTime >= new DateTime(2010, 1, 1)
-                    && t.OrderTime <= DateTime.Now.AddDays(1))
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -103,9 +101,9 @@ namespace LiteSqlTest
 
             string[] idsNotIn = new string[] { "100007", "100008", "100009" };
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) =>
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
                 {
                     Console.WriteLine(s);
                     foreach (DbParameter item in p)
@@ -115,26 +113,25 @@ namespace LiteSqlTest
                     Console.WriteLine(string.Empty);
                 };
 
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id");
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id");
 
-                List<BsOrder> list = sql.Where(t => new int[] { 0, 1 }.Contains(t.Status)
-                    && t.Remark.Contains(order.Remark.ToString())
-                    && t.OrderTime >= time.startTime
-                    && t.OrderTime <= time.endTime
-                    && !idsNotIn.Contains(t.Id)
-                    && !new string[] { "100007", "100008", "100009" }.Contains(t.Id))
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
+            List<BsOrder> list = sql.Where(t => new int[] { 0, 1 }.Contains(t.Status)
+                && t.Remark.Contains(order.Remark.ToString())
+                && t.OrderTime >= time.startTime
+                && t.OrderTime <= time.endTime
+                && !idsNotIn.Contains(t.Id)
+                && !new string[] { "100007", "100008", "100009" }.Contains(t.Id))
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
 
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
 
         [TestMethod]
@@ -152,37 +149,36 @@ namespace LiteSqlTest
 
             List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
 
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
             {
-                session.OnExecuting = (s, p) =>
+                Console.WriteLine(s);
+                foreach (DbParameter item in p)
                 {
-                    Console.WriteLine(s);
-                    foreach (DbParameter item in p)
-                    {
-                        Console.Write(item.ParameterName + "：" + item.Value + ", ");
-                    }
-                    Console.WriteLine(string.Empty);
-                };
-
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id");
-
-                List<BsOrder> list = sql.Where(t => t.Status == order.Status
-                    && t.Remark.Contains(order.Remark.ToString())
-                    && !idsNotIn.Contains(t.Id)
-                    && !new List<string>() { "100021", "100022", "100023" }.Contains(t.Id))
-                    .Where(t => !(new List<string>() { "100015", "100016", "100017" }).Contains(t.Id))
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
+                    Console.Write(item.ParameterName + "：" + item.Value + ", ");
                 }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(string.Empty);
+            };
+
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id");
+
+            List<BsOrder> list = sql.Where(t => t.Status == order.Status
+                && t.Remark.Contains(order.Remark.ToString())
+                && !idsNotIn.Contains(t.Id)
+                && !new List<string>() { "100021", "100022", "100023" }.Contains(t.Id))
+                .Where(t => !(new List<string>() { "100015", "100016", "100017" }).Contains(t.Id))
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -202,36 +198,35 @@ namespace LiteSqlTest
 
             List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
 
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id");
+
+            sql.Where(t => t.Status >= 0);
+
+            sql.Where(t => t.Remark.StartsWith("订单"));
+
+            sql.Where(t => t.Remark.StartsWith(GetStr(9)));
+
+            sql.Where(t => t.OrderTime >= time.startTime);
+
+            sql.Where(t => t.OrderTime >= dt);
+
+            sql.Where(t => t.OrderTime >= DateTime.Parse(new DateTime(2010, 1, 1).ToString("yyyy-MM-dd HH:mm:ss")));
+
+            // sql.Where<BsOrder>(t => ids.Contains(t.Id)); //同一个字段不能同时 in 和 not in
+
+            sql.Where(t => !idsNotIn.Contains(t.Id));
+
+            sql.Append(" order by t.order_time desc, t.id asc ");
+
+            List<BsOrder> list = session.QueryList<BsOrder>(sql);
+            foreach (BsOrder item in list)
             {
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id");
-
-                sql.Where(t => t.Status >= 0);
-
-                sql.Where(t => t.Remark.StartsWith("订单"));
-
-                sql.Where(t => t.Remark.StartsWith(GetStr(9)));
-
-                sql.Where(t => t.OrderTime >= time.startTime);
-
-                sql.Where(t => t.OrderTime >= dt);
-
-                sql.Where(t => t.OrderTime >= DateTime.Parse(new DateTime(2010, 1, 1).ToString("yyyy-MM-dd HH:mm:ss")));
-
-                // sql.Where<BsOrder>(t => ids.Contains(t.Id)); //同一个字段不能同时 in 和 not in
-
-                sql.Where(t => !idsNotIn.Contains(t.Id));
-
-                sql.Append(" order by t.order_time desc, t.id asc ");
-
-                List<BsOrder> list = session.QueryList<BsOrder>(sql);
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
         }
 
@@ -245,33 +240,32 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda6()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
             {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+                Console.WriteLine(s); //打印SQL
+            };
 
-                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+            ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
-                string remark = "测试";
+            string remark = "测试";
 
-                List<BsOrder> list = sql
+            List<BsOrder> list = sql
 
-                    .WhereIf(!string.IsNullOrWhiteSpace(remark),
-                        t => t.Remark.Contains(remark)
-                        && t.CreateTime < DateTime.Now
-                        && t.CreateUserid == "10")
+                .WhereIf(!string.IsNullOrWhiteSpace(remark),
+                    t => t.Remark.Contains(remark)
+                    && t.CreateTime < DateTime.Now
+                    && t.CreateUserid == "10")
 
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
 
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -279,30 +273,29 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda8()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+
+            string remark = "测试";
+
+            sql.WhereIf(!string.IsNullOrWhiteSpace(remark),
+                t => t.Remark.Contains(remark)
+                && t.CreateTime < DateTime.Now
+                && t.CreateUserid == "10")
+
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id);
+
+
+            long total = sql.Count();
+            List<BsOrder> list = sql.ToPageList(1, 20);
+
+            foreach (BsOrder item in list)
             {
-                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
-
-                string remark = "测试";
-
-                sql.WhereIf(!string.IsNullOrWhiteSpace(remark),
-                    t => t.Remark.Contains(remark)
-                    && t.CreateTime < DateTime.Now
-                    && t.CreateUserid == "10")
-
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id);
-
-
-                long total = sql.Count();
-                List<BsOrder> list = sql.ToPageList(1, 20);
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Console.WriteLine("total=" + total);
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Console.WriteLine("total=" + total);
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -310,57 +303,55 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda5()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+
+            List<BsOrder> list = sql
+                .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
+                .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
+                .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
+                .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
+                .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName == "电脑")
+                .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
+                .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
             {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
-
-                List<BsOrder> list = sql
-                    .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
-                    .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
-                    .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
-                    .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
-                    .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName == "电脑")
-                    .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
-                    .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
 
         [TestMethod]
         public void TestQueryByLambda5_2()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>();
+
+            List<BsOrder> list = sql
+                .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
+                .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
+                .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
+                .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
+                .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName == "电脑")
+                .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
+                .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
             {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>();
-
-                List<BsOrder> list = sql
-                    .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
-                    .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
-                    .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
-                    .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
-                    .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName == "电脑")
-                    .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
-                    .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -368,36 +359,35 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda7()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
             {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+                Console.WriteLine(s); //打印SQL
+            };
 
-                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+            ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
 
-                List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
+            List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
 
-                sql.Select<SysUser>(u => u.UserName, t => t.OrderUserName)
-                    .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
-                    .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
-                    .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
-                    .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName != null)
-                    .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
-                    .WhereIf<BsOrder>(true, t => !idsNotIn.Contains(t.Id))
-                    .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id);
+            sql.Select<SysUser>(u => u.UserName, t => t.OrderUserName)
+                .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
+                .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
+                .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
+                .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName != null)
+                .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
+                .WhereIf<BsOrder>(true, t => !idsNotIn.Contains(t.Id))
+                .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id);
 
-                long total = sql.Count();
-                List<BsOrder> list = sql.ToPageList(1, 20);
+            long total = sql.Count();
+            List<BsOrder> list = sql.ToPageList(1, 20);
 
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Console.WriteLine("total=" + total);
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Console.WriteLine("total=" + total);
         }
         #endregion
 
@@ -405,29 +395,28 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda9()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id");
+
+            List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
+                && t.Status == new BsOrder().Status
+                && t.Remark.Contains("订单")
+                && t.Remark != null
+                && t.OrderTime >= new DateTime(2010, 1, 1)
+                && t.OrderTime <= DateTime.Now.AddDays(1))
+                .WhereIf<SysUser>(true, u => u.CreateTime < DateTime.Now)
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
             {
-                ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id");
-
-                List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
-                    && t.Status == new BsOrder().Status
-                    && t.Remark.Contains("订单")
-                    && t.Remark != null
-                    && t.OrderTime >= new DateTime(2010, 1, 1)
-                    && t.OrderTime <= DateTime.Now.AddDays(1))
-                    .WhereIf<SysUser>(true, u => u.CreateTime < DateTime.Now)
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -435,29 +424,28 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda10()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s);
+
+            ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
+
+            string remark = "测试";
+
+            List<BsOrder> list = sql
+                .WhereIf(!string.IsNullOrWhiteSpace(remark),
+                    t => t.Remark.Contains(remark)
+                    && t.CreateTime < DateTime.Now
+                    && !t.CreateUserid.Contains(string.Format("12{0}", 3)))
+
+                .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
+                .ToList();
+
+            foreach (BsOrder item in list)
             {
-                session.OnExecuting = (s, p) => Console.WriteLine(s);
-
-                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
-
-                string remark = "测试";
-
-                List<BsOrder> list = sql
-                    .WhereIf(!string.IsNullOrWhiteSpace(remark),
-                        t => t.Remark.Contains(remark)
-                        && t.CreateTime < DateTime.Now
-                        && !t.CreateUserid.Contains(string.Format("12{0}", 3)))
-
-                    .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-                    .ToList();
-
-                foreach (BsOrder item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 
@@ -470,22 +458,21 @@ namespace LiteSqlTest
 
         private async void TestQueryByLambda11Internal()
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>("o");
+
+            BsOrder order = await sql.Where(o => o.Id == "100001").FirstAsync();
+
+            sql = session.Queryable<BsOrder>("o");
+            bool bl = await sql.Where(o => o.Id == "100001").ExistsAsync();
+            Assert.IsTrue(bl);
+
+            if (order != null)
             {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-                ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>("o");
-
-                BsOrder order = await sql.Where(o => o.Id == "100001").FirstAsync();
-
-                sql = session.Queryable<BsOrder>("o");
-                bool bl = await sql.Where(o => o.Id == "100001").ExistsAsync();
-                Assert.IsTrue(bl);
-
-                if (order != null)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(order));
-                }
+                Console.WriteLine(ModelToStringUtil.ToString(order));
             }
         }
         #endregion
@@ -494,122 +481,118 @@ namespace LiteSqlTest
         [TestMethod]
         public void TestQueryByLambda12() //拼接子查询
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                List<SysUser> list = session.CreateSql<SysUser>()
-                    .Select(session.CreateSql("count(id) as Count"))
-                    .Select(t => new
-                    {
-                        t.RealName,
-                        t.CreateUserid
-                    })
-                    .Where(t => t.Id >= 0)
-                    .Append<SysUser>("group by t.real_name, t.create_userid")
-                    .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
-                    {
-                        Name1 = "%管理员%",
-                        Name2 = "%测试%"
-                    })
-                    .ToList();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                foreach (SysUser item in list)
+            List<SysUser> list = session.CreateSql<SysUser>()
+                .Select(session.CreateSql("count(id) as Count"))
+                .Select(t => new
                 {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                    t.RealName,
+                    t.CreateUserid
+                })
+                .Where(t => t.Id >= 0)
+                .Append<SysUser>("group by t.real_name, t.create_userid")
+                .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+                {
+                    Name1 = "%管理员%",
+                    Name2 = "%测试%"
+                })
+                .ToList();
+
+            foreach (SysUser item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
 
         [TestMethod]
         public void TestQueryByLambda13() //拼接子查询
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                List<SysUser> list = session.Queryable<SysUser>(
-                    t => new
-                    {
-                        t.RealName,
-                        t.CreateUserid
-                    })
-                    .Select("count(id) as Count")
-                    .Where(t => t.Id >= 0)
-                    .Append<SysUser>("group by t.real_name, t.create_userid")
-                    .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
-                    {
-                        Name1 = "%管理员%",
-                        Name2 = "%测试%"
-                    })
-                    .ToList();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                foreach (SysUser item in list)
+            List<SysUser> list = session.Queryable<SysUser>(
+                t => new
                 {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                    t.RealName,
+                    t.CreateUserid
+                })
+                .Select("count(id) as Count")
+                .Where(t => t.Id >= 0)
+                .Append<SysUser>("group by t.real_name, t.create_userid")
+                .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+                {
+                    Name1 = "%管理员%",
+                    Name2 = "%测试%"
+                })
+                .ToList();
+
+            foreach (SysUser item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
 
         [TestMethod]
         public void TestQueryByLambda14()
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                List<SysUser> list = session.CreateSql<SysUser>()
-                    .Select(t => new
-                    {
-                        t.RealName,
-                        t.CreateUserid
-                    })
-                    .Select(session.CreateSql(@"(
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            List<SysUser> list = session.CreateSql<SysUser>()
+                .Select(t => new
+                {
+                    t.RealName,
+                    t.CreateUserid
+                })
+                .Select(session.CreateSql(@"(
                             select count(1) 
                             from bs_order o 
                             where o.order_userid = t.id
                             and o.status = @Status
                         ) as OrderCount", new { Status = 0 }))
-                    .Where(t => t.Id >= 0)
-                    .ToList();
+                .Where(t => t.Id >= 0)
+                .ToList();
 
-                foreach (SysUser item in list)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+            foreach (SysUser item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
 
         [TestMethod]
         public void TestQueryByLambda15()
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                var subSql = session.Queryable<BsOrder>(o => "count(1)")
-                    .WhereJoin<SysUser>((o, t) => o.OrderUserid == t.Id)
-                    .Where<BsOrder>(o => o.Status == 0);
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                List<SysUser> list = session.Queryable<SysUser>(
-                    t => new
-                    {
-                        t.RealName,
-                        t.CreateUserid
-                    })
-                    .Select("({0}) as OrderCount", subSql)
-                    .Where(t => t.Id >= 0)
-                    .ToList();
+            var subSql = session.Queryable<BsOrder>(o => "count(1)")
+                .WhereJoin<SysUser>((o, t) => o.OrderUserid == t.Id)
+                .Where<BsOrder>(o => o.Status == 0);
 
-                foreach (SysUser item in list)
+            List<SysUser> list = session.Queryable<SysUser>(
+                t => new
                 {
-                    Console.WriteLine(ModelToStringUtil.ToString(item));
-                }
-                Assert.IsTrue(list.Count > 0);
+                    t.RealName,
+                    t.CreateUserid
+                })
+                .Select("({0}) as OrderCount", subSql)
+                .Where(t => t.Id >= 0)
+                .ToList();
+
+            foreach (SysUser item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
             }
+            Assert.IsTrue(list.Count > 0);
         }
         #endregion
 

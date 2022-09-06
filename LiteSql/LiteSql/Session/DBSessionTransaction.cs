@@ -14,7 +14,8 @@ namespace LiteSql
         /// </summary>
         public void BeginTransaction()
         {
-            _tran = _conn.BeginTransaction();
+            _conn = DbConnectionFactory.GetConnection(_provider, _connectionString, null);
+            _tran = new DbTransactionExt(_conn.Conn.BeginTransaction(), _conn);
         }
         #endregion
 
@@ -28,17 +29,20 @@ namespace LiteSql
 
             try
             {
-                _tran.Commit();
+                _tran.Tran.Commit();
             }
             catch
             {
-                _tran.Rollback();
+                _tran.Tran.Rollback();
                 throw;
             }
             finally
             {
-                _tran.Dispose();
+                _tran.Tran.Dispose();
+                _tran.Tran = null;
                 _tran = null;
+                _conn.Tran = null;
+                _conn.Dispose();
             }
         }
         #endregion
@@ -51,7 +55,7 @@ namespace LiteSql
         {
             if (_tran == null) return; //防止重复回滚
 
-            _tran.Rollback();
+            _tran.Tran.Rollback();
         }
         #endregion
 

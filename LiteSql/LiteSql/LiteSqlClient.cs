@@ -80,8 +80,6 @@ namespace LiteSql
             {
                 dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _autoIncrement);
             }
-
-            dbSession.InitConn();
             return dbSession;
         }
         #endregion
@@ -90,7 +88,7 @@ namespace LiteSql
         /// <summary>
         /// 获取 ISession (异步)
         /// </summary>
-        public async Task<ISession> GetSessionAsync(SplitTableMapping splitTableMapping = null)
+        public Task<ISession> GetSessionAsync(SplitTableMapping splitTableMapping = null)
         {
             DBSession dbSession;
 
@@ -102,9 +100,7 @@ namespace LiteSql
             {
                 dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _autoIncrement);
             }
-
-            await dbSession.InitConnAsync();
-            return dbSession;
+            return Task.FromResult(dbSession as ISession);
         }
         #endregion
 

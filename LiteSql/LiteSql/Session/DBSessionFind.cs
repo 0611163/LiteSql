@@ -207,17 +207,22 @@ namespace LiteSql
         {
             object result = Activator.CreateInstance(type);
             IDataReader rd = null;
+            DbConnectionExt _connExt = null;
             bool hasValue = false;
 
             try
             {
                 if (cmdParams == null)
                 {
-                    rd = ExecuteReader(sql);
+                    var tuple = ExecuteReader(sql);
+                    rd = tuple.Item1;
+                    _connExt = tuple.Item2;
                 }
                 else
                 {
-                    rd = ExecuteReader(sql, cmdParams);
+                    var tuple = ExecuteReader(sql, cmdParams);
+                    rd = tuple.Item1;
+                    _connExt = tuple.Item2;
                 }
 
                 DataReaderToEntity(type, rd, ref result, ref hasValue);
@@ -232,6 +237,10 @@ namespace LiteSql
                 {
                     rd.Close();
                     rd.Dispose();
+                }
+                if (_tran == null)
+                {
+                    _connExt.Dispose();
                 }
             }
 
@@ -254,17 +263,22 @@ namespace LiteSql
         {
             object result = Activator.CreateInstance(type);
             IDataReader rd = null;
+            DbConnectionExt _connExt = null;
             bool hasValue = false;
 
             try
             {
                 if (cmdParams == null)
                 {
-                    rd = await ExecuteReaderAsync(sql);
+                    var tuple = await ExecuteReaderAsync(sql);
+                    rd = tuple.Item1;
+                    _connExt = tuple.Item2;
                 }
                 else
                 {
-                    rd = await ExecuteReaderAsync(sql, cmdParams);
+                    var tuple = await ExecuteReaderAsync(sql, cmdParams);
+                    rd = tuple.Item1;
+                    _connExt = tuple.Item2;
                 }
 
                 DataReaderToEntity(type, rd, ref result, ref hasValue);
@@ -279,6 +293,10 @@ namespace LiteSql
                 {
                     rd.Close();
                     rd.Dispose();
+                }
+                if (_tran == null)
+                {
+                    _connExt.Dispose();
                 }
             }
 

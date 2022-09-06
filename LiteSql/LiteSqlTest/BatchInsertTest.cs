@@ -41,11 +41,10 @@ namespace LiteSqlTest
             }
             m_SysUserDal.Insert(userList);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                long count = session.QueryCount("select * from sys_user");
-                Assert.IsTrue(count >= 1000);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            long count = session.QueryCount("select * from sys_user");
+            Assert.IsTrue(count >= 1000);
         }
         #endregion
 
@@ -65,11 +64,10 @@ namespace LiteSqlTest
             }
             await m_SysUserDal.InsertAsync(userList);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                long count = session.QueryCount("select * from sys_user");
-                Assert.IsTrue(count >= 1000);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            long count = session.QueryCount("select * from sys_user");
+            Assert.IsTrue(count >= 1000);
         }
         #endregion
 

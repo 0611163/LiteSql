@@ -40,40 +40,36 @@ namespace OracleTest
             info.BeginTime = new DateTime(2020, 1, 1);
             info.High = 8;
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
 
-                info.Id = session.QueryNextId<CarinfoMerge>();
-                session.Insert(info);
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
+            info.Id = session.QueryNextId<CarinfoMerge>();
+            session.Insert(info);
 
-                CarinfoMerge carinfo = sql.Query<CarinfoMerge>();
-                Assert.AreEqual(carinfo.High, 8);
-                Assert.AreEqual(carinfo.BeginTime, new DateTime(2020, 1, 1));
-                Console.WriteLine(ModelToStringUtil.ToString(carinfo));
-            }
+            ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            CarinfoMerge carinfo = sql.Query<CarinfoMerge>();
+            Assert.AreEqual(carinfo.High, 8);
+            Assert.AreEqual(carinfo.BeginTime, new DateTime(2020, 1, 1));
+            Console.WriteLine(ModelToStringUtil.ToString(carinfo));
 
-                info = session.QueryById<CarinfoMerge>(info.Id);
-                session.AttachOld(info); //使只更新有变化的字段
-                info.ModifyTime = DateTime.Now;
-                info.High = 9;
-                info.BeginTime = new DateTime(2020, 1, 2);
-                info.TotalMass = (decimal)100.66;
-                session.Update(info);
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
+            info = session.QueryById<CarinfoMerge>(info.Id);
+            session.AttachOld(info); //使只更新有变化的字段
+            info.ModifyTime = DateTime.Now;
+            info.High = 9;
+            info.BeginTime = new DateTime(2020, 1, 2);
+            info.TotalMass = (decimal)100.66;
+            session.Update(info);
 
-                CarinfoMerge carinfo = sql.Query<CarinfoMerge>();
-                Assert.AreEqual(carinfo.High, 9);
-                Assert.AreEqual(carinfo.BeginTime, new DateTime(2020, 1, 2));
-                Console.WriteLine(ModelToStringUtil.ToString(carinfo));
-            }
+            sql = session.CreateSql("select * from CARINFO_MERGE where id=@id", info.Id);
+
+            carinfo = sql.Query<CarinfoMerge>();
+            Assert.AreEqual(carinfo.High, 9);
+            Assert.AreEqual(carinfo.BeginTime, new DateTime(2020, 1, 2));
+            Console.WriteLine(ModelToStringUtil.ToString(carinfo));
         }
 
     }

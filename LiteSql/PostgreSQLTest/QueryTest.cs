@@ -22,12 +22,11 @@ namespace PostgreSQLTest
             try
             {
                 List<SysUser> list = new List<Models.SysUser>();
-                using (var session = LiteSqlFactory.GetSession())
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                var session = LiteSqlFactory.GetSession();
 
-                    list = session.QueryList<SysUser>("select * from sys_user");
-                }
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                list = session.QueryList<SysUser>("select * from sys_user");
 
                 foreach (SysUser item in list)
                 {
@@ -46,34 +45,33 @@ namespace PostgreSQLTest
         {
             try
             {
-                using (var session = LiteSqlFactory.GetSession())
+                var session = LiteSqlFactory.GetSession();
+
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                PageModel pageModel = new PageModel();
+                pageModel.CurrentPage = 2;
+                pageModel.PageSize = 5;
+
+                ISqlString sql = session.CreateSql(@"
+                    select t.*
+                    from sys_user t
+                    where 1=1");
+
+                sql.Append(@" and t.""RealName"" like concat('%',@RealName,'%')", "测试");
+
+                sql.Append(@" and t.""CreateTime"" < @startTime ", sql.ForDateTime(DateTime.Now));
+
+                sql.Append(@" and t.""Id"" in @ids ", sql.ForList(new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }));
+
+                string orderby = @" order by t.""Id"" ";
+                pageModel.TotalRows = sql.QueryCount();
+                List<SysUser> list = sql.QueryPage<SysUser>(orderby, pageModel.PageSize, pageModel.CurrentPage);
+                foreach (SysUser item in list)
                 {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-                    PageModel pageModel = new PageModel();
-                    pageModel.CurrentPage = 2;
-                    pageModel.PageSize = 5;
-
-                    ISqlString sql = session.CreateSql(@"
-                        select t.*
-                        from sys_user t
-                        where 1=1");
-
-                    sql.Append(@" and t.""RealName"" like concat('%',@RealName,'%')", "测试");
-
-                    sql.Append(@" and t.""CreateTime"" < @startTime ", sql.ForDateTime(DateTime.Now));
-
-                    sql.Append(@" and t.""Id"" in @ids ", sql.ForList(new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }));
-
-                    string orderby = @" order by t.""Id"" ";
-                    pageModel.TotalRows = sql.QueryCount();
-                    List<SysUser> list = sql.QueryPage<SysUser>(orderby, pageModel.PageSize, pageModel.CurrentPage);
-                    foreach (SysUser item in list)
-                    {
-                        Console.WriteLine(ModelToStringUtil.ToString(item));
-                    }
-                    Console.WriteLine("totalRows=" + pageModel.TotalRows);
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Console.WriteLine("totalRows=" + pageModel.TotalRows);
             }
             catch (Exception ex)
             {
@@ -90,34 +88,33 @@ namespace PostgreSQLTest
         {
             try
             {
-                using (var session = LiteSqlFactory.GetSession())
+                var session = LiteSqlFactory.GetSession();
+
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+                ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
+
+                string realName = "测试";
+                DateTime now = DateTime.Now;
+                int height = 160;
+
+                sql.WhereIf(!string.IsNullOrWhiteSpace(realName),
+                       t => t.Realname.Contains(realName)
+                       && t.Createtime < now
+                       && t.Createtime < DateTime.Now
+                       && t.Createuserid == "1"
+                       && t.Height >= height
+                       && t.Height >= 160)
+                   .OrderBy(t => t.Id);
+
+                long total = sql.Count();
+                List<SysUser> list = sql.ToPageList(1, 20);
+
+                foreach (SysUser item in list)
                 {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-                    ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
-
-                    string realName = "测试";
-                    DateTime now = DateTime.Now;
-                    int height = 160;
-
-                    sql.WhereIf(!string.IsNullOrWhiteSpace(realName),
-                           t => t.Realname.Contains(realName)
-                           && t.Createtime < now
-                           && t.Createtime < DateTime.Now
-                           && t.Createuserid == "1"
-                           && t.Height >= height
-                           && t.Height >= 160)
-                       .OrderBy(t => t.Id);
-
-                    long total = sql.Count();
-                    List<SysUser> list = sql.ToPageList(1, 20);
-
-                    foreach (SysUser item in list)
-                    {
-                        Console.WriteLine(ModelToStringUtil.ToString(item));
-                    }
-                    Console.WriteLine("total=" + total);
+                    Console.WriteLine(ModelToStringUtil.ToString(item));
                 }
+                Console.WriteLine("total=" + total);
             }
             catch (Exception ex)
             {

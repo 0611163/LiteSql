@@ -67,14 +67,13 @@ namespace LiteSqlTest
 
             string id = m_BsOrderDal.Insert(order, detailList);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                bool bl = session.CreateSql("select * from bs_order where id=@Id", new { Id = id }).Exists();
-                Assert.IsTrue(bl);
+            var session = LiteSqlFactory.GetSession();
 
-                long count = session.CreateSql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = id }).QueryCount();
-                Assert.IsTrue(count == 3);
-            }
+            bool bl = session.CreateSql("select * from bs_order where id=@Id", new { Id = id }).Exists();
+            Assert.IsTrue(bl);
+
+            long count = session.CreateSql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = id }).QueryCount();
+            Assert.IsTrue(count == 3);
         }
         #endregion
 
@@ -104,11 +103,10 @@ namespace LiteSqlTest
             Console.WriteLine("user.Id=" + user.Id);
             Assert.IsTrue(user.Id > 0);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = user.Id }).Exists();
-                Assert.IsTrue(bl);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = user.Id }).Exists();
+            Assert.IsTrue(bl);
         }
         #endregion
 
@@ -125,11 +123,10 @@ namespace LiteSqlTest
             long id = await m_SysUserDal.InsertAsync(user);
             Console.WriteLine("user.Id=" + id);
             Assert.IsTrue(id > 0);
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = id }).Exists();
-                Assert.IsTrue(bl);
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = id }).Exists();
+            Assert.IsTrue(bl);
         }
         #endregion
 

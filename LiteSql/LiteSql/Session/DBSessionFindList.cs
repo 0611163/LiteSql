@@ -19,10 +19,13 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
+            DbConnectionExt _connExt = null;
 
             try
             {
-                rd = ExecuteReader(sql);
+                var tuple = ExecuteReader(sql);
+                rd = tuple.Item1;
+                _connExt = tuple.Item2;
 
                 DataReaderToList(rd, ref list);
             }
@@ -36,6 +39,10 @@ namespace LiteSql
                 {
                     rd.Close();
                     rd.Dispose();
+                }
+                if (_tran == null)
+                {
+                    _connExt.Dispose();
                 }
             }
 
@@ -51,10 +58,13 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
+            DbConnectionExt _connExt = null;
 
             try
             {
-                rd = await ExecuteReaderAsync(sql);
+                var tuple = await ExecuteReaderAsync(sql);
+                rd = tuple.Item1;
+                _connExt = tuple.Item2;
 
                 DataReaderToList(rd, ref list);
             }
@@ -68,6 +78,10 @@ namespace LiteSql
                 {
                     rd.Close();
                     rd.Dispose();
+                }
+                if (_tran == null)
+                {
+                    _connExt.Dispose();
                 }
             }
 
@@ -84,10 +98,13 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
+            DbConnectionExt _connExt = null;
 
             try
             {
-                rd = ExecuteReader(sql, cmdParms);
+                var tuple = ExecuteReader(sql, cmdParms);
+                rd = tuple.Item1;
+                _connExt = tuple.Item2;
 
                 DataReaderToList(rd, ref list);
             }
@@ -101,6 +118,10 @@ namespace LiteSql
                 {
                     rd.Close();
                     rd.Dispose();
+                }
+                if (_tran == null)
+                {
+                    _connExt.Dispose();
                 }
             }
 
@@ -116,10 +137,13 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
+            DbConnectionExt _connExt = null;
 
             try
             {
-                rd = await ExecuteReaderAsync(sql, cmdParms);
+                var tuple = await ExecuteReaderAsync(sql, cmdParms);
+                rd = tuple.Item1;
+                _connExt = tuple.Item2;
 
                 DataReaderToList(rd, ref list);
             }
@@ -133,6 +157,10 @@ namespace LiteSql
                 {
                     rd.Close();
                     rd.Dispose();
+                }
+                if (_tran == null)
+                {
+                    _connExt.Dispose();
                 }
             }
 

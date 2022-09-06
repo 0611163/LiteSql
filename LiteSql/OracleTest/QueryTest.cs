@@ -18,14 +18,9 @@ namespace OracleTest
             ThreadPool.SetMinThreads(200, 200);
 
             //预热
-            using (var session = LiteSqlFactoryMySQL.GetSession())
-            {
-                session.QuerySingle("select count(*) from bs_order");
-            }
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.QuerySingle("select count(*) from CARINFO_MERGE");
-            }
+            LiteSqlFactoryMySQL.GetSession().QuerySingle("select count(*) from bs_order");
+
+            LiteSqlFactory.GetSession().QuerySingle("select count(*) from CARINFO_MERGE");
         }
         #endregion
 
@@ -34,14 +29,13 @@ namespace OracleTest
         {
             List<CarinfoMerge> list = new List<CarinfoMerge>();
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                list = session.CreateSql(@"
-                   select * 
-                   from CARINFO_MERGE 
-                   where rownum<20000
-                   and modify_time < @Time", new { Time = new DateTime(2022, 1, 1) }).QueryList<CarinfoMerge>();
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            list = session.CreateSql(@"
+                select * 
+                from CARINFO_MERGE 
+                where rownum<20000
+                and modify_time < @Time", new { Time = new DateTime(2022, 1, 1) }).QueryList<CarinfoMerge>();
 
             Assert.IsTrue(list.Count > 0);
 
@@ -60,15 +54,14 @@ namespace OracleTest
         {
             List<CarinfoMerge> list = new List<CarinfoMerge>();
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                list = session.CreateSql(@"
-                   select * 
-                   from CARINFO_MERGE 
-                   where rownum<200
-                   and modify_time < @Time
-                   and license_no like @NO", new { Time = new DateTime(2022, 1, 1), NO = "%A81063%" }).QueryList<CarinfoMerge>();
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            list = session.CreateSql(@"
+                select * 
+                from CARINFO_MERGE 
+                where rownum<200
+                and modify_time < @Time
+                and license_no like @NO", new { Time = new DateTime(2022, 1, 1), NO = "%A81063%" }).QueryList<CarinfoMerge>();
 
             Assert.IsTrue(list.Count > 0);
 
@@ -85,27 +78,22 @@ namespace OracleTest
         [TestMethod]
         public void Test2QueryMySqlAndOracle()
         {
-            using (var session = LiteSqlFactoryMySQL.GetSession())
+            BsOrder order = LiteSqlFactoryMySQL.GetSession().QueryById<BsOrder>("100001");
+            Assert.IsTrue(order != null);
+            Console.WriteLine("订单：");
+            Console.WriteLine(ModelToStringUtil.ToString(order));
+
+            var session = LiteSqlFactory.GetSession();
+            ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where rownum<1000");
+
+            //sql.Append(" and id in @ids", sql.ForList(new List<long> { 715299 }));
+
+            List<CarinfoMerge> list = sql.QueryList<CarinfoMerge>();
+            Assert.IsTrue(list.Count > 0);
+            Console.WriteLine("CARINFO_MERGE：");
+            for (int i = 0; i < 20; i++)
             {
-                BsOrder order = session.QueryById<BsOrder>("100001");
-                Assert.IsTrue(order != null);
-                Console.WriteLine("订单：");
-                Console.WriteLine(ModelToStringUtil.ToString(order));
-            }
-
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                ISqlString sql = session.CreateSql("select * from CARINFO_MERGE where rownum<1000");
-
-                //sql.Append(" and id in @ids", sql.ForList(new List<long> { 715299 }));
-
-                List<CarinfoMerge> list = sql.QueryList<CarinfoMerge>();
-                Assert.IsTrue(list.Count > 0);
-                Console.WriteLine("CARINFO_MERGE：");
-                for (int i = 0; i < 20; i++)
-                {
-                    Console.WriteLine(ModelToStringUtil.ToString(list[i]));
-                }
+                Console.WriteLine(ModelToStringUtil.ToString(list[i]));
             }
         }
     }

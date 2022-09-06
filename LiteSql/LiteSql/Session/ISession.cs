@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
+    /// <summary>
+    /// Session接口
+    /// </summary>
     public partial interface ISession : IDisposable
     {
         #region 创建SqlString对象

@@ -20,10 +20,8 @@ namespace DAL
         /// </summary>
         public void Preheat()
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.QuerySingle("select count(*) from bs_order");
-            }
+            var session = LiteSqlFactory.GetSession();
+            session.QuerySingle("select count(*) from bs_order");
         }
         #endregion
 
@@ -33,43 +31,42 @@ namespace DAL
         /// </summary>
         public string Insert(BsOrder order, List<BsOrderDetail> detailList)
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            try
             {
-                try
+                session.OnExecuting = (s, p) =>
                 {
-                    session.OnExecuting = (s, p) =>
-                    {
-                        Console.WriteLine(s); //打印SQL
-                    };
+                    Console.WriteLine(s); //打印SQL
+                };
 
-                    session.BeginTransaction();
+                session.BeginTransaction();
 
-                    order.Id = Guid.NewGuid().ToString("N");
-                    order.CreateTime = DateTime.Now;
+                order.Id = Guid.NewGuid().ToString("N");
+                order.CreateTime = DateTime.Now;
 
-                    decimal amount = 0;
-                    foreach (BsOrderDetail detail in detailList)
-                    {
-                        detail.Id = Guid.NewGuid().ToString("N");
-                        detail.OrderId = order.Id;
-                        detail.CreateTime = DateTime.Now;
-                        amount += detail.Price * detail.Quantity;
-                        session.Insert(detail);
-                    }
-                    order.Amount = amount;
-
-                    session.Insert(order);
-
-                    session.CommitTransaction();
-
-                    return order.Id;
-                }
-                catch (Exception ex)
+                decimal amount = 0;
+                foreach (BsOrderDetail detail in detailList)
                 {
-                    session.RollbackTransaction();
-                    Console.WriteLine(ex.ToString());
-                    throw;
+                    detail.Id = Guid.NewGuid().ToString("N");
+                    detail.OrderId = order.Id;
+                    detail.CreateTime = DateTime.Now;
+                    amount += detail.Price * detail.Quantity;
+                    session.Insert(detail);
                 }
+                order.Amount = amount;
+
+                session.Insert(order);
+
+                session.CommitTransaction();
+
+                return order.Id;
+            }
+            catch (Exception ex)
+            {
+                session.RollbackTransaction();
+                Console.WriteLine(ex.ToString());
+                throw;
             }
         }
         #endregion
@@ -122,60 +119,59 @@ namespace DAL
         /// </summary>
         public string Update(BsOrder order, List<BsOrderDetail> detailList)
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            try
             {
-                try
+                session.OnExecuting = (s, p) =>
                 {
-                    session.OnExecuting = (s, p) =>
-                    {
-                        Console.WriteLine(s); //打印SQL
-                    };
+                    Console.WriteLine(s); //打印SQL
+                };
 
-                    session.BeginTransaction();
+                session.BeginTransaction();
 
-                    List<BsOrderDetail> oldDetailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(order.Id); //根据订单ID查询旧订单明细
+                List<BsOrderDetail> oldDetailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(order.Id); //根据订单ID查询旧订单明细
 
-                    foreach (BsOrderDetail oldDetail in oldDetailList)
-                    {
-                        if (!detailList.Exists(a => a.Id == oldDetail.Id)) //该旧订单明细已从列表中删除
-                        {
-                            session.DeleteById<BsOrderDetail>(oldDetail.Id); //删除旧订单明细
-                        }
-                    }
-
-                    decimal amount = 0;
-                    foreach (BsOrderDetail detail in detailList)
-                    {
-                        amount += detail.Price * detail.Quantity;
-
-                        if (oldDetailList.Exists(a => a.Id == detail.Id)) //该订单明细存在
-                        {
-                            detail.UpdateTime = DateTime.Now;
-                            session.Update(detail);
-                        }
-                        else //该订单明细不存在
-                        {
-                            detail.Id = Guid.NewGuid().ToString("N");
-                            detail.OrderId = order.Id;
-                            detail.CreateTime = DateTime.Now;
-                            session.Insert(detail);
-                        }
-                    }
-                    order.Amount = amount;
-
-                    order.UpdateTime = DateTime.Now;
-                    session.Update(order);
-
-                    session.CommitTransaction();
-
-                    return order.Id;
-                }
-                catch (Exception ex)
+                foreach (BsOrderDetail oldDetail in oldDetailList)
                 {
-                    session.RollbackTransaction();
-                    Console.WriteLine(ex.ToString());
-                    throw;
+                    if (!detailList.Exists(a => a.Id == oldDetail.Id)) //该旧订单明细已从列表中删除
+                    {
+                        session.DeleteById<BsOrderDetail>(oldDetail.Id); //删除旧订单明细
+                    }
                 }
+
+                decimal amount = 0;
+                foreach (BsOrderDetail detail in detailList)
+                {
+                    amount += detail.Price * detail.Quantity;
+
+                    if (oldDetailList.Exists(a => a.Id == detail.Id)) //该订单明细存在
+                    {
+                        detail.UpdateTime = DateTime.Now;
+                        session.Update(detail);
+                    }
+                    else //该订单明细不存在
+                    {
+                        detail.Id = Guid.NewGuid().ToString("N");
+                        detail.OrderId = order.Id;
+                        detail.CreateTime = DateTime.Now;
+                        session.Insert(detail);
+                    }
+                }
+                order.Amount = amount;
+
+                order.UpdateTime = DateTime.Now;
+                session.Update(order);
+
+                session.CommitTransaction();
+
+                return order.Id;
+            }
+            catch (Exception ex)
+            {
+                session.RollbackTransaction();
+                Console.WriteLine(ex.ToString());
+                throw;
             }
         }
         #endregion
@@ -186,55 +182,54 @@ namespace DAL
         /// </summary>
         public async Task<string> UpdateAsync(BsOrder order, List<BsOrderDetail> detailList)
         {
-            using (var session = await LiteSqlFactory.GetSessionAsync())
+            var session = LiteSqlFactory.GetSession();
+
+            try
             {
-                try
+                session.BeginTransaction();
+
+                List<BsOrderDetail> oldDetailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(order.Id); //根据订单ID查询旧订单明细
+
+                foreach (BsOrderDetail oldDetail in oldDetailList)
                 {
-                    session.BeginTransaction();
-
-                    List<BsOrderDetail> oldDetailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(order.Id); //根据订单ID查询旧订单明细
-
-                    foreach (BsOrderDetail oldDetail in oldDetailList)
+                    if (!detailList.Exists(a => a.Id == oldDetail.Id)) //该旧订单明细已从列表中删除
                     {
-                        if (!detailList.Exists(a => a.Id == oldDetail.Id)) //该旧订单明细已从列表中删除
-                        {
-                            session.DeleteById<BsOrderDetail>(oldDetail.Id); //删除旧订单明细
-                        }
+                        session.DeleteById<BsOrderDetail>(oldDetail.Id); //删除旧订单明细
                     }
-
-                    decimal amount = 0;
-                    foreach (BsOrderDetail detail in detailList)
-                    {
-                        amount += detail.Price * detail.Quantity;
-
-                        if (oldDetailList.Exists(a => a.Id == detail.Id)) //该订单明细存在
-                        {
-                            detail.UpdateTime = DateTime.Now;
-                            await session.UpdateAsync(detail);
-                        }
-                        else //该订单明细不存在
-                        {
-                            detail.Id = Guid.NewGuid().ToString("N");
-                            detail.OrderId = order.Id;
-                            detail.CreateTime = DateTime.Now;
-                            session.Insert(detail);
-                        }
-                    }
-                    order.Amount = amount;
-
-                    order.UpdateTime = DateTime.Now;
-                    await session.UpdateAsync(order);
-
-                    session.CommitTransaction();
-
-                    return order.Id;
                 }
-                catch (Exception ex)
+
+                decimal amount = 0;
+                foreach (BsOrderDetail detail in detailList)
                 {
-                    session.RollbackTransaction();
-                    Console.WriteLine(ex.ToString());
-                    throw;
+                    amount += detail.Price * detail.Quantity;
+
+                    if (oldDetailList.Exists(a => a.Id == detail.Id)) //该订单明细存在
+                    {
+                        detail.UpdateTime = DateTime.Now;
+                        await session.UpdateAsync(detail);
+                    }
+                    else //该订单明细不存在
+                    {
+                        detail.Id = Guid.NewGuid().ToString("N");
+                        detail.OrderId = order.Id;
+                        detail.CreateTime = DateTime.Now;
+                        session.Insert(detail);
+                    }
                 }
+                order.Amount = amount;
+
+                order.UpdateTime = DateTime.Now;
+                await session.UpdateAsync(order);
+
+                session.CommitTransaction();
+
+                return order.Id;
+            }
+            catch (Exception ex)
+            {
+                session.RollbackTransaction();
+                Console.WriteLine(ex.ToString());
+                throw;
             }
         }
         #endregion
@@ -245,20 +240,19 @@ namespace DAL
         /// </summary>
         public BsOrder Get(string id)
         {
-            using (var session = LiteSqlFactory.GetSession())
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
             {
-                session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+                Console.WriteLine(s); //打印SQL
+            };
 
-                List<BsOrderDetail> detailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(id);
+            List<BsOrderDetail> detailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(id);
 
-                BsOrder result = session.QueryById<BsOrder>(id);
-                result.DetailList = detailList;
+            BsOrder result = session.QueryById<BsOrder>(id);
+            result.DetailList = detailList;
 
-                return result;
-            }
+            return result;
         }
         #endregion
 
@@ -268,15 +262,14 @@ namespace DAL
         /// </summary>
         public BsOrder GetFirst()
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                BsOrder result = session.Query<BsOrder>("select * from bs_order");
+            var session = LiteSqlFactory.GetSession();
 
-                List<BsOrderDetail> detailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(result.Id);
-                result.DetailList = detailList;
+            BsOrder result = session.Query<BsOrder>("select * from bs_order");
 
-                return result;
-            }
+            List<BsOrderDetail> detailList = ServiceHelper.Get<BsOrderDetailDal>().GetListByOrderId(result.Id);
+            result.DetailList = detailList;
+
+            return result;
         }
         #endregion
 
@@ -286,32 +279,31 @@ namespace DAL
         /// </summary>
         public List<BsOrder> GetList(int? status, string remark, DateTime? startTime, DateTime? endTime, string ids)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                ISqlString sql = session.CreateSql(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id
-                    where 1=1");
+            var session = LiteSqlFactory.GetSession();
 
-                sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            ISqlString sql = session.CreateSql(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id
+                where 1=1");
 
-                sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
+            sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @Remark", new { Remark = "%" + remark + "%" });
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(startTime.HasValue, " and t.order_time>=@startTime ", startTime);
 
-                int index = 0;
-                string[] idArr = ids.Split(',');
-                string args = string.Join(",", idArr.ToList().ConvertAll<string>(a => "@id" + index++));
-                sql.Append(" and t.id in (" + args + ") ", idArr);
+            sql.AppendIf(endTime.HasValue, " and t.order_time<=@endTime ", endTime);
 
-                sql.Append(" order by t.order_time desc, t.id asc ");
+            int index = 0;
+            string[] idArr = ids.Split(',');
+            string args = string.Join(",", idArr.ToList().ConvertAll<string>(a => "@id" + index++));
+            sql.Append(" and t.id in (" + args + ") ", idArr);
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql);
-                return list;
-            }
+            sql.Append(" order by t.order_time desc, t.id asc ");
+
+            List<BsOrder> list = session.QueryList<BsOrder>(sql);
+            return list;
         }
         #endregion
 
@@ -321,27 +313,26 @@ namespace DAL
         /// </summary>
         public async Task<List<BsOrder>> GetListAsync(int? status, string remark, DateTime? startTime, DateTime? endTime)
         {
-            using (var session = await LiteSqlFactory.GetSessionAsync())
-            {
-                ISqlString sql = session.CreateSql(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id
-                    where 1=1");
+            var session = LiteSqlFactory.GetSession();
 
-                sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            ISqlString sql = session.CreateSql(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id
+                where 1=1");
 
-                sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
+            sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                sql.Append(" order by t.order_time desc, t.id asc ");
+            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                List<BsOrder> list = await session.QueryListAsync<BsOrder>(sql);
-                return list;
-            }
+            sql.Append(" order by t.order_time desc, t.id asc ");
+
+            List<BsOrder> list = await session.QueryListAsync<BsOrder>(sql);
+            return list;
         }
         #endregion
 
@@ -351,30 +342,29 @@ namespace DAL
         /// </summary>
         public List<BsOrder> GetListPage(ref PageModel pageModel, int? status, string remark, DateTime? startTime, DateTime? endTime)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s);
+            var session = LiteSqlFactory.GetSession();
 
-                ISqlString sql = session.CreateSql(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id
-                    where 1=1");
+            session.OnExecuting = (s, p) => Console.WriteLine(s);
 
-                sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            ISqlString sql = session.CreateSql(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id
+                where 1=1");
 
-                sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
+            sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                sql.Append(" order by t.order_time desc, t.id asc ");
+            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                pageModel.TotalRows = sql.QueryCount();
-                List<BsOrder> result = sql.QueryPage<BsOrder>(null, pageModel.PageSize, pageModel.CurrentPage);
-                return result;
-            }
+            sql.Append(" order by t.order_time desc, t.id asc ");
+
+            pageModel.TotalRows = sql.QueryCount();
+            List<BsOrder> result = sql.QueryPage<BsOrder>(null, pageModel.PageSize, pageModel.CurrentPage);
+            return result;
         }
         #endregion
 
@@ -384,28 +374,27 @@ namespace DAL
         /// </summary>
         public async Task<List<BsOrder>> GetListPageAsync(PageModel pageModel, int? status, string remark, DateTime? startTime, DateTime? endTime)
         {
-            using (var session = await LiteSqlFactory.GetSessionAsync())
-            {
-                ISqlString sql = session.CreateSql(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id
-                    where 1=1");
+            var session = LiteSqlFactory.GetSession();
 
-                sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            ISqlString sql = session.CreateSql(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id
+                where 1=1");
 
-                sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
+            sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                string orderby = " order by t.order_time desc, t.id asc ";
+            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                var countResult = await session.QueryCountAsync(sql, pageModel.PageSize);
-                pageModel.TotalRows = countResult.Count;
-                return await session.QueryPageAsync<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
-            }
+            string orderby = " order by t.order_time desc, t.id asc ";
+
+            var countResult = await session.QueryCountAsync(sql, pageModel.PageSize);
+            pageModel.TotalRows = countResult.Count;
+            return await session.QueryPageAsync<BsOrder>(sql, orderby, pageModel.PageSize, pageModel.CurrentPage);
         }
         #endregion
 
@@ -415,29 +404,28 @@ namespace DAL
         /// </summary>
         public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime, DateTime? endTime, string ids)
         {
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                ISqlString sql = session.CreateSql(@"
-                    select t.*, u.real_name as OrderUserRealName
-                    from bs_order t
-                    left join sys_user u on t.order_userid=u.id
-                    where 1=1");
+            var session = LiteSqlFactory.GetSession();
 
-                sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            ISqlString sql = session.CreateSql(@"
+                select t.*, u.real_name as OrderUserRealName
+                from bs_order t
+                left join sys_user u on t.order_userid=u.id
+                where 1=1");
 
-                sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", sql.ForContains(remark));
+            sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-                sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", sql.ForDateTime(startTime.Value));
+            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", sql.ForContains(remark));
 
-                sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", sql.ForDateTime(endTime.Value));
+            sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => sql.ForDateTime(startTime.Value));
 
-                sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
+            sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => sql.ForDateTime(endTime.Value));
 
-                sql.Append(" order by t.order_time desc, t.id asc ");
+            sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
 
-                List<BsOrder> list = session.QueryList<BsOrder>(sql);
-                return list;
-            }
+            sql.Append(" order by t.order_time desc, t.id asc ");
+
+            List<BsOrder> list = session.QueryList<BsOrder>(sql);
+            return list;
         }
         #endregion
 

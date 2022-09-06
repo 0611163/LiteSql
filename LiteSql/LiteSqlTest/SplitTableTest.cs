@@ -44,21 +44,20 @@ namespace LiteSqlTest
 
             SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
 
-            using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession(splitTableMapping);
 
-                user.Id = session.InsertReturnId(user, "select @@IDENTITY");
-                Console.WriteLine("插入成功, user.Id=" + user.Id);
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                SysUser userInfo = session.CreateSql(
-                    "select * from sys_user_202208 where id = @Id", new { user.Id })
-                    .Query<SysUser>();
-                Assert.IsTrue(userInfo != null);
+            user.Id = session.InsertReturnId(user, "select @@IDENTITY");
+            Console.WriteLine("插入成功, user.Id=" + user.Id);
 
-                Assert.IsTrue(userInfo.Remark == (start + index).ToString());
-                return user.Id;
-            }
+            SysUser userInfo = session.CreateSql(
+                "select * from sys_user_202208 where id = @Id", new { user.Id })
+                .Query<SysUser>();
+            Assert.IsTrue(userInfo != null);
+
+            Assert.IsTrue(userInfo.Remark == (start + index).ToString());
+            return user.Id;
 
         }
 
@@ -66,10 +65,9 @@ namespace LiteSqlTest
         public void Test1Insert()
         {
             long start;
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                start = session.QuerySingle<long>("select max(id) from sys_user_202208");
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            start = session.QuerySingle<long>("select max(id) from sys_user_202208");
 
             Test1InsertInternal(start, 0);
         }
@@ -79,10 +77,9 @@ namespace LiteSqlTest
         {
             ConcurrentDictionary<long, long> dict = new ConcurrentDictionary<long, long>();
             long start;
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                start = session.QuerySingle<long>("select max(id)+1 from sys_user_202208");
-            }
+            var session = LiteSqlFactory.GetSession();
+
+            start = session.QuerySingle<long>("select max(id)+1 from sys_user_202208");
 
             ThreadPool.SetMinThreads(100, 100);
             List<Task> taskList = new List<Task>();
@@ -112,30 +109,27 @@ namespace LiteSqlTest
 
             SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
 
-            using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-            {
-                user = session.QueryById<SysUser>(userId);
-            }
+            var session = LiteSqlFactory.GetSession(splitTableMapping);
+
+            user = session.QueryById<SysUser>(userId);
 
             if (user != null)
             {
-                using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                    session.AttachOld(user);
+                session.AttachOld(user);
 
-                    user.UpdateUserid = "1";
-                    user.Remark = "测试修改分表数据" + _rnd.Next(1, 100);
-                    user.UpdateTime = DateTime.Now;
+                user.UpdateUserid = "1";
+                user.Remark = "测试修改分表数据" + _rnd.Next(1, 100);
+                user.UpdateTime = DateTime.Now;
 
-                    session.Update(user);
+                session.Update(user);
 
-                    SysUser userInfo = session.CreateSql(
-                        "select * from sys_user_202208 where Remark like @Remark", new { Remark = "测试修改分表数据%" })
-                        .Query<SysUser>();
-                    Assert.IsTrue(userInfo.Remark == user.Remark);
-                }
+                SysUser userInfo = session.CreateSql(
+                    "select * from sys_user_202208 where Remark like @Remark", new { Remark = "测试修改分表数据%" })
+                    .Query<SysUser>();
+                Assert.IsTrue(userInfo.Remark == user.Remark);
+
                 Console.WriteLine("用户 ID=" + user.Id + " 已修改");
             }
             else
@@ -150,15 +144,14 @@ namespace LiteSqlTest
         public void Test4Delete()
         {
             SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-            using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession(splitTableMapping);
 
-                int deleteCount = session.DeleteByCondition<SysUser>(string.Format("id>20"));
-                Console.WriteLine(deleteCount + "条数据已删除");
-                int deleteCount2 = session.DeleteById<SysUser>(10000);
-                Console.WriteLine(deleteCount2 + "条数据已删除");
-            }
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            int deleteCount = session.DeleteByCondition<SysUser>(string.Format("id>20"));
+            Console.WriteLine(deleteCount + "条数据已删除");
+            int deleteCount2 = session.DeleteById<SysUser>(10000);
+            Console.WriteLine(deleteCount2 + "条数据已删除");
         }
         #endregion
 
@@ -169,16 +162,15 @@ namespace LiteSqlTest
             SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
 
             List<SysUser> list = new List<SysUser>();
-            using (var session = LiteSqlFactory.GetSession(splitTableMapping))
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession(splitTableMapping);
 
-                ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                list = sql.Where(t => t.Id < 10)
-                    .OrderBy(t => t.Id)
-                    .ToList();
-            }
+            ISqlQueryable<SysUser> sql = session.Queryable<SysUser>();
+
+            list = sql.Where(t => t.Id < 10)
+                .OrderBy(t => t.Id)
+                .ToList();
 
             foreach (SysUser item in list)
             {
