@@ -51,7 +51,7 @@ namespace LiteSql
                             lock (_lock)
                             {
                                 if (!dbConnectionExt.IsUsing
-                                && DateTime.Now.Subtract(dbConnectionExt.CreateTime).TotalSeconds > _timeout)
+                                    && DateTime.Now.Subtract(dbConnectionExt.CreateTime).TotalSeconds > _timeout)
                                 {
                                     dbConnections.Connections.TryRemove(dbConnectionExt, out object _);
                                     dbConnectionExt.Conn.Close();
@@ -68,8 +68,7 @@ namespace LiteSql
                                     //创建连接池
                                     DbConnection conn = dbConnections.Provider.CreateConnection(dbConnections.ConnnectionString);
                                     conn.Open();
-                                    DbConnectionExt connExt = new DbConnectionExt(conn);
-                                    connExt.IsUsing = false;
+                                    DbConnectionExt connExt = new DbConnectionExt(conn, false);
                                     dbConnections.Connections.TryAdd(connExt, null);
                                 }
                             }
@@ -88,12 +87,12 @@ namespace LiteSql
         /// <summary>
         /// 从数据库连接池获取一个数据库连接
         /// </summary>
-        public static DbConnectionExt GetConnection(IProvider provider, string connnectionString, DbTransactionExt _trans)
+        public static DbConnectionExt GetConnection(IProvider provider, string connnectionString, DbTransactionExt _tran)
         {
-            if (_trans != null)
+            if (_tran != null)
             {
-                _trans.ConnEx.Tran = _trans;
-                return _trans.ConnEx;
+                _tran.ConnEx.Tran = _tran;
+                return _tran.ConnEx;
             }
 
             lock (_lock)
@@ -136,12 +135,12 @@ namespace LiteSql
         /// <summary>
         /// 从数据库连接池获取一个数据库连接
         /// </summary>
-        public static async Task<DbConnectionExt> GetConnectionAsync(IProvider provider, string connnectionString, DbTransactionExt _trans)
+        public static async Task<DbConnectionExt> GetConnectionAsync(IProvider provider, string connnectionString, DbTransactionExt _tran)
         {
-            if (_trans != null)
+            if (_tran != null)
             {
-                _trans.ConnEx.Tran = _trans;
-                return _trans.ConnEx;
+                _tran.ConnEx.Tran = _tran;
+                return _tran.ConnEx;
             }
 
             Monitor.Enter(_lock);

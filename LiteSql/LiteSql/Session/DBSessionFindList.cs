@@ -19,30 +19,26 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
-            DbConnectionExt _connExt = null;
 
-            try
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                var tuple = ExecuteReader(sql);
-                rd = tuple.Item1;
-                _connExt = tuple.Item2;
-
-                DataReaderToList(rd, ref list);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                if (rd != null && !rd.IsClosed)
+                try
                 {
-                    rd.Close();
-                    rd.Dispose();
+                    rd = ExecuteReader(sql, _conn);
+
+                    DataReaderToList(rd, ref list);
                 }
-                if (_tran == null)
+                catch
                 {
-                    _connExt.Dispose();
+                    throw;
+                }
+                finally
+                {
+                    if (rd != null && !rd.IsClosed)
+                    {
+                        rd.Close();
+                        rd.Dispose();
+                    }
                 }
             }
 
@@ -58,30 +54,26 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
-            DbConnectionExt _connExt = null;
 
-            try
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                var tuple = await ExecuteReaderAsync(sql);
-                rd = tuple.Item1;
-                _connExt = tuple.Item2;
-
-                DataReaderToList(rd, ref list);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                if (rd != null && !rd.IsClosed)
+                try
                 {
-                    rd.Close();
-                    rd.Dispose();
+                    rd = await ExecuteReaderAsync(sql, _conn);
+
+                    DataReaderToList(rd, ref list);
                 }
-                if (_tran == null)
+                catch
                 {
-                    _connExt.Dispose();
+                    throw;
+                }
+                finally
+                {
+                    if (rd != null && !rd.IsClosed)
+                    {
+                        rd.Close();
+                        rd.Dispose();
+                    }
                 }
             }
 
@@ -98,30 +90,26 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
-            DbConnectionExt _connExt = null;
 
-            try
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                var tuple = ExecuteReader(sql, cmdParms);
-                rd = tuple.Item1;
-                _connExt = tuple.Item2;
-
-                DataReaderToList(rd, ref list);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                if (rd != null && !rd.IsClosed)
+                try
                 {
-                    rd.Close();
-                    rd.Dispose();
+                    rd = ExecuteReader(sql, cmdParms, _conn);
+
+                    DataReaderToList(rd, ref list);
                 }
-                if (_tran == null)
+                catch
                 {
-                    _connExt.Dispose();
+                    throw;
+                }
+                finally
+                {
+                    if (rd != null && !rd.IsClosed)
+                    {
+                        rd.Close();
+                        rd.Dispose();
+                    }
                 }
             }
 
@@ -137,30 +125,26 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
             IDataReader rd = null;
-            DbConnectionExt _connExt = null;
 
-            try
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                var tuple = await ExecuteReaderAsync(sql, cmdParms);
-                rd = tuple.Item1;
-                _connExt = tuple.Item2;
-
-                DataReaderToList(rd, ref list);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                if (rd != null && !rd.IsClosed)
+                try
                 {
-                    rd.Close();
-                    rd.Dispose();
+                    rd = await ExecuteReaderAsync(sql, cmdParms, _conn);
+
+                    DataReaderToList(rd, ref list);
                 }
-                if (_tran == null)
+                catch
                 {
-                    _connExt.Dispose();
+                    throw;
+                }
+                finally
+                {
+                    if (rd != null && !rd.IsClosed)
+                    {
+                        rd.Close();
+                        rd.Dispose();
+                    }
                 }
             }
 

@@ -313,15 +313,15 @@ namespace LiteSql
         /// <summary>
         /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
         /// </summary>
-        private Tuple<DbDataReader, DbConnectionExt> ExecuteReader(string sqlString)
+        private DbDataReader ExecuteReader(string sqlString, DbConnectionExt conn)
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            _conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran);
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
+
+            using (DbCommand cmd = _provider.GetCommand(sqlString, conn.Conn))
             {
                 DbDataReader myReader = cmd.ExecuteReader();
-                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
+                return myReader;
             }
         }
         #endregion
@@ -330,15 +330,15 @@ namespace LiteSql
         /// <summary>
         /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
         /// </summary>
-        private async Task<Tuple<DbDataReader, DbConnectionExt>> ExecuteReaderAsync(string sqlString)
+        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbConnectionExt conn)
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-            _conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran);
-            using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
+
+            using (DbCommand cmd = _provider.GetCommand(sqlString, conn.Conn))
             {
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
-                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
+                return myReader;
             }
         }
         #endregion
@@ -655,17 +655,16 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         ///  <param name="cmdParms">参数</param>
         /// <returns>IDataReader</returns>
-        private Tuple<DbDataReader, DbConnectionExt> ExecuteReader(string sqlString, DbParameter[] cmdParms)
+        private DbDataReader ExecuteReader(string sqlString, DbParameter[] cmdParms, DbConnectionExt conn)
         {
             OnExecuting?.Invoke(sqlString, cmdParms);
 
-            _conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran);
-            using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+            using (DbCommand cmd = _provider.GetCommand(conn.Conn))
             {
-                PrepareCommand(cmd, _conn.Conn, null, sqlString, cmdParms);
+                PrepareCommand(cmd, conn.Conn, null, sqlString, cmdParms);
                 DbDataReader myReader = cmd.ExecuteReader();
                 cmd.Parameters.Clear();
-                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
+                return myReader;
             }
         }
         #endregion
@@ -677,17 +676,16 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         ///  <param name="cmdParms">参数</param>
         /// <returns>IDataReader</returns>
-        private async Task<Tuple<DbDataReader, DbConnectionExt>> ExecuteReaderAsync(string sqlString, DbParameter[] cmdParms)
+        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbParameter[] cmdParms, DbConnectionExt conn)
         {
             OnExecuting?.Invoke(sqlString, cmdParms);
 
-            _conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran);
-            using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
+            using (DbCommand cmd = _provider.GetCommand(conn.Conn))
             {
-                await PrepareCommandAsync(cmd, _conn.Conn, null, sqlString, cmdParms);
+                await PrepareCommandAsync(cmd, conn.Conn, null, sqlString, cmdParms);
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
                 cmd.Parameters.Clear();
-                return new Tuple<DbDataReader, DbConnectionExt>(myReader, _conn);
+                return myReader;
             }
         }
         #endregion

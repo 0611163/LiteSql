@@ -42,7 +42,7 @@ namespace LiteSql
                 _tran.Tran = null;
                 _tran = null;
                 _conn.Tran = null;
-                _conn.Dispose();
+                _conn.IsUsing = false;
             }
         }
         #endregion

@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 namespace LiteSql
 {
     /// <summary>
-    /// LiteSqlClient
+    /// LiteSql客户端接口
+    /// LiteSqlClient是线程安全的
     /// </summary>
     public class LiteSqlClient : ILiteSqlClient
     {

@@ -59,6 +59,7 @@
     <Compile Include="DeleteTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="LambdaTest.cs" />
+    <Compile Include="MultiThreadTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryTest.cs" />
     <Compile Include="SplitTableTest.cs" />

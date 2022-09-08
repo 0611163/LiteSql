@@ -207,40 +207,34 @@ namespace LiteSql
         {
             object result = Activator.CreateInstance(type);
             IDataReader rd = null;
-            DbConnectionExt _connExt = null;
             bool hasValue = false;
 
-            try
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                if (cmdParams == null)
+                try
                 {
-                    var tuple = ExecuteReader(sql);
-                    rd = tuple.Item1;
-                    _connExt = tuple.Item2;
-                }
-                else
-                {
-                    var tuple = ExecuteReader(sql, cmdParams);
-                    rd = tuple.Item1;
-                    _connExt = tuple.Item2;
-                }
+                    if (cmdParams == null)
+                    {
+                        rd = ExecuteReader(sql, _conn);
+                    }
+                    else
+                    {
+                        rd = ExecuteReader(sql, cmdParams, _conn);
+                    }
 
-                DataReaderToEntity(type, rd, ref result, ref hasValue);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                if (rd != null && !rd.IsClosed)
-                {
-                    rd.Close();
-                    rd.Dispose();
+                    DataReaderToEntity(type, rd, ref result, ref hasValue);
                 }
-                if (_tran == null)
+                catch
                 {
-                    _connExt.Dispose();
+                    throw;
+                }
+                finally
+                {
+                    if (rd != null && !rd.IsClosed)
+                    {
+                        rd.Close();
+                        rd.Dispose();
+                    }
                 }
             }
 
@@ -263,40 +257,34 @@ namespace LiteSql
         {
             object result = Activator.CreateInstance(type);
             IDataReader rd = null;
-            DbConnectionExt _connExt = null;
             bool hasValue = false;
 
-            try
+            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
             {
-                if (cmdParams == null)
+                try
                 {
-                    var tuple = await ExecuteReaderAsync(sql);
-                    rd = tuple.Item1;
-                    _connExt = tuple.Item2;
-                }
-                else
-                {
-                    var tuple = await ExecuteReaderAsync(sql, cmdParams);
-                    rd = tuple.Item1;
-                    _connExt = tuple.Item2;
-                }
+                    if (cmdParams == null)
+                    {
+                        rd = await ExecuteReaderAsync(sql, _conn);
+                    }
+                    else
+                    {
+                        rd = await ExecuteReaderAsync(sql, cmdParams, _conn);
+                    }
 
-                DataReaderToEntity(type, rd, ref result, ref hasValue);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                if (rd != null && !rd.IsClosed)
-                {
-                    rd.Close();
-                    rd.Dispose();
+                    DataReaderToEntity(type, rd, ref result, ref hasValue);
                 }
-                if (_tran == null)
+                catch
                 {
-                    _connExt.Dispose();
+                    throw;
+                }
+                finally
+                {
+                    if (rd != null && !rd.IsClosed)
+                    {
+                        rd.Close();
+                        rd.Dispose();
+                    }
                 }
             }
 

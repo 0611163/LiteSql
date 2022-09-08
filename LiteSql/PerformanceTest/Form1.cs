@@ -169,10 +169,7 @@ namespace PerformanceTest
 
                 try
                 {
-                    session.OnExecuting = (sql, param) =>
-                    {
-                        Console.WriteLine(sql); //打印SQL
-                    };
+                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
                     session.BeginTransaction();
                     session.Insert(userList);
@@ -250,6 +247,7 @@ namespace PerformanceTest
                     user.RealName = "测试插入用户";
                     user.Password = "123456";
                     user.CreateUserid = "1";
+                    user.CreateTime = DateTime.Now;
                     userList.Add(user);
                 }
 

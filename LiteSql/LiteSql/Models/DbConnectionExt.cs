@@ -37,11 +37,11 @@ namespace LiteSql
         /// <summary>
         /// 数据库连接扩展
         /// </summary>
-        public DbConnectionExt(DbConnection conn)
+        public DbConnectionExt(DbConnection conn, bool isUsing = true)
         {
             Conn = conn;
             CreateTime = DateTime.Now;
-            IsUsing = true;
+            IsUsing = isUsing;
         }
 
         /// <summary>
