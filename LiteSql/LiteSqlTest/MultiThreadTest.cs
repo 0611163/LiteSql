@@ -36,7 +36,7 @@ namespace LiteSqlTest
         /// <summary>
         /// true:使用独立线程池,false:使用.NET默认线程池
         /// </summary>
-        private bool _useTaskEx = true;
+        private bool _useTaskEx = false;
 
         #region 构造函数
         public MultiThreadTest()

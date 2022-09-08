@@ -39,47 +39,54 @@ namespace LiteSql
         static DbConnectionFactory()
         {
             //数据库连接释放定时器
-            new Timer(state =>
+            Thread thread = new Thread(() =>
             {
-                try
+                while (true)
                 {
-                    foreach (string key in _connections.Keys)
-                    {
-                        DbConnectionCollection dbConnections = _connections[key];
-                        foreach (DbConnectionExt dbConnectionExt in dbConnections.Connections.Keys)
-                        {
-                            lock (_lock)
-                            {
-                                if (!dbConnectionExt.IsUsing
-                                    && DateTime.Now.Subtract(dbConnectionExt.CreateTime).TotalSeconds > _timeout)
-                                {
-                                    dbConnections.Connections.TryRemove(dbConnectionExt, out object _);
-                                    dbConnectionExt.Conn.Close();
-                                }
-                            }
-                        }
+                    Thread.Sleep(1000);
 
-                        if (dbConnections.Connections.Count < _minPoolSize)
+                    try
+                    {
+                        foreach (string key in _connections.Keys)
                         {
-                            for (int i = 0; i < _minPoolSize - dbConnections.Connections.Count; i++)
+                            DbConnectionCollection dbConnections = _connections[key];
+                            foreach (DbConnectionExt dbConnectionExt in dbConnections.Connections.Keys)
                             {
                                 lock (_lock)
                                 {
-                                    //创建连接池
-                                    DbConnection conn = dbConnections.Provider.CreateConnection(dbConnections.ConnnectionString);
-                                    conn.Open();
-                                    DbConnectionExt connExt = new DbConnectionExt(conn, false);
-                                    dbConnections.Connections.TryAdd(connExt, null);
+                                    if (!dbConnectionExt.IsUsing
+                                        && DateTime.Now.Subtract(dbConnectionExt.CreateTime).TotalSeconds > _timeout)
+                                    {
+                                        dbConnections.Connections.TryRemove(dbConnectionExt, out object _);
+                                        dbConnectionExt.Conn.Close();
+                                    }
+                                }
+                            }
+
+                            if (dbConnections.Connections.Count < _minPoolSize)
+                            {
+                                for (int i = 0; i < _minPoolSize - dbConnections.Connections.Count; i++)
+                                {
+                                    lock (_lock)
+                                    {
+                                        //创建连接池
+                                        DbConnection conn = dbConnections.Provider.CreateConnection(dbConnections.ConnnectionString);
+                                        conn.Open();
+                                        DbConnectionExt connExt = new DbConnectionExt(conn, false);
+                                        dbConnections.Connections.TryAdd(connExt, null);
+                                    }
                                 }
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-            }, null, 0, 1000);
+            });
+            thread.IsBackground = true;
+            thread.Start();
         }
         #endregion
 
@@ -95,9 +102,9 @@ namespace LiteSql
                 return _tran.ConnEx;
             }
 
+            DbConnectionCollection dbConnections;
             lock (_lock)
             {
-                DbConnectionCollection dbConnections;
                 string key = provider.GetType().Name + "_" + connnectionString;
 
                 //获取或初始化DbConnectionCollection
@@ -120,14 +127,14 @@ namespace LiteSql
                         return dbConnectionExt;
                     }
                 }
-
-                //连接池没有则创建
-                DbConnection conn = provider.CreateConnection(connnectionString);
-                conn.Open();
-                DbConnectionExt connExt = new DbConnectionExt(conn);
-                dbConnections.Connections.TryAdd(connExt, null);
-                return connExt;
             }
+
+            //连接池没有则创建
+            DbConnection conn = provider.CreateConnection(connnectionString);
+            conn.Open();
+            DbConnectionExt connExt = new DbConnectionExt(conn);
+            dbConnections.Connections.TryAdd(connExt, null);
+            return connExt;
         }
         #endregion
 
@@ -143,11 +150,10 @@ namespace LiteSql
                 return _tran.ConnEx;
             }
 
+            DbConnectionCollection dbConnections;
             Monitor.Enter(_lock);
-
             try
             {
-                DbConnectionCollection dbConnections;
                 string key = provider.GetType().Name + "_" + connnectionString;
 
                 //获取或初始化DbConnectionCollection
@@ -170,13 +176,6 @@ namespace LiteSql
                         return dbConnectionExt;
                     }
                 }
-
-                //连接池没有则创建
-                DbConnection conn = provider.CreateConnection(connnectionString);
-                await conn.OpenAsync();
-                DbConnectionExt connExt = new DbConnectionExt(conn);
-                dbConnections.Connections.TryAdd(connExt, null);
-                return connExt;
             }
             catch
             {
@@ -186,6 +185,13 @@ namespace LiteSql
             {
                 Monitor.Exit(_lock);
             }
+
+            //连接池没有则创建
+            DbConnection conn = provider.CreateConnection(connnectionString);
+            await conn.OpenAsync();
+            DbConnectionExt connExt = new DbConnectionExt(conn);
+            dbConnections.Connections.TryAdd(connExt, null);
+            return connExt;
         }
         #endregion
 

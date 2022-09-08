@@ -14,8 +14,8 @@ namespace OracleTest
         #region 构造函数
         public QueryTest()
         {
-            ThreadPool.SetMaxThreads(1000, 1000);
-            ThreadPool.SetMinThreads(200, 200);
+            //ThreadPool.SetMaxThreads(1000, 1000);
+            //ThreadPool.SetMinThreads(200, 200);
 
             //预热
             LiteSqlFactoryMySQL.GetSession().QuerySingle("select count(*) from bs_order");

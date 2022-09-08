@@ -25,8 +25,8 @@ namespace LiteSqlTest
         #region 构造函数
         public AsyncSyncTest()
         {
-            ThreadPool.SetMaxThreads(1000, 1000);
-            ThreadPool.SetMinThreads(200, 200);
+            //ThreadPool.SetMaxThreads(1000, 1000);
+            //ThreadPool.SetMinThreads(200, 200);
 
             m_BsOrderDal.Preheat();
         }
