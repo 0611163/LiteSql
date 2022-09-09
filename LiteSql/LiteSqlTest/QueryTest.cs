@@ -351,5 +351,46 @@ namespace LiteSqlTest
         }
         #endregion
 
+        #region 分组统计查询
+        [TestMethod]
+        public void TestGroupBy()
+        {
+            var session = LiteSqlFactory.GetSession();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            List<BsOrder> list = session.Queryable<BsOrder>(o => new { o.Id, o.Remark, o.OrderTime })
+                .Select("sum(d.price * d.quantity) as Amount")
+                .LeftJoin<BsOrderDetail>((o, d) => o.Id == d.OrderId)
+                .Append("group by  o.id, o.remark, o.order_time")
+                .Append("order by Amount desc").QueryList<BsOrder>();
+
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
+            }
+            Assert.IsTrue(list.Count > 0);
+        }
+
+        [TestMethod]
+        public void TestGroupBy2()
+        {
+            var session = LiteSqlFactory.GetSession();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            List<BsOrder> list = session.CreateSql(@"
+                select o.id, o.remark, o.order_time, sum(d.price * d.quantity) as amount
+                from bs_order o
+                left join bs_order_detail d on d.order_id = o.id
+                group by o.id, o.remark, o.order_time
+                order by amount desc").QueryList<BsOrder>();
+
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
+            }
+            Assert.IsTrue(list.Count > 0);
+        }
+        #endregion
+
     }
 }

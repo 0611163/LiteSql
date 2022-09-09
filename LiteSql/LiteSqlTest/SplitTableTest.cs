@@ -81,7 +81,7 @@ namespace LiteSqlTest
 
             start = session.QuerySingle<long>("select max(id)+1 from sys_user_202208");
 
-            //ThreadPool.SetMinThreads(100, 100);
+            ThreadPool.SetMinThreads(100, 100);
             List<Task> taskList = new List<Task>();
 
             for (int i = 0; i < 100; i++)

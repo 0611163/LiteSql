@@ -15,6 +15,11 @@ namespace LiteSql
     internal class DbConnectionExt : IDisposable
     {
         /// <summary>
+        /// 父容器
+        /// </summary>
+        public DbConnectionCollection Parent { get; set; }
+
+        /// <summary>
         /// 数据库事务
         /// </summary>
         public DbTransactionExt Tran { get; set; }
@@ -37,9 +42,10 @@ namespace LiteSql
         /// <summary>
         /// 数据库连接扩展
         /// </summary>
-        public DbConnectionExt(DbConnection conn, bool isUsing = true)
+        public DbConnectionExt(DbConnection conn, DbConnectionCollection parent, bool isUsing = true)
         {
             Conn = conn;
+            Parent = parent;
             CreateTime = DateTime.Now;
             IsUsing = isUsing;
         }
@@ -52,6 +58,7 @@ namespace LiteSql
             if (Tran == null)
             {
                 IsUsing = false;
+                Parent.Connections.Enqueue(this);
             }
         }
     }
@@ -80,14 +87,14 @@ namespace LiteSql
         /// <summary>
         /// 数据库连接集合
         /// </summary>
-        public ConcurrentDictionary<DbConnectionExt, object> Connections { get; set; }
+        public ConcurrentQueue<DbConnectionExt> Connections { get; set; }
 
         /// <summary>
         /// 数据库连接集合 构造函数
         /// </summary>
         public DbConnectionCollection(IProvider provider, string connnectionString)
         {
-            Connections = new ConcurrentDictionary<DbConnectionExt, object>();
+            Connections = new ConcurrentQueue<DbConnectionExt>();
             Provider = provider;
             ConnnectionString = connnectionString;
             Key = provider.GetType().Name + "_" + connnectionString;

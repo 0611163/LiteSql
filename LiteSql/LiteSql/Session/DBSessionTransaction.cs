@@ -43,6 +43,7 @@ namespace LiteSql
                 _tran = null;
                 _conn.Tran = null;
                 _conn.IsUsing = false;
+                _conn.Parent.Connections.Enqueue(_conn);
             }
         }
         #endregion

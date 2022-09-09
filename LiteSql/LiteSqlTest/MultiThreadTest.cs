@@ -41,6 +41,8 @@ namespace LiteSqlTest
         #region 构造函数
         public MultiThreadTest()
         {
+            ThreadPool.SetMaxThreads(1000, 1000);
+            ThreadPool.SetMinThreads(200, 200);
             ServiceHelper.Get<BsOrderDal>().Preheat();  //预热
         }
         #endregion

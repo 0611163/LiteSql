@@ -28,7 +28,7 @@ namespace LiteSql
         /// <summary>
         /// 连接池最小数量
         /// </summary>
-        private static readonly int _minPoolSize = 5;
+        private static readonly int _minPoolSize = 10;
 
         /// <summary>
         /// 锁
@@ -50,16 +50,16 @@ namespace LiteSql
                         foreach (string key in _connections.Keys)
                         {
                             DbConnectionCollection dbConnections = _connections[key];
-                            foreach (DbConnectionExt dbConnectionExt in dbConnections.Connections.Keys)
+                            while (dbConnections.Connections.TryDequeue(out DbConnectionExt connExt))
                             {
-                                lock (_lock)
+                                if (!connExt.IsUsing
+                                   && DateTime.Now.Subtract(connExt.CreateTime).TotalSeconds > _timeout)
                                 {
-                                    if (!dbConnectionExt.IsUsing
-                                        && DateTime.Now.Subtract(dbConnectionExt.CreateTime).TotalSeconds > _timeout)
-                                    {
-                                        dbConnections.Connections.TryRemove(dbConnectionExt, out object _);
-                                        dbConnectionExt.Conn.Close();
-                                    }
+                                    connExt.Conn.Close();
+                                }
+                                else
+                                {
+                                    dbConnections.Connections.Enqueue(connExt);
                                 }
                             }
 
@@ -67,14 +67,11 @@ namespace LiteSql
                             {
                                 for (int i = 0; i < _minPoolSize - dbConnections.Connections.Count; i++)
                                 {
-                                    lock (_lock)
-                                    {
-                                        //创建连接池
-                                        DbConnection conn = dbConnections.Provider.CreateConnection(dbConnections.ConnnectionString);
-                                        conn.Open();
-                                        DbConnectionExt connExt = new DbConnectionExt(conn, false);
-                                        dbConnections.Connections.TryAdd(connExt, null);
-                                    }
+                                    //创建连接池
+                                    DbConnection conn = dbConnections.Provider.CreateConnection(dbConnections.ConnnectionString);
+                                    conn.Open();
+                                    DbConnectionExt connExt = new DbConnectionExt(conn, dbConnections, false);
+                                    dbConnections.Connections.Enqueue(connExt);
                                 }
                             }
                         }
@@ -102,38 +99,31 @@ namespace LiteSql
                 return _tran.ConnEx;
             }
 
-            DbConnectionCollection dbConnections;
+            //获取或初始化DbConnectionCollection
+            string key = provider.GetType().Name + "_" + connnectionString;
+            DbConnectionCollection dbConnections = _connections.GetOrAdd(key, k => new DbConnectionCollection(provider, connnectionString));
+
             lock (_lock)
             {
-                string key = provider.GetType().Name + "_" + connnectionString;
-
-                //获取或初始化DbConnectionCollection
-                if (!_connections.ContainsKey(key))
-                {
-                    dbConnections = new DbConnectionCollection(provider, connnectionString);
-                    _connections.TryAdd(key, dbConnections);
-                }
-                else
-                {
-                    _connections.TryGetValue(key, out dbConnections);
-                }
-
                 //从空闲数据库连接池中取数据库连接
-                foreach (DbConnectionExt dbConnectionExt in dbConnections.Connections.Keys)
+                dbConnections.Connections.TryDequeue(out DbConnectionExt connectionExt);
+                while (connectionExt != null && connectionExt.IsUsing)
                 {
-                    if (!dbConnectionExt.IsUsing)
-                    {
-                        dbConnectionExt.IsUsing = true;
-                        return dbConnectionExt;
-                    }
+                    dbConnections.Connections.Enqueue(connectionExt);
+                    dbConnections.Connections.TryDequeue(out connectionExt);
+                }
+                if (connectionExt != null)
+                {
+                    connectionExt.IsUsing = true;
+                    return connectionExt;
                 }
             }
 
             //连接池没有则创建
             DbConnection conn = provider.CreateConnection(connnectionString);
             conn.Open();
-            DbConnectionExt connExt = new DbConnectionExt(conn);
-            dbConnections.Connections.TryAdd(connExt, null);
+            DbConnectionExt connExt = new DbConnectionExt(conn, dbConnections);
+            dbConnections.Connections.Enqueue(connExt);
             return connExt;
         }
         #endregion
@@ -150,47 +140,31 @@ namespace LiteSql
                 return _tran.ConnEx;
             }
 
-            DbConnectionCollection dbConnections;
-            Monitor.Enter(_lock);
-            try
+            //获取或初始化DbConnectionCollection
+            string key = provider.GetType().Name + "_" + connnectionString;
+            DbConnectionCollection dbConnections = _connections.GetOrAdd(key, k => new DbConnectionCollection(provider, connnectionString));
+
+            lock (_lock)
             {
-                string key = provider.GetType().Name + "_" + connnectionString;
-
-                //获取或初始化DbConnectionCollection
-                if (!_connections.ContainsKey(key))
-                {
-                    dbConnections = new DbConnectionCollection(provider, connnectionString);
-                    _connections.TryAdd(key, dbConnections);
-                }
-                else
-                {
-                    _connections.TryGetValue(key, out dbConnections);
-                }
-
                 //从空闲数据库连接池中取数据库连接
-                foreach (DbConnectionExt dbConnectionExt in dbConnections.Connections.Keys)
+                dbConnections.Connections.TryDequeue(out DbConnectionExt connectionExt);
+                while (connectionExt != null && connectionExt.IsUsing)
                 {
-                    if (!dbConnectionExt.IsUsing)
-                    {
-                        dbConnectionExt.IsUsing = true;
-                        return dbConnectionExt;
-                    }
+                    dbConnections.Connections.Enqueue(connectionExt);
+                    dbConnections.Connections.TryDequeue(out connectionExt);
                 }
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                Monitor.Exit(_lock);
+                if (connectionExt != null)
+                {
+                    connectionExt.IsUsing = true;
+                    return connectionExt;
+                }
             }
 
             //连接池没有则创建
             DbConnection conn = provider.CreateConnection(connnectionString);
             await conn.OpenAsync();
-            DbConnectionExt connExt = new DbConnectionExt(conn);
-            dbConnections.Connections.TryAdd(connExt, null);
+            DbConnectionExt connExt = new DbConnectionExt(conn, dbConnections);
+            dbConnections.Connections.Enqueue(connExt);
             return connExt;
         }
         #endregion
