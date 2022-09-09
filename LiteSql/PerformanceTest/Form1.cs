@@ -8,6 +8,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utils;
@@ -85,6 +86,22 @@ namespace PerformanceTest
                     throw;
                 }
             });
+        }
+
+        private Task RunTask<T>(Action<T> action, T t)
+        {
+            return Task.Factory.StartNew(obj =>
+            {
+                try
+                {
+                    action((T)obj);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex.ToString());
+                    throw;
+                }
+            }, t);
         }
         #endregion
 
@@ -382,6 +399,47 @@ namespace PerformanceTest
 
                 string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
                 Log("查询 完成，耗时：" + time + "秒");
+            });
+        }
+        #endregion
+
+        #region 并发插入
+        private void button9_Click(object sender, EventArgs e)
+        {
+            ThreadPool.SetMaxThreads(1000, 1000);
+            ThreadPool.SetMinThreads(200, 200);
+
+            RunTask(() =>
+            {
+                List<SysUser> userList = new List<SysUser>();
+                for (int i = 1; i <= _count; i++)
+                {
+                    SysUser user = new SysUser();
+                    user.UserName = "testUser";
+                    user.RealName = "测试插入用户";
+                    user.Remark = "测试插入用户" + i;
+                    user.Password = "123456";
+                    user.CreateUserid = "1";
+                    user.CreateTime = DateTime.Now;
+                    userList.Add(user);
+                }
+
+                Log("循环添加 开始 count=" + userList.Count);
+                DateTime dt = DateTime.Now;
+
+                List<Task> tasks = new List<Task>();
+                foreach (SysUser item in userList)
+                {
+                    var task = RunTask(user =>
+                    {
+                        LiteSqlFactory.GetSession().Insert(user);
+                    }, item);
+                    tasks.Add(task);
+                }
+                Task.WaitAll(tasks.ToArray());
+
+                string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
+                Log("循环添加 完成，耗时：" + time + "秒");
             });
         }
         #endregion

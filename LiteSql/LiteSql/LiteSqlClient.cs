@@ -38,14 +38,16 @@ namespace LiteSql
         /// <param name="connectionString">数据库连接字符串</param>
         /// <param name="dbType">数据库类型</param>
         /// <param name="provider">数据库Provider</param>
+        /// <param name="maxPoolSize">数据库最大连接池大小</param>
         /// <param name="autoIncrement">主键自增全局配置(如果实体类或实体类的主键添加了AutoIncrementAttribute特性则不使用全局配置)</param>
-        public LiteSqlClient(string connectionString, DBType dbType, IProvider provider, bool autoIncrement = false)
+        public LiteSqlClient(string connectionString, DBType dbType, IProvider provider, int maxPoolSize = 50, bool autoIncrement = false)
         {
             _connectionString = connectionString;
             _dbType = dbType;
             _autoIncrement = autoIncrement;
 
             ProviderFactory.RegisterDBProvider(dbType, provider);
+            DbConnectionFactory.InitConnectionPool(provider, connectionString, maxPoolSize);
         }
 
         /// <summary>
@@ -54,14 +56,16 @@ namespace LiteSql
         /// <param name="connectionString">数据库连接字符串</param>
         /// <param name="providerType">数据库提供者类型</param>
         /// <param name="provider">数据库Provider</param>
+        /// <param name="maxPoolSize">数据库最大连接池大小</param>
         /// <param name="autoIncrement">主键自增全局配置(如果实体类或实体类的主键添加了AutoIncrementAttribute特性则不使用全局配置)</param>
-        public LiteSqlClient(string connectionString, Type providerType, IProvider provider, bool autoIncrement = false)
+        public LiteSqlClient(string connectionString, Type providerType, IProvider provider, int maxPoolSize = 50, bool autoIncrement = false)
         {
             _connectionString = connectionString;
             _providerType = providerType;
             _autoIncrement = autoIncrement;
 
             ProviderFactory.RegisterDBProvider(providerType, provider);
+            DbConnectionFactory.InitConnectionPool(provider, connectionString, maxPoolSize);
         }
         #endregion
 

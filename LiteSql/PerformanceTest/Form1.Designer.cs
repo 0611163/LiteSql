@@ -38,6 +38,7 @@
             this.button2 = new System.Windows.Forms.Button();
             this.button10 = new System.Windows.Forms.Button();
             this.button8 = new System.Windows.Forms.Button();
+            this.button9 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // button6
@@ -131,7 +132,7 @@
             // 
             // button8
             // 
-            this.button8.Location = new System.Drawing.Point(12, 272);
+            this.button8.Location = new System.Drawing.Point(12, 275);
             this.button8.Name = "button8";
             this.button8.Size = new System.Drawing.Size(91, 23);
             this.button8.TabIndex = 28;
@@ -139,11 +140,22 @@
             this.button8.UseVisualStyleBackColor = true;
             this.button8.Click += new System.EventHandler(this.button8_Click);
             // 
+            // button9
+            // 
+            this.button9.Location = new System.Drawing.Point(12, 316);
+            this.button9.Name = "button9";
+            this.button9.Size = new System.Drawing.Size(91, 23);
+            this.button9.TabIndex = 29;
+            this.button9.Text = "并发插入";
+            this.button9.UseVisualStyleBackColor = true;
+            this.button9.Click += new System.EventHandler(this.button9_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(767, 525);
+            this.Controls.Add(this.button9);
             this.Controls.Add(this.button8);
             this.Controls.Add(this.button10);
             this.Controls.Add(this.button2);
@@ -175,6 +187,7 @@
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button button10;
         private System.Windows.Forms.Button button8;
+        private System.Windows.Forms.Button button9;
     }
 }
 

@@ -16,14 +16,14 @@ namespace LiteSql
     internal static class DbConnectionFactory
     {
         /// <summary>
-        /// 数据库连接集合, key:数据库Provider类型名称+下划线+数据库连接字符串, value:该数据库连接字符串对应的数据库连接集合
+        /// 数据库连接池集合, key:数据库Provider类型名称+下划线+数据库连接字符串, value:数据库连接池
         /// </summary>
-        private static readonly ConcurrentDictionary<string, DbConnectionCollection> _connections = new ConcurrentDictionary<string, DbConnectionCollection>();
+        private static readonly ConcurrentDictionary<string, DbConnectionCollection> _connectionPools = new ConcurrentDictionary<string, DbConnectionCollection>();
 
         /// <summary>
         /// 数据库连接超时释放时间
         /// </summary>
-        private static readonly int _timeout = 5000;
+        private static readonly int _timeout = 10;
 
         /// <summary>
         /// 连接池最小数量
@@ -31,59 +31,75 @@ namespace LiteSql
         private static readonly int _minPoolSize = 10;
 
         /// <summary>
-        /// 锁
+        /// 定时器
         /// </summary>
-        private static readonly object _lock = new object();
+        private static readonly Timer _timer;
 
-        #region DbConnectionFactory 静态构造函数
+        #region 静态构造函数
         static DbConnectionFactory()
         {
-            //数据库连接释放定时器
-            Thread thread = new Thread(() =>
+            _timer = new Timer(obj =>
             {
-                while (true)
+                try
                 {
-                    Thread.Sleep(1000);
-
-                    try
+                    foreach (DbConnectionCollection connectionPool in _connectionPools.Values)
                     {
-                        foreach (string key in _connections.Keys)
+                        for (int i = 0; i < 10; i++)
                         {
-                            DbConnectionCollection dbConnections = _connections[key];
-                            while (dbConnections.Connections.TryDequeue(out DbConnectionExt connExt))
+                            if (connectionPool.Connections.TryDequeue(out DbConnectionExt connExt))
                             {
-                                if (!connExt.IsUsing
-                                   && DateTime.Now.Subtract(connExt.CreateTime).TotalSeconds > _timeout)
+                                //数据库连接过期重新创建
+                                if (DateTime.Now.Subtract(connExt.UpdateTime).TotalSeconds > _timeout)
                                 {
                                     connExt.Conn.Close();
+                                    DbConnection conn = connectionPool.Provider.CreateConnection(connectionPool.ConnnectionString);
+                                    connExt = new DbConnectionExt(conn, connectionPool.Provider, connectionPool.ConnnectionString);
                                 }
-                                else
-                                {
-                                    dbConnections.Connections.Enqueue(connExt);
-                                }
-                            }
 
-                            if (dbConnections.Connections.Count < _minPoolSize)
-                            {
-                                for (int i = 0; i < _minPoolSize - dbConnections.Connections.Count; i++)
-                                {
-                                    //创建连接池
-                                    DbConnection conn = dbConnections.Provider.CreateConnection(dbConnections.ConnnectionString);
-                                    conn.Open();
-                                    DbConnectionExt connExt = new DbConnectionExt(conn, dbConnections, false);
-                                    dbConnections.Connections.Enqueue(connExt);
-                                }
+                                connectionPool.Connections.Enqueue(connExt);
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                    }
                 }
-            });
-            thread.IsBackground = true;
-            thread.Start();
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }, null, 1000, 1000);
+        }
+        #endregion
+
+        #region 初始化数据库连接对象池
+        /// <summary>
+        /// 初始化数据库连接对象池
+        /// </summary>
+        public static void InitConnectionPool(IProvider provider, string connectionString, int maxPoolSize)
+        {
+            string key = GetConnectionPoolKey(provider, connectionString);
+            DbConnectionCollection connectionPool = _connectionPools.GetOrAdd(key, k => new DbConnectionCollection(provider, connectionString));
+
+            for (int i = 0; i < maxPoolSize; i++)
+            {
+                DbConnection conn = connectionPool.Provider.CreateConnection(connectionPool.ConnnectionString);
+                DbConnectionExt connExt = new DbConnectionExt(conn, provider, connectionString);
+                if (i < _minPoolSize)
+                {
+                    conn.Open();
+                }
+                connectionPool.Connections.Enqueue(connExt);
+            }
+        }
+        #endregion
+
+        #region 获取连接池
+        /// <summary>
+        /// 获取连接池
+        /// </summary>
+        internal static DbConnectionCollection GetConnectionPool(IProvider provider, string connectionString)
+        {
+            string key = GetConnectionPoolKey(provider, connectionString);
+            _connectionPools.TryGetValue(key, out DbConnectionCollection connctionPool);
+            return connctionPool;
         }
         #endregion
 
@@ -91,39 +107,26 @@ namespace LiteSql
         /// <summary>
         /// 从数据库连接池获取一个数据库连接
         /// </summary>
-        public static DbConnectionExt GetConnection(IProvider provider, string connnectionString, DbTransactionExt _tran)
+        public static DbConnectionExt GetConnection(IProvider provider, string connectionString, DbTransactionExt _tran)
         {
             if (_tran != null)
             {
-                _tran.ConnEx.Tran = _tran;
                 return _tran.ConnEx;
             }
 
-            //获取或初始化DbConnectionCollection
-            string key = provider.GetType().Name + "_" + connnectionString;
-            DbConnectionCollection dbConnections = _connections.GetOrAdd(key, k => new DbConnectionCollection(provider, connnectionString));
+            //获取连接池
+            DbConnectionCollection connectionPool = GetConnectionPool(provider, connectionString);
 
-            lock (_lock)
+            SpinWait spinWait = new SpinWait();
+            DbConnectionExt connExt;
+            while (!connectionPool.Connections.TryDequeue(out connExt))
             {
-                //从空闲数据库连接池中取数据库连接
-                dbConnections.Connections.TryDequeue(out DbConnectionExt connectionExt);
-                while (connectionExt != null && connectionExt.IsUsing)
-                {
-                    dbConnections.Connections.Enqueue(connectionExt);
-                    dbConnections.Connections.TryDequeue(out connectionExt);
-                }
-                if (connectionExt != null)
-                {
-                    connectionExt.IsUsing = true;
-                    return connectionExt;
-                }
+                spinWait.SpinOnce();
             }
-
-            //连接池没有则创建
-            DbConnection conn = provider.CreateConnection(connnectionString);
-            conn.Open();
-            DbConnectionExt connExt = new DbConnectionExt(conn, dbConnections);
-            dbConnections.Connections.Enqueue(connExt);
+            if (connExt.Conn.State != ConnectionState.Open)
+            {
+                connExt.Conn.Open();
+            }
             return connExt;
         }
         #endregion
@@ -132,40 +135,58 @@ namespace LiteSql
         /// <summary>
         /// 从数据库连接池获取一个数据库连接
         /// </summary>
-        public static async Task<DbConnectionExt> GetConnectionAsync(IProvider provider, string connnectionString, DbTransactionExt _tran)
+        public static Task<DbConnectionExt> GetConnectionAsync(IProvider provider, string connectionString, DbTransactionExt _tran)
         {
             if (_tran != null)
             {
-                _tran.ConnEx.Tran = _tran;
-                return _tran.ConnEx;
+                return Task.FromResult(_tran.ConnEx);
             }
 
-            //获取或初始化DbConnectionCollection
-            string key = provider.GetType().Name + "_" + connnectionString;
-            DbConnectionCollection dbConnections = _connections.GetOrAdd(key, k => new DbConnectionCollection(provider, connnectionString));
+            //获取连接池
+            DbConnectionCollection connectionPool = GetConnectionPool(provider, connectionString);
 
-            lock (_lock)
+            SpinWait spinWait = new SpinWait();
+            DbConnectionExt connExt;
+            while (!connectionPool.Connections.TryDequeue(out connExt))
             {
-                //从空闲数据库连接池中取数据库连接
-                dbConnections.Connections.TryDequeue(out DbConnectionExt connectionExt);
-                while (connectionExt != null && connectionExt.IsUsing)
-                {
-                    dbConnections.Connections.Enqueue(connectionExt);
-                    dbConnections.Connections.TryDequeue(out connectionExt);
-                }
-                if (connectionExt != null)
-                {
-                    connectionExt.IsUsing = true;
-                    return connectionExt;
-                }
+                spinWait.SpinOnce();
+            }
+            if (connExt.Conn.State != ConnectionState.Open)
+            {
+                connExt.Conn.Open();
+            }
+            return Task.FromResult(connExt);
+        }
+        #endregion
+
+        #region 回收数据库连接
+        /// <summary>
+        /// 回收数据库连接
+        /// </summary>
+        internal static void Release(DbConnectionExt connExt)
+        {
+            //获取连接池
+            DbConnectionCollection connectionPool = GetConnectionPool(connExt.Provider, connExt.ConnectionString);
+
+            //数据库连接过期重新创建
+            if (DateTime.Now.Subtract(connExt.UpdateTime).TotalSeconds > _timeout)
+            {
+                connExt.Conn.Close();
+                DbConnection conn = connectionPool.Provider.CreateConnection(connectionPool.ConnnectionString);
+                connExt = new DbConnectionExt(conn, connectionPool.Provider, connectionPool.ConnnectionString);
             }
 
-            //连接池没有则创建
-            DbConnection conn = provider.CreateConnection(connnectionString);
-            await conn.OpenAsync();
-            DbConnectionExt connExt = new DbConnectionExt(conn, dbConnections);
-            dbConnections.Connections.Enqueue(connExt);
-            return connExt;
+            connectionPool.Connections.Enqueue(connExt);
+        }
+        #endregion
+
+        #region 获取连接池的键
+        /// <summary>
+        /// 获取连接池的键
+        /// </summary>
+        internal static string GetConnectionPoolKey(IProvider provider, string connectionString)
+        {
+            return provider.GetType().Name + "_" + connectionString;
         }
         #endregion
 

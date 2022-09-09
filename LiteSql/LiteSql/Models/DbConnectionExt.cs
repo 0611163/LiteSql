@@ -15,9 +15,14 @@ namespace LiteSql
     internal class DbConnectionExt : IDisposable
     {
         /// <summary>
-        /// 父容器
+        /// 数据库提供者
         /// </summary>
-        public DbConnectionCollection Parent { get; set; }
+        public IProvider Provider { get; set; }
+
+        /// <summary>
+        /// 数据库连接字符串
+        /// </summary>
+        public string ConnectionString { get; set; }
 
         /// <summary>
         /// 数据库事务
@@ -30,24 +35,19 @@ namespace LiteSql
         public DbConnection Conn { get; set; }
 
         /// <summary>
-        /// 连接创建时间
+        /// 更新时间
         /// </summary>
-        public DateTime CreateTime { get; set; }
-
-        /// <summary>
-        /// 是否使用中
-        /// </summary>
-        public bool IsUsing { get; set; }
+        public DateTime UpdateTime { get; set; }
 
         /// <summary>
         /// 数据库连接扩展
         /// </summary>
-        public DbConnectionExt(DbConnection conn, DbConnectionCollection parent, bool isUsing = true)
+        public DbConnectionExt(DbConnection conn, IProvider provider, string connectionString)
         {
             Conn = conn;
-            Parent = parent;
-            CreateTime = DateTime.Now;
-            IsUsing = isUsing;
+            Provider = provider;
+            ConnectionString = connectionString;
+            UpdateTime = DateTime.Now;
         }
 
         /// <summary>
@@ -57,49 +57,8 @@ namespace LiteSql
         {
             if (Tran == null)
             {
-                IsUsing = false;
-                Parent.Connections.Enqueue(this);
+                DbConnectionFactory.Release(this);
             }
         }
     }
-
-    #region DbConnectionCollection 数据库连接集合
-    /// <summary>
-    /// 数据库连接集合
-    /// </summary>
-    internal class DbConnectionCollection
-    {
-        /// <summary>
-        /// key:数据库Provider类型名称+下划线+数据库连接字符串
-        /// </summary>
-        public string Key { get; set; }
-
-        /// <summary>
-        /// 数据库Provider
-        /// </summary>
-        public IProvider Provider { get; set; }
-
-        /// <summary>
-        /// 数据库连接字符串
-        /// </summary>
-        public string ConnnectionString { get; set; }
-
-        /// <summary>
-        /// 数据库连接集合
-        /// </summary>
-        public ConcurrentQueue<DbConnectionExt> Connections { get; set; }
-
-        /// <summary>
-        /// 数据库连接集合 构造函数
-        /// </summary>
-        public DbConnectionCollection(IProvider provider, string connnectionString)
-        {
-            Connections = new ConcurrentQueue<DbConnectionExt>();
-            Provider = provider;
-            ConnnectionString = connnectionString;
-            Key = provider.GetType().Name + "_" + connnectionString;
-        }
-    }
-    #endregion
-
 }

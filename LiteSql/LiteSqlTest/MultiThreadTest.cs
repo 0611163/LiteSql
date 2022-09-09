@@ -43,7 +43,6 @@ namespace LiteSqlTest
         {
             ThreadPool.SetMaxThreads(1000, 1000);
             ThreadPool.SetMinThreads(200, 200);
-            ServiceHelper.Get<BsOrderDal>().Preheat();  //预热
         }
         #endregion
 
