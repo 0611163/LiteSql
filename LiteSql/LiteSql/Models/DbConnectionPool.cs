@@ -10,13 +10,8 @@ namespace LiteSql
     /// <summary>
     /// 数据库连接集合
     /// </summary>
-    internal class DbConnectionCollection
+    internal class DbConnectionPool
     {
-        /// <summary>
-        /// key:数据库Provider类型名称+下划线+数据库连接字符串
-        /// </summary>
-        public string Key { get; set; }
-
         /// <summary>
         /// 数据库Provider
         /// </summary>
@@ -35,12 +30,11 @@ namespace LiteSql
         /// <summary>
         /// 数据库连接集合 构造函数
         /// </summary>
-        public DbConnectionCollection(IProvider provider, string connectionString)
+        public DbConnectionPool(IProvider provider, string connectionString)
         {
             Connections = new ConcurrentQueue<DbConnectionExt>();
             Provider = provider;
             ConnnectionString = connectionString;
-            Key = DbConnectionFactory.GetConnectionPoolKey(provider, connectionString);
         }
     }
 }

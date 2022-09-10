@@ -20,7 +20,7 @@ namespace LiteSql
             List<T> list = new List<T>();
             IDataReader rd = null;
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 try
                 {
@@ -55,7 +55,7 @@ namespace LiteSql
             List<T> list = new List<T>();
             IDataReader rd = null;
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 try
                 {
@@ -91,7 +91,7 @@ namespace LiteSql
             List<T> list = new List<T>();
             IDataReader rd = null;
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 try
                 {
@@ -126,7 +126,7 @@ namespace LiteSql
             List<T> list = new List<T>();
             IDataReader rd = null;
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 try
                 {

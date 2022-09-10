@@ -12,7 +12,7 @@ namespace LiteSql
     /// <summary>
     /// 数据库连接扩展
     /// </summary>
-    internal class DbConnectionExt : IDisposable
+    public class DbConnectionExt : IDisposable
     {
         /// <summary>
         /// 数据库提供者
@@ -40,13 +40,19 @@ namespace LiteSql
         public DateTime UpdateTime { get; set; }
 
         /// <summary>
+        /// 数据库连接工厂
+        /// </summary>
+        public DbConnectionFactory ConnFactory { get; set; }
+
+        /// <summary>
         /// 数据库连接扩展
         /// </summary>
-        public DbConnectionExt(DbConnection conn, IProvider provider, string connectionString)
+        public DbConnectionExt(DbConnection conn, IProvider provider, string connectionString, DbConnectionFactory connFactory)
         {
             Conn = conn;
             Provider = provider;
             ConnectionString = connectionString;
+            ConnFactory = connFactory;
             UpdateTime = DateTime.Now;
         }
 
@@ -57,7 +63,7 @@ namespace LiteSql
         {
             if (Tran == null)
             {
-                DbConnectionFactory.Release(this);
+                ConnFactory.Release(this);
             }
         }
     }

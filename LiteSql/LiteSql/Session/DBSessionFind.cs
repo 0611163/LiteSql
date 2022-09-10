@@ -209,7 +209,7 @@ namespace LiteSql
             IDataReader rd = null;
             bool hasValue = false;
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 try
                 {
@@ -259,7 +259,7 @@ namespace LiteSql
             IDataReader rd = null;
             bool hasValue = false;
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 try
                 {

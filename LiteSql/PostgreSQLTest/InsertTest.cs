@@ -8,16 +8,19 @@ namespace PostgreSQLTest
 {
     public partial class PostgreSQLTest
     {
+        public PostgreSQLTest()
+        {
+            LiteSqlFactory.GetSession(); //预热
+        }
+
         [TestMethod]
         public void Test1Insert()
         {
             try
             {
                 int id;
-                using (var session = LiteSqlFactory.GetSession())
-                {
-                    id = session.QueryNextId<SysUser>();
-                }
+                var session = LiteSqlFactory.GetSession();
+                id = session.QueryNextId<SysUser>();
 
                 SysUser user = new SysUser();
                 user.Id = id;
@@ -27,18 +30,15 @@ namespace PostgreSQLTest
                 user.Createuserid = "1";
                 user.Height = 175;
 
-                using (var session = LiteSqlFactory.GetSession())
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                    user.Createtime = DateTime.Now;
-                    session.Insert(user);
+                user.Createtime = DateTime.Now;
+                session.Insert(user);
 
-                    long count = session.CreateSql(
-                        "select * from sys_user where \"Id\" = @Id", new { Id = user.Id })
-                        .QueryCount();
-                    Assert.IsTrue(count > 0);
-                }
+                long count = session.CreateSql(
+                    "select * from sys_user where \"Id\" = @Id", new { Id = user.Id })
+                    .QueryCount();
+                Assert.IsTrue(count > 0);
 
                 Console.WriteLine("user.Id=" + user.Id);
             }
@@ -54,12 +54,10 @@ namespace PostgreSQLTest
         public void Test2InsertList()
         {
             int id;
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+            var session = LiteSqlFactory.GetSession();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                id = session.QueryNextId<SysUser>();
-            }
+            id = session.QueryNextId<SysUser>();
 
             List<SysUser> userList = new List<SysUser>();
             for (int i = 1; i <= 1000; i++)
@@ -75,24 +73,21 @@ namespace PostgreSQLTest
                 userList.Add(user);
             }
 
-            using (var session = LiteSqlFactory.GetSession())
+            try
             {
-                try
-                {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-                    session.BeginTransaction();
-                    session.Insert(userList);
-                    session.CommitTransaction();
+                session.BeginTransaction();
+                session.Insert(userList);
+                session.CommitTransaction();
 
-                    int count = session.QuerySingle<int>("select count(*) from sys_user");
-                    Assert.IsTrue(count >= 1000);
-                }
-                catch
-                {
-                    session.RollbackTransaction();
-                    throw;
-                }
+                int count = session.QuerySingle<int>("select count(*) from sys_user");
+                Assert.IsTrue(count >= 1000);
+            }
+            catch (Exception ex)
+            {
+                session.RollbackTransaction();
+                throw;
             }
         }
         #endregion

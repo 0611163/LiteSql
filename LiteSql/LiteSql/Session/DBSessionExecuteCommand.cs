@@ -75,7 +75,7 @@ namespace LiteSql
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
                 {
@@ -98,7 +98,7 @@ namespace LiteSql
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
 
-            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
+            using (_conn = await _connFactory.GetConnectionAsync(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
                 {
@@ -122,7 +122,7 @@ namespace LiteSql
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
                 {
@@ -146,7 +146,7 @@ namespace LiteSql
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
 
-            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
+            using (_conn = await _connFactory.GetConnectionAsync(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
                 {
@@ -358,7 +358,7 @@ namespace LiteSql
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
                 {
@@ -382,7 +382,7 @@ namespace LiteSql
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
 
-            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
+            using (_conn = await _connFactory.GetConnectionAsync(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
                 {
@@ -408,7 +408,7 @@ namespace LiteSql
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
 
-            using (_conn = DbConnectionFactory.GetConnection(_provider, _connectionString, _tran))
+            using (_conn = _connFactory.GetConnection(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
                 {
@@ -432,7 +432,7 @@ namespace LiteSql
         {
             OnExecuting?.Invoke(SQLString, cmdParms);
 
-            using (_conn = await DbConnectionFactory.GetConnectionAsync(_provider, _connectionString, _tran))
+            using (_conn = await _connFactory.GetConnectionAsync(_tran))
             {
                 using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
                 {

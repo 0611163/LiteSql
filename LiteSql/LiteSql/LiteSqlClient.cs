@@ -29,6 +29,11 @@ namespace LiteSql
         /// 主键自增全局配置
         /// </summary>
         private bool _autoIncrement;
+
+        /// <summary>
+        /// 数据库连接池
+        /// </summary>
+        private DbConnectionFactory _connFactory;
         #endregion
 
         #region 构造函数
@@ -47,7 +52,7 @@ namespace LiteSql
             _autoIncrement = autoIncrement;
 
             ProviderFactory.RegisterDBProvider(dbType, provider);
-            DbConnectionFactory.InitConnectionPool(provider, connectionString, maxPoolSize);
+            _connFactory = new DbConnectionFactory(provider, connectionString, maxPoolSize);
         }
 
         /// <summary>
@@ -65,7 +70,7 @@ namespace LiteSql
             _autoIncrement = autoIncrement;
 
             ProviderFactory.RegisterDBProvider(providerType, provider);
-            DbConnectionFactory.InitConnectionPool(provider, connectionString, maxPoolSize);
+            _connFactory = new DbConnectionFactory(provider, connectionString, maxPoolSize);
         }
         #endregion
 
@@ -79,11 +84,11 @@ namespace LiteSql
 
             if (_dbType != null)
             {
-                dbSession = new DBSession(_connectionString, _dbType.Value, splitTableMapping, _autoIncrement);
+                dbSession = new DBSession(_connectionString, _dbType.Value, splitTableMapping, _connFactory, _autoIncrement);
             }
             else
             {
-                dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _autoIncrement);
+                dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _connFactory, _autoIncrement);
             }
             return dbSession;
         }
@@ -99,11 +104,11 @@ namespace LiteSql
 
             if (_dbType != null)
             {
-                dbSession = new DBSession(_connectionString, _dbType.Value, splitTableMapping, _autoIncrement);
+                dbSession = new DBSession(_connectionString, _dbType.Value, splitTableMapping, _connFactory, _autoIncrement);
             }
             else
             {
-                dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _autoIncrement);
+                dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _connFactory, _autoIncrement);
             }
             return Task.FromResult(dbSession as ISession);
         }

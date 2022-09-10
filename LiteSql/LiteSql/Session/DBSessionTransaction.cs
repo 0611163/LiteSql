@@ -14,7 +14,7 @@ namespace LiteSql
         /// </summary>
         public void BeginTransaction()
         {
-            _conn = DbConnectionFactory.GetConnection(_provider, _connectionString, null);
+            _conn = _connFactory.GetConnection(null);
             _tran = new DbTransactionExt(_conn.Conn.BeginTransaction(), _conn);
         }
         #endregion
@@ -42,7 +42,7 @@ namespace LiteSql
                 _tran.Tran = null;
                 _tran = null;
                 _conn.Tran = null;
-                DbConnectionFactory.Release(_conn);
+                _connFactory.Release(_conn);
             }
         }
         #endregion
