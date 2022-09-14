@@ -22,6 +22,7 @@ namespace PerformanceTest
         private SysUserDal m_SysUserDal = ServiceHelper.Get<SysUserDal>();
         private Random _rnd = new Random();
         private int _count = 10000;
+        private bool _printSql = false;
         #endregion
 
         #region Form1
@@ -36,7 +37,7 @@ namespace PerformanceTest
         {
             RunTask(() =>
             {
-                m_BsOrderDal.Preheat(); //预热
+                LiteSqlFactory.GetSession();  //预热
                 Log("预热完成");
             });
         }
@@ -83,7 +84,6 @@ namespace PerformanceTest
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    throw;
                 }
             });
         }
@@ -99,9 +99,15 @@ namespace PerformanceTest
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    throw;
                 }
             }, t);
+        }
+        #endregion
+
+        #region cbxPrintSql_Click
+        private void cbxPrintSql_Click(object sender, EventArgs e)
+        {
+            _printSql = cbxPrintSql.Checked;
         }
         #endregion
 
@@ -112,7 +118,7 @@ namespace PerformanceTest
             {
                 Log("删除 开始");
                 var session = LiteSqlFactory.GetSession();
-                session.DeleteByCondition<SysUser>(string.Format("id>=12"));
+                session.CreateSql("id>@Id", 12).DeleteByCondition<SysUser>();
                 Log("删除 完成");
             });
         }
@@ -129,14 +135,13 @@ namespace PerformanceTest
                 DateTime dt = DateTime.Now;
 
                 var session = LiteSqlFactory.GetSession();
+                if (_printSql)
+                {
+                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                }
 
                 try
                 {
-                    session.OnExecuting = (sql, param) =>
-                    {
-                        Console.WriteLine(sql); //打印SQL
-                    };
-
                     session.AttachOld(userList);
                     foreach (SysUser user in userList)
                     {
@@ -183,11 +188,13 @@ namespace PerformanceTest
                 DateTime dt = DateTime.Now;
 
                 var session = LiteSqlFactory.GetSession();
+                if (_printSql)
+                {
+                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                }
 
                 try
                 {
-                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
                     session.BeginTransaction();
                     session.Insert(userList);
                     session.CommitTransaction();
@@ -215,14 +222,13 @@ namespace PerformanceTest
                 DateTime dt = DateTime.Now;
 
                 var session = LiteSqlFactory.GetSession();
+                if (_printSql)
+                {
+                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                }
 
                 try
                 {
-                    session.OnExecuting = (sql, param) =>
-                    {
-                        Console.WriteLine(sql); //打印SQL
-                    };
-
                     session.AttachOld(userList);
                     foreach (SysUser user in userList)
                     {
@@ -272,14 +278,13 @@ namespace PerformanceTest
                 DateTime dt = DateTime.Now;
 
                 var session = LiteSqlFactory.GetSession();
+                if (_printSql)
+                {
+                    session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+                }
 
                 try
                 {
-                    session.OnExecuting = (sql, param) =>
-                    {
-                        Console.WriteLine(sql); //打印SQL
-                    };
-
                     session.BeginTransaction();
                     foreach (SysUser user in userList)
                     {
@@ -370,14 +375,18 @@ namespace PerformanceTest
         #region 并发查询
         private void button8_Click(object sender, EventArgs e)
         {
+            ThreadPool.SetMaxThreads(1000, 1000);
+            ThreadPool.SetMinThreads(200, 200);
+
             RunTask(() =>
             {
-                Log("查询 开始");
+                Log("并发查询 开始");
                 DateTime dt = DateTime.Now;
 
                 List<Task> tasks = new List<Task>();
-                for (int i = 0; i < 200; i++)
+                for (int i = 1; i <= 1000; i++)
                 {
+                    int index = i;
                     Task task = RunTask(() =>
                     {
                         var session = LiteSqlFactory.GetSession();
@@ -391,14 +400,14 @@ namespace PerformanceTest
                         sql.Append(" order by t.create_time desc, t.id asc");
 
                         List<SysUser> userList = sql.QueryList<SysUser>();
-                        Log("查询结果 count=" + userList.Count.ToString());
+                        if (index % 50 == 0) Log("第" + index + "次查询结果 count=" + userList.Count);
                     });
                     tasks.Add(task);
                 }
                 Task.WaitAll(tasks.ToArray());
 
                 string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-                Log("查询 完成，耗时：" + time + "秒");
+                Log("并发查询 完成，耗时：" + time + "秒");
             });
         }
         #endregion
@@ -424,7 +433,7 @@ namespace PerformanceTest
                     userList.Add(user);
                 }
 
-                Log("循环添加 开始 count=" + userList.Count);
+                Log("并发插入 开始 count=" + userList.Count);
                 DateTime dt = DateTime.Now;
 
                 List<Task> tasks = new List<Task>();
@@ -439,7 +448,7 @@ namespace PerformanceTest
                 Task.WaitAll(tasks.ToArray());
 
                 string time = DateTime.Now.Subtract(dt).TotalSeconds.ToString("0.000");
-                Log("循环添加 完成，耗时：" + time + "秒");
+                Log("并发插入 完成，耗时：" + time + "秒");
             });
         }
         #endregion
