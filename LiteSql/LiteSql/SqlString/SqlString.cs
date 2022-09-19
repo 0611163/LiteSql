@@ -299,6 +299,146 @@ namespace LiteSql
         }
         #endregion
 
+        #region Where
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString Where(string sql, params object[] args)
+        {
+            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            {
+                return Append("and " + sql, args);
+            }
+            else
+            {
+                return Append("where " + sql, args);
+            }
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> Where<T>(string sql, params object[] args) where T : new()
+        {
+            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            {
+                return Append<T>("and " + sql, args);
+            }
+            else
+            {
+                return Append<T>("where " + sql, args);
+            }
+        }
+        #endregion
+
+        #region WhereIf
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString WhereIf(bool condition, string sql, params object[] args)
+        {
+            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            {
+                return AppendIf(condition, "and " + sql, args);
+            }
+            else
+            {
+                return AppendIf(condition, "where " + sql, args);
+            }
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> WhereIf<T>(bool condition, string sql, params object[] args) where T : new()
+        {
+            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            {
+                return AppendIf<T>(condition, "and " + sql, args);
+            }
+            else
+            {
+                return AppendIf<T>(condition, "where " + sql, args);
+            }
+        }
+        #endregion
+
+        #region Having
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString Having(string sql, params object[] args)
+        {
+            return Append("having " + sql, args);
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> Having<T>(string sql, params object[] args) where T : new()
+        {
+            return Append<T>("having " + sql, args);
+        }
+        #endregion
+
+        #region Group By
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString GroupBy(string sql, params object[] args)
+        {
+            return Append("group by " + sql, args);
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> GroupBy<T>(string sql, params object[] args) where T : new()
+        {
+            return Append<T>("group by " + sql, args);
+        }
+        #endregion
+
+        #region Order By
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString OrderBy(string sql, params object[] args)
+        {
+            return Append("order by " + sql, args);
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> OrderBy<T>(string sql, params object[] args) where T : new()
+        {
+            return Append<T>("order by " + sql, args);
+        }
+        #endregion
+
         #region AppendFormat
         /// <summary>
         /// 封装 StringBuilder AppendFormat 追加非参数化SQL

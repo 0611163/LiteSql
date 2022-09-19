@@ -76,8 +76,7 @@ namespace LiteSqlTest
                 ISqlString sql = session.CreateSql(@"
                     select t.*, u.real_name as OrderUserRealName
                     from bs_order t
-                    left join sys_user u on t.order_userid=u.id
-                    where 1=1");
+                    left join sys_user u on t.order_userid=u.id");
 
                 sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
@@ -389,6 +388,112 @@ namespace LiteSqlTest
                 Console.WriteLine(ModelToStringUtil.ToString(item));
             }
             Assert.IsTrue(list.Count > 0);
+        }
+
+        [TestMethod]
+        public void TestGroupBy3()
+        {
+            var session = LiteSqlFactory.GetSession();
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            List<BsOrder> list = session.Queryable<BsOrder>(o => new { o.Id, o.Remark, o.OrderTime })
+                .Select("sum(d.price * d.quantity) as Amount")
+                .LeftJoin<BsOrderDetail>((o, d) => o.Id == d.OrderId)
+                .GroupBy("o.id, o.remark, o.order_time")
+                .Having("Amount > @Amount", new { Amount = 1000 })
+                .OrderBy("Amount desc").QueryList<BsOrder>();
+
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
+            }
+            Assert.IsTrue(list.Count > 0);
+        }
+        #endregion
+
+        #region TestWhere
+        [TestMethod]
+        public void TestWhere()
+        {
+            int? status = 0;
+            string remark = "订单";
+            string ids = "100001,100002,100003";
+            DateTime? startTime = new DateTime(2020, 1, 1);
+            DateTime? endTime = DateTime.Now.AddDays(1);
+
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            ISqlString sql = session.CreateSql(@"
+                    select t.*, u.real_name as OrderUserRealName
+                    from bs_order t
+                    left join sys_user u on t.order_userid=u.id");
+
+            sql.Where("t.status=@status", status);
+
+            sql.Where("t.remark like @remark", sql.ForContains(remark));
+
+            sql.Where("t.order_time >= @startTime ", startTime);
+
+            sql.Where("t.order_time <= @endTime ", endTime);
+
+            sql.Where("t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
+
+            sql.OrderBy("t.order_time desc, t.id asc ");
+
+            Assert.IsTrue(sql.SQL.Contains("and t.order_time >="));
+            Assert.IsTrue(sql.SQL.Contains("and t.order_time <="));
+
+            List<BsOrder> list = session.QueryList<BsOrder>(sql);
+
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
+            }
+        }
+        #endregion
+
+        #region TestWhereIf
+        [TestMethod]
+        public void TestWhereIf()
+        {
+            int? status = 0;
+            string remark = "订单";
+            string ids = "100001,100002,100003";
+            DateTime? startTime = null;
+            DateTime? endTime = DateTime.Now.AddDays(1);
+
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
+
+            ISqlString sql = session.CreateSql(@"
+                    select t.*, u.real_name as OrderUserRealName
+                    from bs_order t
+                    left join sys_user u on t.order_userid=u.id");
+
+            sql.WhereIf(status.HasValue, "t.status=@status", status);
+
+            sql.WhereIf(!string.IsNullOrWhiteSpace(remark), "t.remark like @remark", sql.ForContains(remark));
+
+            sql.WhereIf(startTime.HasValue, "t.order_time >= @startTime ", startTime);
+
+            sql.WhereIf(endTime.HasValue, "t.order_time <= @endTime ", endTime);
+
+            sql.Where("t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
+
+            sql.OrderBy("t.order_time desc, t.id asc ");
+
+            Assert.IsFalse(sql.SQL.Contains("and t.order_time >="));
+            Assert.IsTrue(sql.SQL.Contains("and t.order_time <="));
+
+            List<BsOrder> list = session.QueryList<BsOrder>(sql);
+
+            foreach (BsOrder item in list)
+            {
+                Console.WriteLine(ModelToStringUtil.ToString(item));
+            }
         }
         #endregion
 
