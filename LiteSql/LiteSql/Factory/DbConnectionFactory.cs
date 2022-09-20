@@ -127,11 +127,11 @@ namespace LiteSql
         /// <summary>
         /// 从数据库连接池获取一个数据库连接
         /// </summary>
-        public Task<DbConnectionExt> GetConnectionAsync(DbTransactionExt _tran)
+        public async Task<DbConnectionExt> GetConnectionAsync(DbTransactionExt _tran)
         {
             if (_tran != null)
             {
-                return Task.FromResult(_tran.ConnEx);
+                return _tran.ConnEx;
             }
 
             SpinWait spinWait = new SpinWait();
@@ -142,9 +142,9 @@ namespace LiteSql
             }
             if (connExt.Conn.State != ConnectionState.Open)
             {
-                connExt.Conn.Open();
+                await connExt.Conn.OpenAsync();
             }
-            return Task.FromResult(connExt);
+            return connExt;
         }
         #endregion
 
