@@ -316,15 +316,19 @@ namespace PerformanceTest
                 {
                     var session = LiteSqlFactory.GetSession();
 
-                    ISqlString sql = session.CreateSql(@"
-                        select t.* 
-                        from sys_user t 
-                        where t.id > @id 
-                        and t.real_name like @remark", 20, "%测试%");
+                    session.OnExecuting = (s, p) =>
+                    {
+                        if (_printSql)
+                        {
+                            Console.WriteLine(s);
+                        }
+                    };
 
-                    sql.Append(" order by t.create_time desc, t.id asc");
+                    List<SysUser> userList = session.Queryable<SysUser>()
+                        .Where(t => t.Id > 20 && t.Remark.Contains("测试"))
+                        .OrderByDescending(t => t.CreateTime)
+                        .OrderBy(t => t.Id).ToList();
 
-                    List<SysUser> userList = sql.QueryList<SysUser>();
                     Log("查询结果 count=" + userList.Count.ToString());
                 }
 

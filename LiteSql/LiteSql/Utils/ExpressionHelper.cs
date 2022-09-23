@@ -141,7 +141,7 @@ namespace LiteSql
             ExpValue left = VisitConditions(exp.Left);
             ExpValue right = VisitConditions(exp.Right);
 
-            result.Sql = string.Format(" {0} {1} {2} ", left.Sql, ToSqlOperator(exp.NodeType), right.Sql);
+            result.Sql = string.Format(" ({0} {1} {2}) ", left.Sql, ToSqlOperator(exp.NodeType), right.Sql);
             result.Type = ExpValueType.SqlAndDbParameter;
 
             result.DbParameters.AddRange(left.DbParameters);
@@ -208,13 +208,13 @@ namespace LiteSql
                             string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
 
                             result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
-                            result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), string.Format(sqlValue.Sql, markKey));
+                            result.Sql = string.Format(" ({0}.{1} {2} {3}) ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), string.Format(sqlValue.Sql, markKey));
                         }
                         else
                         {
                             string markKey = _provider.GetParameterName(left.MemberAliasName, right.Value.GetType());
                             result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
-                            result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), markKey);
+                            result.Sql = string.Format(" ({0}.{1} {2} {3}) ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), markKey);
                         }
                     }
                 }
