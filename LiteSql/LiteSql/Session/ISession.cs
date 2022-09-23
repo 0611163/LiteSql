@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -50,6 +51,13 @@ namespace LiteSql
         /// </summary>
         /// <typeparam name="T">实体类</typeparam>
         int QueryNextId<T>();
+        #endregion
+
+        #region ForList
+        /// <summary>
+        /// 创建 in 或 not in SQL
+        /// </summary>
+        SqlValue ForList(IList list);
         #endregion
 
     }

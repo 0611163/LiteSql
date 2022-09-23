@@ -175,27 +175,6 @@ namespace LiteSql
         string ToString();
 
         /// <summary>
-        /// 创建 Like SQL
-        /// </summary>
-        SqlValue ForContains(string value);
-
-        /// <summary>
-        /// 创建 Like SQL
-        /// </summary>
-        SqlValue ForStartsWith(string value);
-
-        /// <summary>
-        /// 创建 Like SQL
-        /// </summary>
-        SqlValue ForEndsWith(string value);
-
-        /// <summary>
-        /// 创建 日期时间类型转换 SQL
-        /// </summary>
-        /// <param name="dateTime">日期时间</param>
-        SqlValue ForDateTime(DateTime dateTime);
-
-        /// <summary>
         /// 创建 in 或 not in SQL
         /// </summary>
         SqlValue ForList(IList list);

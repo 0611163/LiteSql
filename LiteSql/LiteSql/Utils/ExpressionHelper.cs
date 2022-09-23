@@ -203,7 +203,7 @@ namespace LiteSql
                     {
                         if (right.Value.GetType() == typeof(DateTime))
                         {
-                            SqlValue sqlValue = _provider.ForDateTime((DateTime)right.Value);
+                            SqlValue sqlValue = new SqlValue(right.Value);
                             Type parameterType = sqlValue.Value == null ? typeof(object) : sqlValue.Value.GetType();
                             string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
 
@@ -240,9 +240,9 @@ namespace LiteSql
                     && (exp.Object as MemberExpression).Type.Name != typeof(List<>).Name)
                 {
                     SqlValue sqlValue = null;
-                    if (exp.Method.Name == "Contains") sqlValue = _sqlString.ForContains(InvokeValue(exp.Arguments[0]).ToString());
-                    if (exp.Method.Name == "StartsWith") sqlValue = _sqlString.ForStartsWith(InvokeValue(exp.Arguments[0]).ToString());
-                    if (exp.Method.Name == "EndsWith") sqlValue = _sqlString.ForEndsWith(InvokeValue(exp.Arguments[0]).ToString());
+                    if (exp.Method.Name == "Contains") sqlValue = new SqlValue("%" + InvokeValue(exp.Arguments[0]).ToString() + "%");
+                    if (exp.Method.Name == "StartsWith") sqlValue = new SqlValue(InvokeValue(exp.Arguments[0]).ToString() + "%");
+                    if (exp.Method.Name == "EndsWith") sqlValue = new SqlValue("%" + InvokeValue(exp.Arguments[0]).ToString());
                     ExpValue expValue = VisitMember(exp.Object as MemberExpression, null);
 
                     expValue.MemberAliasName = GetAliasName(expValue.MemberAliasName);

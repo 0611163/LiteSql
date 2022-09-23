@@ -601,11 +601,11 @@ public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime,
 
     sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", sql.ForContains(remark));
+    sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
 
-    sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => sql.ForDateTime(startTime.Value));
+    sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
 
-    sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => sql.ForDateTime(endTime.Value));
+    sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
 
     sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
 
@@ -1086,34 +1086,6 @@ namespace PostgreSQLTest
         }
         #endregion
 
-        #region ForContains
-        public SqlValue ForContains(string value)
-        {
-            return new SqlValue("%" + value + "%");
-        }
-        #endregion
-
-        #region ForStartsWith
-        public SqlValue ForStartsWith(string value)
-        {
-            return new SqlValue(value + "%");
-        }
-        #endregion
-
-        #region ForEndsWith
-        public SqlValue ForEndsWith(string value)
-        {
-            return new SqlValue("%" + value);
-        }
-        #endregion
-
-        #region ForDateTime
-        public SqlValue ForDateTime(DateTime dateTime)
-        {
-            return new SqlValue(dateTime);
-        }
-        #endregion
-
         #region ForList
         public SqlValue ForList(IList list)
         {
@@ -1312,27 +1284,7 @@ namespace LiteSql.Provider
         }
         #endregion
 
-        #region For Lambda
-
-        public SqlValue ForContains(string value)
-        {
-            return new SqlValue("%" + value + "%");
-        }
-
-        public SqlValue ForStartsWith(string value)
-        {
-            return new SqlValue(value + "%");
-        }
-
-        public SqlValue ForEndsWith(string value)
-        {
-            return new SqlValue("%" + value);
-        }
-
-        public SqlValue ForDateTime(DateTime dateTime)
-        {
-            return new SqlValue(dateTime);
-        }
+        #region ForList
 
         public SqlValue ForList(IList list)
         {

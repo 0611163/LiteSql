@@ -398,7 +398,7 @@ namespace DAL
         }
         #endregion
 
-        #region 查询集合(使用 ForContains、ForStartsWith、ForEndsWith、ForDateTime 等辅助方法)
+        #region 查询集合(使用 ForList 辅助方法)
         /// <summary>
         /// 查询集合
         /// </summary>
@@ -414,11 +414,11 @@ namespace DAL
 
             sql.AppendIf(status.HasValue, " and t.status=@status", status);
 
-            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", sql.ForContains(remark));
+            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
 
-            sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => sql.ForDateTime(startTime.Value));
+            sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => startTime);
 
-            sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => sql.ForDateTime(endTime.Value));
+            sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => endTime);
 
             sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
 

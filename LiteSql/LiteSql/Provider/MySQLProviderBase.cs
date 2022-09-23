@@ -122,34 +122,6 @@ namespace LiteSql
         }
         #endregion
 
-        #region ForContains
-        public SqlValue ForContains(string value)
-        {
-            return new SqlValue("%" + value + "%");
-        }
-        #endregion
-
-        #region ForStartsWith
-        public SqlValue ForStartsWith(string value)
-        {
-            return new SqlValue(value + "%");
-        }
-        #endregion
-
-        #region ForEndsWith
-        public SqlValue ForEndsWith(string value)
-        {
-            return new SqlValue("%" + value);
-        }
-        #endregion
-
-        #region ForDateTime
-        public SqlValue ForDateTime(DateTime dateTime)
-        {
-            return new SqlValue(dateTime);
-        }
-        #endregion
-
         #region ForList
         public SqlValue ForList(IList list)
         {

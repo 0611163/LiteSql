@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -193,6 +194,16 @@ namespace LiteSql
             {
                 return int.Parse(obj.ToString()) + 1;
             }
+        }
+        #endregion
+
+        #region ForList
+        /// <summary>
+        /// 创建 in 或 not in SQL
+        /// </summary>
+        public SqlValue ForList(IList list)
+        {
+            return _provider.ForList(list);
         }
         #endregion
 
