@@ -670,6 +670,7 @@ namespace LiteSql
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         public int DeleteByCondition<T>()
         {
             return _session.DeleteByCondition<T>(this);
@@ -678,6 +679,7 @@ namespace LiteSql
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         public Task<int> DeleteByConditionAsync<T>()
         {
             return _session.DeleteByConditionAsync<T>(this);
@@ -686,6 +688,7 @@ namespace LiteSql
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         public int DeleteByCondition(Type type)
         {
             return _session.DeleteByCondition(type, this);
@@ -694,7 +697,41 @@ namespace LiteSql
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         public Task<int> DeleteByConditionAsync(Type type)
+        {
+            return _session.DeleteByConditionAsync(type, this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        [Obsolete]
+        public int Delete<T>()
+        {
+            return _session.DeleteByCondition<T>(this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public Task<int> DeleteAsync<T>()
+        {
+            return _session.DeleteByConditionAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public int Delete(Type type)
+        {
+            return _session.DeleteByCondition(type, this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        public Task<int> DeleteAsync(Type type)
         {
             return _session.DeleteByConditionAsync(type, this);
         }

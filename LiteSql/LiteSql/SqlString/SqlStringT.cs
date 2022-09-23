@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace LiteSql
@@ -564,6 +565,60 @@ namespace LiteSql
         public new async Task<bool> ExistsAsync()
         {
             return await _session.ExistsAsync(this.SQL, this.Params);
+        }
+        #endregion
+
+        #region Delete
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public int Delete()
+        {
+            string[] sqlParts = this.SQL.Split(new string[] { " where " }, StringSplitOptions.None);
+            string right;
+            if (sqlParts.Length > 1)
+            {
+                right = sqlParts[1];
+            }
+            else
+            {
+                right = sqlParts[0];
+            }
+
+            Regex regex = new Regex("[\\(]?[\\s]*([\\w]+\\.)", RegexOptions.IgnoreCase);
+            Match match = regex.Match(right);
+            if (match.Success)
+            {
+                right = right.Replace(match.Groups[1].Value, " ");
+            }
+
+            return _session.DeleteByCondition<T>(right, this.Params);
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public Task<int> DeleteAsync()
+        {
+            string[] sqlParts = this.SQL.Split(new string[] { " where " }, StringSplitOptions.None);
+            string right;
+            if (sqlParts.Length > 1)
+            {
+                right = sqlParts[1];
+            }
+            else
+            {
+                right = sqlParts[0];
+            }
+
+            Regex regex = new Regex("[\\(]?[\\s]*([\\w]+\\.)", RegexOptions.IgnoreCase);
+            Match match = regex.Match(right);
+            if (match.Success)
+            {
+                right = right.Replace(match.Groups[1].Value, " ");
+            }
+
+            return _session.DeleteByConditionAsync<T>(right, this.Params);
         }
         #endregion
 

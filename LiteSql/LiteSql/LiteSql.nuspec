@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>LiteSql</id>
-    <version>1.7.11</version>
+    <version>1.7.12</version>
     <title>LiteSql</title>
     <authors>suxiang</authors>
     <owners></owners>
@@ -10,7 +10,9 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/0611163/LiteSql</projectUrl>
     <description>一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。</description>
-    <releaseNotes>接口无变化。代码中数据库连接池一处Open修改成OpenAsync。</releaseNotes>
+    <releaseNotes>1. ISqlQueryable接口增加Delete和DeleteAsync方法。 
+2. 修复BUG：Lambda表达式解析not in字段名应该使用数据库字段名而不是实体类属性名。
+3. 调整ISqlString接口，废弃DeleteByCondition，修改为Delete。</releaseNotes>
     <copyright>Copyright @ 2022</copyright>
   </metadata>
   <files>

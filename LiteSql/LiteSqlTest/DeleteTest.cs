@@ -5,6 +5,8 @@ using DAL;
 using System.Collections.Generic;
 using LiteSql;
 using Utils;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace LiteSqlTest
 {
@@ -49,12 +51,10 @@ namespace LiteSqlTest
         {
             var session = LiteSqlFactory.GetSession();
 
-            session.OnExecuting = (s, p) =>
-                {
-                    Console.WriteLine(s); //打印SQL
-                };
+            session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-            session.DeleteByCondition<SysUser>(string.Format("id>20"));
+            session.CreateSql("id>@Id", 20).Delete<SysUser>();
+            session.Queryable<SysUser>().Where(t => t.Id > 20).Delete();
 
             long count = session.QueryCount("select * from sys_user where id>20");
             Assert.IsTrue(count == 0);
@@ -69,15 +69,47 @@ namespace LiteSqlTest
 
             session.OnExecuting = (sql, param) => Console.WriteLine(sql); //打印SQL
 
-            int rows = session.CreateSql("id not like @Id", new { Id = "10000_" }).DeleteByCondition<BsOrder>();
+            int rows = session.CreateSql<BsOrder>("id not like @Id", new { Id = "10000_" }).Delete();
             Console.WriteLine("BsOrder表" + rows + "行已删除");
-            rows = session.CreateSql("order_id not like @OrderId", new { OrderId = "10000_" }).DeleteByCondition<BsOrderDetail>();
+            rows = session.CreateSql("order_id not like @OrderId", new { OrderId = "10000_" }).Delete<BsOrderDetail>();
             Console.WriteLine("BsOrderDetail表" + rows + "行已删除");
 
             long count = session.CreateSql("select * from bs_order where id not like @Id", new { Id = "10000_" }).QueryCount();
             Assert.IsTrue(count == 0);
             count = session.CreateSql("select * from bs_order_detail where order_id not like @OrderId", new { OrderId = "10000_" }).QueryCount();
             Assert.IsTrue(count == 0);
+        }
+        #endregion
+
+        #region TestLambdaDelete
+        [TestMethod]
+        public void TestLambdaDelete()
+        {
+            var session = LiteSqlFactory.GetSession();
+            session.OnExecuting = (s, p) => Console.WriteLine(s);
+
+            SysUser user = new SysUser();
+            user.UserName = "testUser";
+            user.RealName = "测试插入用户";
+            user.Password = "123456";
+            user.CreateUserid = "1";
+            long id = m_SysUserDal.Insert(user);
+
+            int rows1 = session.Queryable<SysUser>().Where(t => t.Id > 20 && !new long[] { 1, 2, 3 }.Contains(t.Id)).Delete();
+            Assert.IsTrue(rows1 > 0);
+
+            user = new SysUser();
+            user.UserName = "testUser";
+            user.RealName = "测试插入用户";
+            user.Password = "123456";
+            user.CreateUserid = "1";
+            id = m_SysUserDal.Insert(user);
+
+            Task.Run(async () =>
+            {
+                int rows2 = await session.Queryable<SysUser>().Where(t => t.Id > 20 || new long[] { 101, 102, 103 }.Contains(t.Id)).DeleteAsync();
+                Assert.IsTrue(rows2 > 0);
+            }).Wait();
         }
         #endregion
 

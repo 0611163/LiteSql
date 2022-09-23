@@ -233,22 +233,46 @@ namespace LiteSql
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         int DeleteByCondition<T>();
 
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         Task<int> DeleteByConditionAsync<T>();
 
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         int DeleteByCondition(Type type);
 
         /// <summary>
         /// 条件删除
         /// </summary>
+        [Obsolete]
         Task<int> DeleteByConditionAsync(Type type);
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        int Delete<T>();
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        Task<int> DeleteAsync<T>();
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        int Delete(Type type);
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        Task<int> DeleteAsync(Type type);
 
         /// <summary>
         /// 执行SQL语句，返回影响的记录数

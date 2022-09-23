@@ -401,7 +401,12 @@ public void Delete(string id)
 
 ```C#
 var session = LiteSqlFactory.GetSession();
-session.DeleteByCondition<SysUser>(string.Format("id>=12"));
+session.CreateSql("id>@Id", 20).Delete<SysUser>();
+```
+
+```C#
+var session = LiteSqlFactory.GetSession();
+session.Queryable<SysUser>().Where(t => t.Id > 20).Delete();
 ```
 
 ### 查询单个记录

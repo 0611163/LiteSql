@@ -297,7 +297,7 @@ namespace LiteSql
                             inOrNotIn = "in";
                         }
 
-                        result.Sql = string.Format("{0}.{1} {2} {3}", expValue.MemberParentName, expValue.MemberName, inOrNotIn, string.Format(sqlValue.Sql, markKey));
+                        result.Sql = string.Format("{0}.{1} {2} {3}", expValue.MemberParentName, expValue.MemberDBField, inOrNotIn, string.Format(sqlValue.Sql, markKey));
 
                         string[] keyArr = sqlValue.Sql.Replace("(", string.Empty).Replace(")", string.Empty).Replace("@", string.Empty).Split(',');
                         IList valueList = (IList)sqlValue.Value;

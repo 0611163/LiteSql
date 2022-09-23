@@ -148,5 +148,15 @@ namespace LiteSql
         /// </summary>
         new Task<bool> ExistsAsync();
 
+        /// <summary>
+        /// 删除
+        /// </summary>
+        int Delete();
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        Task<int> DeleteAsync();
+
     }
 }
