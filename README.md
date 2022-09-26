@@ -23,7 +23,7 @@ List<SysUser> list = session.CreateSql(@"
         {
             CreateUserId = "1",
             Password = "%345%",
-            Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
+            Ids = session.ForList(new List<int> { 1, 2, 9, 10, 11 })
         })
 
     .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime })
@@ -586,7 +586,7 @@ public async Task<List<BsOrder>> GetListPageAsync(PageModel pageModel, int? stat
 }
 ```
 
-### 条件查询(使用 ForContains、ForStartsWith、ForEndsWith、ForDateTime、ForList 等辅助方法)
+### 条件查询(使用 ForList 辅助方法)
 
 ```C#
 public List<BsOrder> GetListExt(int? status, string remark, DateTime? startTime, DateTime? endTime, string ids)
@@ -722,7 +722,7 @@ List<SysUser> list = session.Queryable<SysUser>() //Lambda写法
         {
             CreateUserId = "1",
             Password = "%345%",
-            Ids = session.CreateSql().ForList(new List<int> { 1, 2, 9, 10, 11 })
+            Ids = session.ForList(new List<int> { 1, 2, 9, 10, 11 })
         })
 
     .Where(t => !t.RealName.Contains("管理员")) //Lambda写法
