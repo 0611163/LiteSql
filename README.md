@@ -685,8 +685,7 @@ public void TestQueryByLambda9()
     ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
         select t.*, u.real_name as OrderUserRealName
         from bs_order t
-        left join sys_user u on t.order_userid=u.id
-        where 1=1");
+        left join sys_user u on t.order_userid=u.id");
 
     List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
         && t.Status == new BsOrder().Status
