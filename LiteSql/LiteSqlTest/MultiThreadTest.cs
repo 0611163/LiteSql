@@ -278,13 +278,12 @@ namespace LiteSqlTest
         [TestMethod]
         public void Test13Query()
         {
-            var session = LiteSqlFactory.GetSession();
-
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < 100; i++)
             {
                 var task = RunTask(obj =>
                 {
+                    var session = LiteSqlFactory.GetSession();
                     List<SysUser> list = session.Queryable<SysUser>().Where(t => t.Id <= 20).ToList();
                     Assert.IsTrue(list.Count > 0);
                     if (obj == 0)
@@ -299,7 +298,7 @@ namespace LiteSqlTest
             }
             Task.WaitAll(tasks.ToArray());
 
-            List<SysUser> list2 = session.Queryable<SysUser>().Where(t => t.Id > 20).ToList();
+            List<SysUser> list2 = LiteSqlFactory.GetSession().Queryable<SysUser>().Where(t => t.Id > 20).ToList();
             Assert.IsTrue(list2.Count >= _count);
         }
         #endregion
