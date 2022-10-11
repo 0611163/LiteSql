@@ -12,7 +12,7 @@ namespace LiteSql
         /// <summary>
         /// 开始事务
         /// </summary>
-        void BeginTransaction();
+        DbTransactionExt BeginTransaction();
         #endregion
 
         #region 提交事务

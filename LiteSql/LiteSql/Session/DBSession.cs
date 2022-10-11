@@ -207,5 +207,23 @@ namespace LiteSql
         }
         #endregion
 
+        #region 从连接池池获取连接
+        /// <summary>
+        /// 从连接池池获取连接
+        /// </summary>
+        public DbConnectionExt GetConnection(DbTransactionExt _tran = null)
+        {
+            return _connFactory.GetConnection(_tran);
+        }
+
+        /// <summary>
+        /// 从连接池池获取连接
+        /// </summary>
+        public Task<DbConnectionExt> GetConnectionAsync(DbTransactionExt _tran = null)
+        {
+            return _connFactory.GetConnectionAsync(_tran);
+        }
+        #endregion
+
     }
 }

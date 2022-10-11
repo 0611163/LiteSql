@@ -12,10 +12,11 @@ namespace LiteSql
         /// <summary>
         /// 开始事务
         /// </summary>
-        public void BeginTransaction()
+        public DbTransactionExt BeginTransaction()
         {
             _conn = _connFactory.GetConnection(null);
             _tran = new DbTransactionExt(_conn.Conn.BeginTransaction(), _conn);
+            return _tran;
         }
         #endregion
 
