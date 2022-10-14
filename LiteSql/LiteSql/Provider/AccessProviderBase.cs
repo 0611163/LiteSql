@@ -82,6 +82,8 @@ namespace LiteSql
         #region 创建分页SQL
         public string CreatePageSql(string sql, string orderby, int pageSize, int currentPage)
         {
+            if (string.IsNullOrWhiteSpace(orderby)) throw new Exception("Access数据库分页查询必须有order by子句");
+
             Regex regex = new Regex("order[\\s]+by", RegexOptions.IgnoreCase);
             orderby = regex.Replace(orderby, string.Empty);
             string[] orderbyArray = orderby.Split(',');

@@ -19,7 +19,7 @@ namespace LiteSql
         /// <summary>
         /// SQL字符串类
         /// </summary>
-        public SqlString(IProvider provider, ISession session, string sql = null, params object[] args)
+        public SqlString(IProvider provider, IDBSession session, string sql = null, params object[] args)
             : base(provider, session, sql, args)
         {
 
@@ -299,6 +299,46 @@ namespace LiteSql
             string alias = sql.Split('=')[1].Split('.')[0].Trim();
 
             _sql.AppendFormat(" left join {0} {1} on {2} ", tableName, alias, sql);
+
+            return this;
+        }
+        #endregion
+
+        #region InnerJoin
+        /// <summary>
+        /// 追加 inner join SQL
+        /// </summary>
+        public ISqlQueryable<T> InnerJoin<U>(Expression<Func<T, U, object>> expression)
+        {
+            ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.LeftJoin);
+            DbParameter[] dbParameters;
+            string sql = condition.VisitLambda(expression, out dbParameters);
+
+            string tableName = _dbSession.GetTableName(_provider, typeof(U));
+
+            string alias = sql.Split('=')[1].Split('.')[0].Trim();
+
+            _sql.AppendFormat(" inner join {0} {1} on {2} ", tableName, alias, sql);
+
+            return this;
+        }
+        #endregion
+
+        #region RightJoin
+        /// <summary>
+        /// 追加 right join SQL
+        /// </summary>
+        public ISqlQueryable<T> RightJoin<U>(Expression<Func<T, U, object>> expression)
+        {
+            ExpressionHelper<T> condition = new ExpressionHelper<T>(this, _provider, _dbParameterNames, SqlStringMethod.LeftJoin);
+            DbParameter[] dbParameters;
+            string sql = condition.VisitLambda(expression, out dbParameters);
+
+            string tableName = _dbSession.GetTableName(_provider, typeof(U));
+
+            string alias = sql.Split('=')[1].Split('.')[0].Trim();
+
+            _sql.AppendFormat(" right join {0} {1} on {2} ", tableName, alias, sql);
 
             return this;
         }

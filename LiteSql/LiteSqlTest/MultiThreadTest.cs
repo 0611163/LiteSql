@@ -14,9 +14,9 @@ namespace LiteSqlTest
 {
     /// <summary>
     /// 多线程并发测试
-    /// 一个ISession实例对应一个数据库连接，一个ISession实例只有一个数据库连接
-    /// ISession不是线程安全的，不能跨线程使用
-    /// 多线程并发的情况，通过LiteSqlFactory在每个线程中创建一个ISession实例
+    /// 一个IDBSession实例对应一个数据库连接，一个IDBSession实例只有一个数据库连接
+    /// IDBSession不是线程安全的，不能跨线程使用
+    /// 多线程并发的情况，通过LiteSqlFactory在每个线程中创建一个IDBSession实例
     /// </summary>
     [TestClass]
     public class MultiThreadTest

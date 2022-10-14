@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial interface ISession
+    public partial interface IDBSession
     {
         #region 开始事务
         /// <summary>

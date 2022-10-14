@@ -14,21 +14,21 @@ namespace PostgreSQLTest
         private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.PostgreSQL, new PostgreSQLProvider());
         #endregion
 
-        #region 获取 ISession
+        #region 获取 IDBSession
         /// <summary>
-        /// 获取 ISession
+        /// 获取 IDBSession
         /// </summary>
-        public static ISession GetSession()
+        public static IDBSession GetSession()
         {
             return _liteSqlClient.GetSession();
         }
         #endregion
 
-        #region 获取 ISession (异步)
+        #region 获取 IDBSession (异步)
         /// <summary>
-        /// 获取 ISession (异步)
+        /// 获取 IDBSession (异步)
         /// </summary>
-        public static async Task<ISession> GetSessionAsync()
+        public static async Task<IDBSession> GetSessionAsync()
         {
             return await _liteSqlClient.GetSessionAsync();
         }

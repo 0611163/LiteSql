@@ -41,7 +41,7 @@ namespace LiteSql
         /// </summary>
         protected HashSet<string> _dbParameterNames = new HashSet<string>();
 
-        protected ISession _session;
+        protected IDBSession _session;
 
         protected DBSession _dbSession;
 
@@ -53,7 +53,7 @@ namespace LiteSql
         #endregion
 
         #region 构造函数
-        public SqlString(IProvider provider, ISession session, string sql = null, params object[] args)
+        public SqlString(IProvider provider, IDBSession session, string sql = null, params object[] args)
         {
             _provider = provider;
             _session = session;
@@ -93,6 +93,7 @@ namespace LiteSql
                 }
             }
 
+            //获取SQL中的参数
             Dictionary<string, object> dict = new Dictionary<string, object>();
             MatchCollection mc = _regex.Matches(sql);
             int argIndex = 0;
@@ -299,6 +300,72 @@ namespace LiteSql
         }
         #endregion
 
+        #region LeftJoin
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString LeftJoin(string sql, params object[] args)
+        {
+            return Append("left join " + sql, args);
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> LeftJoin<T>(string sql, params object[] args) where T : new()
+        {
+            return Append<T>("left join " + sql, args);
+        }
+        #endregion
+
+        #region InnerJoin
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString InnerJoin(string sql, params object[] args)
+        {
+            return Append("inner join " + sql, args);
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> InnerJoin<T>(string sql, params object[] args) where T : new()
+        {
+            return Append<T>("inner join " + sql, args);
+        }
+        #endregion
+
+        #region RightJoin
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlString RightJoin(string sql, params object[] args)
+        {
+            return Append("right join " + sql, args);
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public ISqlQueryable<T> RightJoin<T>(string sql, params object[] args) where T : new()
+        {
+            return Append<T>("right join " + sql, args);
+        }
+        #endregion
+
         #region Where
         /// <summary>
         /// 追加参数化SQL
@@ -381,7 +448,14 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlString Having(string sql, params object[] args)
         {
-            return Append("having " + sql, args);
+            if (RemoveSubSqls(_sql.ToString()).Contains("having"))
+            {
+                return Append("and " + sql, args);
+            }
+            else
+            {
+                return Append("having " + sql, args);
+            }
         }
 
         /// <summary>
@@ -391,7 +465,14 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlQueryable<T> Having<T>(string sql, params object[] args) where T : new()
         {
-            return Append<T>("having " + sql, args);
+            if (RemoveSubSqls(_sql.ToString()).Contains("having"))
+            {
+                return Append<T>("and " + sql, args);
+            }
+            else
+            {
+                return Append<T>("having " + sql, args);
+            }
         }
         #endregion
 
@@ -465,7 +546,14 @@ namespace LiteSql
         #endregion
 
         #region ToString
-        public override string ToString()
+        public string ToString()
+        {
+            return _sql.ToString();
+        }
+        #endregion
+
+        #region ToSql
+        public string ToSql()
         {
             return _sql.ToString();
         }

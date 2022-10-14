@@ -13,16 +13,16 @@ namespace LiteSql
     public interface ILiteSqlClient
     {
         /// <summary>
-        /// 获取 ISession
+        /// 获取 IDBSession
         /// </summary>
         /// <param name="splitTableMapping">分表映射</param>
-        ISession GetSession(SplitTableMapping splitTableMapping = null);
+        IDBSession GetSession(SplitTableMapping splitTableMapping = null);
 
         /// <summary>
-        /// 获取 ISession (异步)
+        /// 获取 IDBSession (异步)
         /// </summary>
         /// <param name="splitTableMapping">分表映射</param>
-        Task<ISession> GetSessionAsync(SplitTableMapping splitTableMapping = null);
+        Task<IDBSession> GetSessionAsync(SplitTableMapping splitTableMapping = null);
 
     }
 }

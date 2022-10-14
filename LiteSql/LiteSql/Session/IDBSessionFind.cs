@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial interface ISession
+    public partial interface IDBSession
     {
         #region 根据Id查询实体
         /// <summary>

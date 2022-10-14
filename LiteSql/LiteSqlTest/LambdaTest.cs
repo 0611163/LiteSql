@@ -493,8 +493,8 @@ namespace LiteSqlTest
                     t.CreateUserid
                 })
                 .Where(t => t.Id >= 0)
-                .Append<SysUser>("group by t.real_name, t.create_userid")
-                .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+                .GroupBy<SysUser>("t.real_name, t.create_userid")
+                .Having<SysUser>("real_name like @Name1 or real_name like @Name2", new
                 {
                     Name1 = "%管理员%",
                     Name2 = "%测试%"
@@ -523,8 +523,8 @@ namespace LiteSqlTest
                 })
                 .Select("count(id) as Count")
                 .Where(t => t.Id >= 0)
-                .Append<SysUser>("group by t.real_name, t.create_userid")
-                .Append<SysUser>("having real_name like @Name1 or real_name like @Name2", new
+                .GroupBy<SysUser>("t.real_name, t.create_userid")
+                .Having<SysUser>("real_name like @Name1 or real_name like @Name2", new
                 {
                     Name1 = "%管理员%",
                     Name2 = "%测试%"

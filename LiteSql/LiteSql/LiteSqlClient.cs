@@ -74,11 +74,11 @@ namespace LiteSql
         }
         #endregion
 
-        #region 获取 ISession
+        #region 获取 IDBSession
         /// <summary>
-        /// 获取 ISession
+        /// 获取 IDBSession
         /// </summary>
-        public ISession GetSession(SplitTableMapping splitTableMapping = null)
+        public IDBSession GetSession(SplitTableMapping splitTableMapping = null)
         {
             DBSession dbSession;
 
@@ -94,11 +94,11 @@ namespace LiteSql
         }
         #endregion
 
-        #region 获取 ISession (异步)
+        #region 获取 IDBSession (异步)
         /// <summary>
-        /// 获取 ISession (异步)
+        /// 获取 IDBSession (异步)
         /// </summary>
-        public Task<ISession> GetSessionAsync(SplitTableMapping splitTableMapping = null)
+        public Task<IDBSession> GetSessionAsync(SplitTableMapping splitTableMapping = null)
         {
             DBSession dbSession;
 
@@ -110,7 +110,7 @@ namespace LiteSql
             {
                 dbSession = new DBSession(_connectionString, _providerType, splitTableMapping, _connFactory, _autoIncrement);
             }
-            return Task.FromResult(dbSession as ISession);
+            return Task.FromResult(dbSession as IDBSession);
         }
         #endregion
 

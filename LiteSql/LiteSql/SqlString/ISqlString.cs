@@ -88,6 +88,48 @@ namespace LiteSql
         /// </summary>
         /// <param name="sql">SQL</param>
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlString LeftJoin(string sql, params object[] args);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlQueryable<T> LeftJoin<T>(string sql, params object[] args) where T : new();
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlString InnerJoin(string sql, params object[] args);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlQueryable<T> InnerJoin<T>(string sql, params object[] args) where T : new();
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlString RightJoin(string sql, params object[] args);
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        ISqlQueryable<T> RightJoin<T>(string sql, params object[] args) where T : new();
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         ISqlString Where(string sql, params object[] args);
 
         /// <summary>
@@ -170,9 +212,14 @@ namespace LiteSql
         ISqlQueryable<T> AppendFormat<T>(string sql, params object[] args) where T : new();
 
         /// <summary>
-        /// ToString
+        /// 返回SQL语句
         /// </summary>
         string ToString();
+
+        /// <summary>
+        /// 返回SQL语句
+        /// </summary>
+        string ToSql();
 
         /// <summary>
         /// 创建 in 或 not in SQL

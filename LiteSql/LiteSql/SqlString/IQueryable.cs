@@ -68,6 +68,16 @@ namespace LiteSql
         ISqlQueryable<T> LeftJoin<U>(Expression<Func<T, U, object>> expression);
 
         /// <summary>
+        /// 追加 inner join SQL
+        /// </summary>
+        ISqlQueryable<T> InnerJoin<U>(Expression<Func<T, U, object>> expression);
+
+        /// <summary>
+        /// 追加 right join SQL
+        /// </summary>
+        ISqlQueryable<T> RightJoin<U>(Expression<Func<T, U, object>> expression);
+
+        /// <summary>
         /// Where 连表
         /// </summary>
         ISqlQueryable<T> WhereJoin<U>(Expression<Func<T, U, object>> expression);

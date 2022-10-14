@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : ISession
+    public partial class DBSession : IDBSession
     {
         #region 变量
         /// <summary>

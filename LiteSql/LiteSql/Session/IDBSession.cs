@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 namespace LiteSql
 {
     /// <summary>
-    /// ISession接口
-    /// 一个ISession实例对应一个数据库连接，一个ISession实例只有一个数据库连接
-    /// ISession不是线程安全的，不能跨线程使用
+    /// IDBSession接口
+    /// 一个IDBSession实例对应一个数据库连接，一个IDBSession实例只有一个数据库连接
+    /// IDBSession不是线程安全的，不能跨线程使用
     /// </summary>
-    public partial interface ISession : IDisposable
+    public partial interface IDBSession : IDisposable
     {
         #region 创建SqlString对象
         /// <summary>

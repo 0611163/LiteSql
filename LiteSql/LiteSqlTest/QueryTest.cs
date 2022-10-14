@@ -360,8 +360,8 @@ namespace LiteSqlTest
             List<BsOrder> list = session.Queryable<BsOrder>(o => new { o.Id, o.Remark, o.OrderTime })
                 .Select("sum(d.price * d.quantity) as Amount")
                 .LeftJoin<BsOrderDetail>((o, d) => o.Id == d.OrderId)
-                .Append("group by  o.id, o.remark, o.order_time")
-                .Append("order by Amount desc").QueryList<BsOrder>();
+                .GroupBy("o.id, o.remark, o.order_time")
+                .OrderBy("Amount desc").QueryList<BsOrder>();
 
             foreach (BsOrder item in list)
             {
