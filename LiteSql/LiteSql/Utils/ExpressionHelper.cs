@@ -208,7 +208,7 @@ namespace LiteSql
                             string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
 
                             result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
-                            result.Sql = string.Format(" ({0}.{1} {2} {3}) ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), string.Format(sqlValue.Sql, markKey));
+                            result.Sql = string.Format(" ({0}.{1} {2} {3}) ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), sqlValue.Sql.Replace("{0}", markKey));
                         }
                         else
                         {
@@ -257,7 +257,7 @@ namespace LiteSql
                         not = "not";
                     }
 
-                    result.Sql = string.Format("{0}.{1} {2} like {3}", expValue.MemberParentName, expValue.MemberDBField, not, string.Format(sqlValue.Sql, markKey));
+                    result.Sql = string.Format("{0}.{1} {2} like {3}", expValue.MemberParentName, expValue.MemberDBField, not, sqlValue.Sql.Replace("{0}", markKey));
                     result.DbParameters.Add(_provider.GetDbParameter(expValue.MemberAliasName, sqlValue.Value));
                 }
                 else // 支持 in 和 not in 例: t => idList.Contains(t.Id)
@@ -297,7 +297,7 @@ namespace LiteSql
                             inOrNotIn = "in";
                         }
 
-                        result.Sql = string.Format("{0}.{1} {2} {3}", expValue.MemberParentName, expValue.MemberDBField, inOrNotIn, string.Format(sqlValue.Sql, markKey));
+                        result.Sql = string.Format("{0}.{1} {2} {3}", expValue.MemberParentName, expValue.MemberDBField, inOrNotIn, sqlValue.Sql.Replace("{0}", markKey));
 
                         string[] keyArr = sqlValue.Sql.Replace("(", string.Empty).Replace(")", string.Empty).Replace("@", string.Empty).Split(',');
                         IList valueList = (IList)sqlValue.Value;

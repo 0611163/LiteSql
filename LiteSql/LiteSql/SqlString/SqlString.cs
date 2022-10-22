@@ -155,14 +155,14 @@ namespace LiteSql
                     if (sqlValue.Value.GetType().Name != typeof(List<>).Name)
                     {
                         string markKey = _provider.GetParameterName(key, parameterType);
-                        sql = sql.Replace(markKey, string.Format(sqlValue.Sql, markKey));
+                        sql = sql.Replace(markKey, sqlValue.Sql.Replace("{0}", markKey));
                         DbParameter param = _provider.GetDbParameter(key, sqlValue.Value);
                         _params.Add(param.ParameterName, param);
                     }
                     else
                     {
                         string markKey = _provider.GetParameterName(key, parameterType);
-                        sql = sql.Replace(markKey, string.Format(sqlValue.Sql, markKey));
+                        sql = sql.Replace(markKey, sqlValue.Sql.Replace("{0}", markKey));
                         string[] keyArr = sqlValue.Sql.Replace("(", string.Empty).Replace(")", string.Empty).Replace("@", string.Empty).Split(',');
                         IList valueList = (IList)sqlValue.Value;
                         for (int k = 0; k < valueList.Count; k++)
@@ -753,7 +753,6 @@ namespace LiteSql
         /// <summary>
         /// 条件删除
         /// </summary>
-        [Obsolete]
         public int Delete<T>()
         {
             return _session.DeleteByCondition<T>(this);

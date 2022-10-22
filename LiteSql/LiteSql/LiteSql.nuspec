@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>LiteSql</id>
-    <version>1.7.18</version>
+    <version>1.7.19</version>
     <title>LiteSql</title>
     <authors>suxiang</authors>
     <owners></owners>
@@ -10,7 +10,7 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/0611163/LiteSql</projectUrl>
     <description>一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。</description>
-    <releaseNotes>增加InnerJoin和RightJoin接口</releaseNotes>
+    <releaseNotes>修复Lambda表达式写法集合Contains不支持ClickHouse的问题</releaseNotes>
     <copyright>Copyright @ 2022</copyright>
   </metadata>
   <files>
