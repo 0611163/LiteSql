@@ -22,6 +22,14 @@ namespace LiteSql
             {
                 return Convert.ToString(rdValue);
             }
+            if (fieldType == typeof(Guid))
+            {
+                return new Guid(Convert.ToString(rdValue));
+            }
+            else if (fieldType == typeof(char))
+            {
+                return Convert.ToChar(rdValue);
+            }
             else if (fieldType == typeof(byte))
             {
                 return Convert.ToByte(rdValue);
@@ -73,6 +81,14 @@ namespace LiteSql
             else if (fieldType == typeof(DateTime))
             {
                 return Convert.ToDateTime(rdValue);
+            }
+            else if (fieldType == typeof(Guid?))
+            {
+                return new Guid(Convert.ToString(rdValue));
+            }
+            else if (fieldType == typeof(char?))
+            {
+                return Convert.ToChar(rdValue);
             }
             else if (fieldType == typeof(byte?))
             {

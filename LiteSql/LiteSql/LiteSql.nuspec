@@ -2,15 +2,16 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>LiteSql</id>
-    <version>1.7.19</version>
+    <version>1.7.20</version>
     <title>LiteSql</title>
     <authors>suxiang</authors>
     <owners></owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/0611163/LiteSql</projectUrl>
-    <description>一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。</description>
-    <releaseNotes>修复Lambda表达式写法集合Contains不支持ClickHouse的问题</releaseNotes>
+    <description>一款同时支持原生SQL和Lambda表达式的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库，以及任意ADO.NET支持的数据库。</description>
+    <releaseNotes>1. 使用Expression表达式树代替反射以提升性能。
+2. 字段类型支持Guid。</releaseNotes>
     <copyright>Copyright @ 2022</copyright>
   </metadata>
   <files>

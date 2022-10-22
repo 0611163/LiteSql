@@ -308,35 +308,25 @@ namespace LiteSql
             PropertyInfoEx[] propertyInfoList = GetEntityProperties(type);
 
             int fieldCount = rd.FieldCount;
-            Dictionary<string, string> fields = new Dictionary<string, string>();
+            StringBuilder strFields = new StringBuilder();
+            Dictionary<string, int> fields = new Dictionary<string, int>();
             for (int i = 0; i < fieldCount; i++)
             {
                 string field = rd.GetName(i).ToUpper();
                 if (!fields.ContainsKey(field))
                 {
-                    fields.Add(field, null);
+                    fields.Add(field, i);
+                    strFields.Append("_" + field);
                 }
             }
+
+            var func = ExpressionMapper.BindData(type, propertyInfoList, fields, strFields.ToString());
 
             while (rd.Read())
             {
                 hasValue = true;
-                IDataRecord record = rd;
 
-                foreach (PropertyInfoEx propertyInfoEx in propertyInfoList)
-                {
-                    PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
-
-                    if (!fields.ContainsKey(propertyInfoEx.FieldNameUpper)) continue;
-
-                    object val = record[propertyInfoEx.FieldName];
-
-                    if (val == DBNull.Value) continue;
-
-                    val = val == DBNull.Value ? null : ConvertValue(val, propertyInfo.PropertyType);
-
-                    propertyInfo.SetValue(result, val);
-                }
+                result = func(rd);
             }
         }
         #endregion
