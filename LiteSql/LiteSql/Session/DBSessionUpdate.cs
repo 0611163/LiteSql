@@ -32,7 +32,7 @@ namespace LiteSql
 
             if (!_oldObjs.ContainsKey(obj))
             {
-                object cloneObj = ModelHelper.Convert<T>(obj);
+                object cloneObj = ModelMapper<T>.Map(obj);
                 _oldObjs.TryAdd(obj, cloneObj);
             }
         }

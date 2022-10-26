@@ -47,6 +47,8 @@
     <Compile Include="Models\BsOrderDetail.cs" />
     <Compile Include="Models\CarinfoMerge.cs" />
     <Compile Include="Models\SysUser.cs" />
+    <Compile Include="Models\ValuesInfo.cs" />
+    <Compile Include="Models\ValuesInfo2.cs" />
     <Compile Include="PageModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

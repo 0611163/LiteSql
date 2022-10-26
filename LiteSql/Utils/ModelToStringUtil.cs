@@ -26,8 +26,18 @@ namespace Utils
             {
                 if (!propertyInfo.PropertyType.Name.Contains("List`1"))
                 {
-                    sb.AppendFormat(propertyInfo.Name + " = " + propertyInfo.GetValue(value));
-                    if (i != propertyInfoList.Length - 1) sb.Append(", ");
+                    object propertyValue = propertyInfo.GetValue(value);
+
+                    if (propertyValue != null && propertyValue.GetType() == typeof(byte[]))
+                    {
+                        sb.AppendFormat(propertyInfo.Name + " = " + ASCIIEncoding.UTF8.GetString((byte[])propertyValue));
+                        if (i != propertyInfoList.Length - 1) sb.Append(", ");
+                    }
+                    else
+                    {
+                        sb.AppendFormat(propertyInfo.Name + " = " + propertyInfo.GetValue(value));
+                        if (i != propertyInfoList.Length - 1) sb.Append(", ");
+                    }
                 }
                 i++;
             }

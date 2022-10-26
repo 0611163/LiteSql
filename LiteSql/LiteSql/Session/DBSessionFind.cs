@@ -310,17 +310,19 @@ namespace LiteSql
             int fieldCount = rd.FieldCount;
             StringBuilder strFields = new StringBuilder();
             Dictionary<string, int> fields = new Dictionary<string, int>();
+            Dictionary<string, Type> fieldTypes = new Dictionary<string, Type>();
             for (int i = 0; i < fieldCount; i++)
             {
                 string field = rd.GetName(i).ToUpper();
                 if (!fields.ContainsKey(field))
                 {
                     fields.Add(field, i);
+                    fieldTypes.Add(field, rd.GetFieldType(i));
                     strFields.Append("_" + field);
                 }
             }
 
-            var func = ExpressionMapper.BindData(type, propertyInfoList, fields, strFields.ToString());
+            var func = ExpressionMapper.BindData(type, propertyInfoList, fields, fieldTypes, strFields.ToString());
 
             while (rd.Read())
             {

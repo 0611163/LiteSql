@@ -27,7 +27,7 @@ namespace LiteSql
         /// <summary>
         /// 数据绑定
         /// </summary>
-        public static Func<IDataRecord, T> BindData<T>(PropertyInfoEx[] propertyInfoList, Dictionary<string, int> fields, string strFields)
+        public static Func<IDataRecord, T> BindData<T>(PropertyInfoEx[] propertyInfoList, Dictionary<string, int> fields, Dictionary<string, Type> fieldTypes, string strFields)
         {
             Type entityType = typeof(T);
             string key = entityType.FullName + "_" + strFields + "_T";
@@ -38,7 +38,7 @@ namespace LiteSql
             }
             else
             {
-                CreateBindings(entityType, propertyInfoList, fields, out ParameterExpression dataRecordExpr, out Expression initExpr);
+                CreateBindings(entityType, propertyInfoList, fields, fieldTypes, out ParameterExpression dataRecordExpr, out Expression initExpr);
 
                 Expression<Func<IDataRecord, T>> lambda = Expression.Lambda<Func<IDataRecord, T>>(initExpr, dataRecordExpr);
 
@@ -54,7 +54,7 @@ namespace LiteSql
         /// <summary>
         /// 数据绑定
         /// </summary>
-        public static Func<IDataRecord, object> BindData(Type entityType, PropertyInfoEx[] propertyInfoList, Dictionary<string, int> fields, string strFields)
+        public static Func<IDataRecord, object> BindData(Type entityType, PropertyInfoEx[] propertyInfoList, Dictionary<string, int> fields, Dictionary<string, Type> fieldTypes, string strFields)
         {
             string key = entityType.FullName + "_" + strFields + "_Type";
             if (_cacheDict.TryGetValue(key, out _))
@@ -63,7 +63,7 @@ namespace LiteSql
             }
             else
             {
-                CreateBindings(entityType, propertyInfoList, fields, out ParameterExpression dataRecordExpr, out Expression initExpr);
+                CreateBindings(entityType, propertyInfoList, fields, fieldTypes, out ParameterExpression dataRecordExpr, out Expression initExpr);
 
                 Expression<Func<IDataRecord, object>> lambda = Expression.Lambda<Func<IDataRecord, object>>(initExpr, dataRecordExpr);
 
@@ -79,7 +79,7 @@ namespace LiteSql
         /// <summary>
         /// 属性绑定
         /// </summary>
-        private static void CreateBindings(Type entityType, PropertyInfoEx[] propertyInfoList, Dictionary<string, int> fields, out ParameterExpression dataRecordExpr, out Expression initExpr)
+        private static void CreateBindings(Type entityType, PropertyInfoEx[] propertyInfoList, Dictionary<string, int> fields, Dictionary<string, Type> fieldTypes, out ParameterExpression dataRecordExpr, out Expression initExpr)
         {
             dataRecordExpr = Expression.Parameter(typeof(IDataRecord), "r");
 
@@ -89,7 +89,7 @@ namespace LiteSql
             {
                 if (!fields.ContainsKey(propertyInfoEx.FieldNameUpper)) continue;
 
-                Expression propertyValue = GetMethodCall(dataRecordExpr, propertyInfoEx, fields[propertyInfoEx.FieldNameUpper]);
+                Expression propertyValue = GetMethodCall(dataRecordExpr, propertyInfoEx, fields[propertyInfoEx.FieldNameUpper], fieldTypes[propertyInfoEx.FieldNameUpper]);
 
                 MemberBinding binding = Expression.Bind(propertyInfoEx.PropertyInfo, propertyValue);
                 bindings.Add(binding);
@@ -100,206 +100,398 @@ namespace LiteSql
         #endregion
 
         #region GetMethodCall
-        private static Expression GetMethodCall(ParameterExpression dataRecordExpr, PropertyInfoEx propertyInfoEx, int fieldIndex)
+        private static Expression GetMethodCall(ParameterExpression dataRecordExpr, PropertyInfoEx propertyInfoEx, int fieldIndex, Type fieldType)
         {
             Type propertyType = propertyInfoEx.PropertyInfo.PropertyType;
             Type typeIDataRecord = typeof(IDataRecord);
 
-            GetIDataRecordMethod(propertyType, out string methodName, out bool convert);
+            string methodName = GetIDataRecordMethod(ref fieldType);
 
             MethodCallExpression getValueExpr = Expression.Call(dataRecordExpr, typeIDataRecord.GetMethod(methodName), Expression.Constant(fieldIndex));
 
             MethodCallExpression isDBNullExpr = Expression.Call(dataRecordExpr, typeIDataRecord.GetMethod("IsDBNull"), Expression.Constant(fieldIndex));
 
-            if (convert)
-            {
-                if (propertyType == typeof(Guid) || propertyType == typeof(Guid?))
-                {
-                    Expression guidExpr = Expression.New(typeof(Guid).GetConstructor(new Type[] { typeof(string) }), getValueExpr);
+            var convertExpr = GetConvertExpr(propertyType, fieldType, getValueExpr);
 
-                    if (propertyType == typeof(Guid))
+            return Expression.Condition(isDBNullExpr, Expression.Default(propertyType), convertExpr);
+        }
+        #endregion
+
+        #region GetConvertExpr
+        private static Expression GetConvertExpr(Type propertyType, Type fieldType, Expression getValueExpr)
+        {
+            Expression convertExpr = null;
+
+            Type genericType = null;
+            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
+            {
+                genericType = propertyType.GenericTypeArguments[0];
+            }
+
+            string methodName = GetConvertMethod(propertyType, out Type methodReturnType);
+
+            if (propertyType != fieldType)
+            {
+                if (genericType != null)
+                {
+                    if (genericType == typeof(Guid))
                     {
-                        return Expression.Condition(isDBNullExpr, Expression.Default(propertyType), guidExpr);
+                        Expression newGuidExpr = Expression.New(typeof(Guid).GetConstructor(new Type[] { typeof(string) }), getValueExpr);
+
+                        convertExpr = Expression.Convert(newGuidExpr, propertyType);
+                    }
+                    else if (genericType != fieldType)
+                    {
+                        convertExpr = Expression.Call(typeof(Convert).GetMethod(methodName, new Type[] { fieldType }), getValueExpr);
+                        convertExpr = Expression.Convert(convertExpr, propertyType);
                     }
                     else
                     {
-                        var convertExpr = Expression.Convert(guidExpr, propertyType);
-
-                        return Expression.Condition(isDBNullExpr, Expression.Default(propertyType), convertExpr);
+                        convertExpr = Expression.Convert(getValueExpr, propertyType);
                     }
                 }
                 else
                 {
-                    var convertExpr = Expression.Convert(getValueExpr, propertyType);
+                    if (propertyType == typeof(Guid))
+                    {
+                        Expression newGuidExpr = Expression.New(typeof(Guid).GetConstructor(new Type[] { typeof(string) }), getValueExpr);
 
-                    return Expression.Condition(isDBNullExpr, Expression.Default(propertyType), convertExpr);
+                        convertExpr = newGuidExpr;
+                    }
+                    else if (methodName != null && methodReturnType != fieldType)
+                    {
+                        convertExpr = Expression.Call(typeof(Convert).GetMethod(methodName, new Type[] { fieldType }), getValueExpr);
+
+                        if (propertyType != methodReturnType)
+                        {
+                            convertExpr = Expression.Convert(convertExpr, propertyType);
+                        }
+                    }
+                    else
+                    {
+                        if (propertyType != methodReturnType || propertyType == typeof(byte[]))
+                        {
+                            convertExpr = Expression.Convert(getValueExpr, propertyType);
+                        }
+                        else
+                        {
+                            convertExpr = getValueExpr;
+                        }
+                    }
                 }
             }
             else
             {
-                return getValueExpr;
+                convertExpr = getValueExpr;
             }
+
+            return convertExpr;
         }
         #endregion
 
-        #region GetIDataRecordMethod
-        private static void GetIDataRecordMethod(Type propertyType, out string methodName, out bool convert)
+        #region GetIDataRecordMethod 获取IDataRecord方法名称和返回值类型
+        /// <summary>
+        /// 获取IDataRecord方法名称和返回值类型
+        /// </summary>
+        private static string GetIDataRecordMethod(ref Type fieldType)
         {
-            methodName = "GetString";
-            convert = false;
+            string methodName = "GetValue";
 
-            if (propertyType == typeof(string))
+            if (fieldType == typeof(string))
             {
                 methodName = "GetString";
-                convert = true;
             }
-            else if (propertyType == typeof(object))
+            else if (fieldType == typeof(object))
             {
                 methodName = "GetValue";
-                convert = true;
             }
-            else if (propertyType == typeof(byte[]))
+            else if (fieldType == typeof(byte[]))
             {
                 methodName = "GetValue";
-                convert = true;
+                fieldType = typeof(object);
             }
-            else if (propertyType == typeof(Guid))
+            else if (fieldType == typeof(Guid))
             {
                 methodName = "GetString";
-                convert = true;
+                fieldType = typeof(string);
             }
-            else if (propertyType == typeof(char))
+            else if (fieldType == typeof(char))
             {
                 methodName = "GetChar";
             }
-            else if (propertyType == typeof(byte))
+            else if (fieldType == typeof(byte))
             {
                 methodName = "GetByte";
             }
-            else if (propertyType == typeof(sbyte))
+            else if (fieldType == typeof(sbyte))
             {
-                methodName = "GetByte";
+                methodName = "GetValue";
+                fieldType = typeof(object);
             }
-            else if (propertyType == typeof(short))
-            {
-                methodName = "GetInt16";
-            }
-            else if (propertyType == typeof(ushort))
+            else if (fieldType == typeof(short))
             {
                 methodName = "GetInt16";
             }
-            else if (propertyType == typeof(int))
+            else if (fieldType == typeof(ushort))
+            {
+                methodName = "GetValue";
+                fieldType = typeof(object);
+            }
+            else if (fieldType == typeof(int))
             {
                 methodName = "GetInt32";
             }
-            else if (propertyType == typeof(uint))
+            else if (fieldType == typeof(uint))
             {
-                methodName = "GetInt32";
+                methodName = "GetValue";
+                fieldType = typeof(object);
             }
-            else if (propertyType == typeof(long))
-            {
-                methodName = "GetInt64";
-            }
-            else if (propertyType == typeof(ulong))
+            else if (fieldType == typeof(long))
             {
                 methodName = "GetInt64";
             }
-            else if (propertyType == typeof(float))
+            else if (fieldType == typeof(ulong))
+            {
+                methodName = "GetValue";
+                fieldType = typeof(object);
+            }
+            else if (fieldType == typeof(float))
             {
                 methodName = "GetFloat";
             }
-            else if (propertyType == typeof(double))
+            else if (fieldType == typeof(double))
             {
                 methodName = "GetDouble";
             }
-            else if (propertyType == typeof(decimal))
+            else if (fieldType == typeof(decimal))
             {
                 methodName = "GetDecimal";
             }
-            else if (propertyType == typeof(bool))
+            else if (fieldType == typeof(bool))
             {
                 methodName = "GetBoolean";
             }
-            else if (propertyType == typeof(DateTime))
+            else if (fieldType == typeof(DateTime))
             {
                 methodName = "GetDateTime";
             }
             // ======== 以下是可空类型 ================================ 
-            else if (propertyType == typeof(Guid?))
+            else if (fieldType == typeof(Guid?))
             {
                 methodName = "GetString";
-                convert = true;
+                fieldType = typeof(string);
             }
-            else if (propertyType == typeof(char?))
+            else if (fieldType == typeof(char?))
             {
                 methodName = "GetChar";
-                convert = true;
+                fieldType = typeof(char);
+            }
+            else if (fieldType == typeof(byte?))
+            {
+                methodName = "GetByte";
+                fieldType = typeof(byte);
+            }
+            else if (fieldType == typeof(sbyte?))
+            {
+                methodName = "GetValue";
+                fieldType = typeof(object);
+            }
+            else if (fieldType == typeof(short?))
+            {
+                methodName = "GetInt16";
+                fieldType = typeof(short);
+            }
+            else if (fieldType == typeof(ushort?))
+            {
+                methodName = "GetValue";
+                fieldType = typeof(object);
+            }
+            else if (fieldType == typeof(int?))
+            {
+                methodName = "GetInt32";
+                fieldType = typeof(int);
+            }
+            else if (fieldType == typeof(uint?))
+            {
+                methodName = "GetValue";
+                fieldType = typeof(object);
+            }
+            else if (fieldType == typeof(long?))
+            {
+                methodName = "GetInt64";
+                fieldType = typeof(long);
+            }
+            else if (fieldType == typeof(ulong?))
+            {
+                methodName = "GetValue";
+                fieldType = typeof(object);
+            }
+            else if (fieldType == typeof(float?))
+            {
+                methodName = "GetFloat";
+                fieldType = typeof(float);
+            }
+            else if (fieldType == typeof(double?))
+            {
+                methodName = "GetDouble";
+                fieldType = typeof(double);
+            }
+            else if (fieldType == typeof(decimal?))
+            {
+                methodName = "GetDecimal";
+                fieldType = typeof(decimal);
+            }
+            else if (fieldType == typeof(bool?))
+            {
+                methodName = "GetBoolean";
+                fieldType = typeof(bool);
+            }
+            else if (fieldType == typeof(DateTime?))
+            {
+                methodName = "GetDateTime";
+                fieldType = typeof(DateTime);
+            }
+
+            return methodName;
+        }
+        #endregion
+
+        #region GetConvertMethod 获取Convert类的方法名称和返回值类型
+        /// <summary>
+        /// 获取Convert类的方法名称和返回值类型
+        /// </summary>
+        private static string GetConvertMethod(Type propertyType, out Type methodReturnType)
+        {
+            string methodName = null;
+            methodReturnType = propertyType;
+
+            if (propertyType == typeof(string))
+            {
+                methodName = "ToString";
+            }
+            else if (propertyType == typeof(char))
+            {
+                methodName = "ToChar";
+            }
+            else if (propertyType == typeof(byte))
+            {
+                methodName = "ToByte";
+            }
+            else if (propertyType == typeof(sbyte))
+            {
+                methodName = "ToByte";
+                methodReturnType = typeof(byte);
+            }
+            else if (propertyType == typeof(short))
+            {
+                methodName = "ToInt16";
+            }
+            else if (propertyType == typeof(ushort))
+            {
+                methodName = "ToInt16";
+                methodReturnType = typeof(short);
+            }
+            else if (propertyType == typeof(int))
+            {
+                methodName = "ToInt32";
+            }
+            else if (propertyType == typeof(uint))
+            {
+                methodName = "ToInt32";
+                methodReturnType = typeof(int);
+            }
+            else if (propertyType == typeof(long))
+            {
+                methodName = "ToInt64";
+            }
+            else if (propertyType == typeof(ulong))
+            {
+                methodName = "ToInt64";
+                methodReturnType = typeof(long);
+            }
+            else if (propertyType == typeof(float))
+            {
+                methodName = "ToSingle";
+            }
+            else if (propertyType == typeof(double))
+            {
+                methodName = "ToDouble";
+            }
+            else if (propertyType == typeof(decimal))
+            {
+                methodName = "ToDecimal";
+            }
+            else if (propertyType == typeof(bool))
+            {
+                methodName = "ToBoolean";
+            }
+            else if (propertyType == typeof(DateTime))
+            {
+                methodName = "ToDateTime";
+            }
+            // ======== 以下是可空类型 ================================ 
+            else if (propertyType == typeof(char?))
+            {
+                methodName = "ToChar";
             }
             else if (propertyType == typeof(byte?))
             {
-                methodName = "GetByte";
-                convert = true;
+                methodName = "ToByte";
             }
             else if (propertyType == typeof(sbyte?))
             {
-                methodName = "GetByte";
-                convert = true;
+                methodName = "ToByte";
+                methodReturnType = typeof(byte);
             }
             else if (propertyType == typeof(short?))
             {
-                methodName = "GetInt16";
-                convert = true;
+                methodName = "ToInt16";
             }
             else if (propertyType == typeof(ushort?))
             {
-                methodName = "GetInt16";
-                convert = true;
+                methodName = "ToInt16";
+                methodReturnType = typeof(short);
             }
             else if (propertyType == typeof(int?))
             {
-                methodName = "GetInt32";
-                convert = true;
+                methodName = "ToInt32";
             }
             else if (propertyType == typeof(uint?))
             {
-                methodName = "GetInt32";
-                convert = true;
+                methodName = "ToInt32";
+                methodReturnType = typeof(int);
             }
             else if (propertyType == typeof(long?))
             {
-                methodName = "GetInt64";
-                convert = true;
+                methodName = "ToInt64";
             }
             else if (propertyType == typeof(ulong?))
             {
-                methodName = "GetInt64";
-                convert = true;
+                methodName = "ToInt64";
+                methodReturnType = typeof(long);
             }
             else if (propertyType == typeof(float?))
             {
-                methodName = "GetFloat";
-                convert = true;
+                methodName = "ToSingle";
             }
             else if (propertyType == typeof(double?))
             {
-                methodName = "GetDouble";
-                convert = true;
+                methodName = "ToDouble";
             }
             else if (propertyType == typeof(decimal?))
             {
-                methodName = "GetDecimal";
-                convert = true;
+                methodName = "ToDecimal";
             }
             else if (propertyType == typeof(bool?))
             {
-                methodName = "GetBoolean";
-                convert = true;
+                methodName = "ToBoolean";
             }
             else if (propertyType == typeof(DateTime?))
             {
-                methodName = "GetDateTime";
-                convert = true;
+                methodName = "ToDateTime";
             }
+
+            return methodName;
         }
         #endregion
 

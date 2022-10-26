@@ -69,6 +69,7 @@
     <Compile Include="QueryTest.cs" />
     <Compile Include="SplitTableTest.cs" />
     <Compile Include="UpdateTest.cs" />
+    <Compile Include="ValuesTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DAL\DAL.csproj">
