@@ -226,6 +226,7 @@ namespace LiteSql
         /// </summary>
         SqlValue ForList(IList list);
 
+        #region 增删改查接口
         /// <summary>
         /// 查询实体
         /// </summary>
@@ -359,6 +360,7 @@ namespace LiteSql
         /// 给定一条查询SQL，返回其查询结果的数量
         /// </summary>
         Task<CountResult> QueryCountAsync(int pageSize);
+        #endregion
 
     }
 }

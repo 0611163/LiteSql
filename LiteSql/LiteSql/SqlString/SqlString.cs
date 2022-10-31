@@ -374,7 +374,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlString Where(string sql, params object[] args)
         {
-            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
             {
                 return Append("and " + sql, args);
             }
@@ -391,7 +391,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlQueryable<T> Where<T>(string sql, params object[] args) where T : new()
         {
-            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
             {
                 return Append<T>("and " + sql, args);
             }
@@ -411,7 +411,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlString WhereIf(bool condition, string sql, params object[] args)
         {
-            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
             {
                 return AppendIf(condition, "and " + sql, args);
             }
@@ -429,7 +429,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlQueryable<T> WhereIf<T>(bool condition, string sql, params object[] args) where T : new()
         {
-            if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
             {
                 return AppendIf<T>(condition, "and " + sql, args);
             }
@@ -448,7 +448,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlString Having(string sql, params object[] args)
         {
-            if (RemoveSubSqls(_sql.ToString()).Contains("having"))
+            if (RemoveSubSqls(_sql.ToString()).Contains(" having "))
             {
                 return Append("and " + sql, args);
             }
@@ -465,7 +465,7 @@ namespace LiteSql
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlQueryable<T> Having<T>(string sql, params object[] args) where T : new()
         {
-            if (RemoveSubSqls(_sql.ToString()).Contains("having"))
+            if (RemoveSubSqls(_sql.ToString()).Contains(" having "))
             {
                 return Append<T>("and " + sql, args);
             }

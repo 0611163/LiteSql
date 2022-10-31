@@ -109,7 +109,7 @@ namespace LiteSql
                     result = ParamsAddRange(dbParameters, result);
                 }
 
-                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+                if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
                 {
                     _sql.Append(" and " + result);
                 }
@@ -146,7 +146,7 @@ namespace LiteSql
                     result = ParamsAddRange(dbParameters, result);
                 }
 
-                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+                if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
                 {
                     _sql.Append(" and " + result);
                 }
@@ -183,7 +183,7 @@ namespace LiteSql
                     result = ParamsAddRange(dbParameters, result);
                 }
 
-                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+                if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
                 {
                     _sql.Append(" and " + result);
                 }
@@ -220,7 +220,7 @@ namespace LiteSql
                     result = ParamsAddRange(dbParameters, result);
                 }
 
-                if (RemoveSubSqls(_sql.ToString()).Contains("where"))
+                if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
                 {
                     _sql.Append(" and " + result);
                 }
@@ -248,7 +248,7 @@ namespace LiteSql
             DbParameter[] dbParameters;
             string sql = condition.VisitLambda(expression, out dbParameters);
 
-            if (!_sql.ToString().Contains("order by"))
+            if (!_sql.ToString().Contains(" order by "))
             {
                 _sql.AppendFormat(" order by {0} asc ", sql);
             }
@@ -271,7 +271,7 @@ namespace LiteSql
             DbParameter[] dbParameters;
             string sql = condition.VisitLambda(expression, out dbParameters);
 
-            if (!_sql.ToString().Contains("order by"))
+            if (!_sql.ToString().Contains(" order by "))
             {
                 _sql.AppendFormat(" order by {0} desc ", sql);
             }
@@ -390,9 +390,9 @@ namespace LiteSql
             {
                 sql = sql + subSql.SQL;
             }
-            if (_sql.ToString().Contains("from"))
+            if (_sql.ToString().Contains(" from "))
             {
-                string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
+                string[] leftRigth = _sql.ToString().Split(new string[] { " from " }, StringSplitOptions.None);
                 string left = leftRigth[0];
                 string right = leftRigth[1];
 
@@ -454,9 +454,9 @@ namespace LiteSql
                 }
             }
 
-            if (_sql.ToString().Contains("from"))
+            if (_sql.ToString().Contains(" from "))
             {
-                string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
+                string[] leftRigth = _sql.ToString().Split(new string[] { " from " }, StringSplitOptions.None);
                 string left = leftRigth[0];
                 string right = leftRigth[1];
 
@@ -493,9 +493,9 @@ namespace LiteSql
             ExpressionHelper<U> condition2 = new ExpressionHelper<U>(this, _provider, _dbParameterNames, SqlStringMethod.Select);
             string sql2 = condition.VisitLambda(expression2, out dbParameters);
 
-            if (_sql.ToString().Contains("from"))
+            if (_sql.ToString().Contains(" from "))
             {
-                string[] leftRigth = _sql.ToString().Split(new string[] { "from" }, StringSplitOptions.None);
+                string[] leftRigth = _sql.ToString().Split(new string[] { " from " }, StringSplitOptions.None);
                 string left = leftRigth[0];
                 string right = leftRigth[1];
 
@@ -534,7 +534,7 @@ namespace LiteSql
         /// </summary>
         public List<T> ToPageList(int page, int pageSize)
         {
-            string ORDER_BY = "order by";
+            string ORDER_BY = " order by ";
             string[] strArr = this.SQL.Split(new string[] { ORDER_BY }, StringSplitOptions.None);
             string orderBy = strArr.Length > 1 ? ORDER_BY + strArr[1] : string.Empty;
 
@@ -546,7 +546,7 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> ToPageListAsync(int page, int pageSize)
         {
-            string ORDER_BY = "order by";
+            string ORDER_BY = " order by ";
             string[] strArr = this.SQL.Split(new string[] { ORDER_BY }, StringSplitOptions.None);
             string orderBy = strArr.Length > 1 ? ORDER_BY + strArr[1] : string.Empty;
 
