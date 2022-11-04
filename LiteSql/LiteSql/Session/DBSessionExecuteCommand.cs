@@ -453,7 +453,7 @@ namespace LiteSql
         /// </summary>
         public bool Exists(string sqlString, DbParameter[] cmdParms)
         {
-            OnExecuting?.Invoke(sqlString, null);
+            OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = ExecuteScalar(sqlString, cmdParms);
 
@@ -475,7 +475,7 @@ namespace LiteSql
         public async Task<bool> ExistsAsync(string sqlString, DbParameter[] cmdParms)
         {
             SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
+            OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = await ExecuteScalarAsync(sqlString, cmdParms);
 
@@ -500,7 +500,7 @@ namespace LiteSql
         public T QuerySingle<T>(string sqlString, DbParameter[] cmdParms)
         {
             SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
+            OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = ExecuteScalar(sqlString, cmdParms);
 
@@ -524,7 +524,7 @@ namespace LiteSql
         public object QuerySingle(string sqlString, DbParameter[] cmdParms)
         {
             SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
+            OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = ExecuteScalar(sqlString, cmdParms);
 
@@ -548,7 +548,7 @@ namespace LiteSql
         public async Task<T> QuerySingleAsync<T>(string sqlString, DbParameter[] cmdParms)
         {
             SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
+            OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = await ExecuteScalarAsync(sqlString, cmdParms);
 
@@ -572,7 +572,7 @@ namespace LiteSql
         public async Task<object> QuerySingleAsync(string sqlString, DbParameter[] cmdParms)
         {
             SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
+            OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = await ExecuteScalarAsync(sqlString, cmdParms);
 
