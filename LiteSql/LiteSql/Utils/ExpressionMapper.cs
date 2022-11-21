@@ -173,6 +173,10 @@ namespace LiteSql
                         {
                             convertExpr = Expression.Convert(getValueExpr, propertyType);
                         }
+                        else if (propertyType != methodReturnType || propertyType.BaseType == typeof(Array))
+                        {
+                            convertExpr = Expression.Convert(getValueExpr, propertyType);
+                        }
                         else
                         {
                             convertExpr = getValueExpr;
