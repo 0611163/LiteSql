@@ -492,7 +492,7 @@ namespace LiteSql
         /// </summary>
         public ExpValue VisitConvert(Expression exp)
         {
-            ExpValue result;
+            ExpValue result = new ExpValue();
 
             Expression operandExp = (exp as UnaryExpression).Operand;
             if (operandExp is UnaryExpression)
@@ -502,6 +502,11 @@ namespace LiteSql
             else if (operandExp is MemberExpression)
             {
                 result = VisitValue(operandExp);
+            }
+            else if (operandExp is ConstantExpression)
+            {
+                result.Value = VisitConstant(operandExp);
+                result.Type = ExpValueType.OnlyValue;
             }
             else
             {

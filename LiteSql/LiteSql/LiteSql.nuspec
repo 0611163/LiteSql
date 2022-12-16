@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>LiteSql</id>
-    <version>1.7.25</version>
+    <version>1.7.26</version>
     <title>LiteSql</title>
     <authors>suxiang</authors>
     <owners></owners>
@@ -10,7 +10,7 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/0611163/LiteSql</projectUrl>
     <description>一款同时支持原生SQL和Lambda表达式的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库，以及任意ADO.NET支持的数据库。</description>
-    <releaseNotes>1. PostgreSQL数组类型查询异常的BUG。</releaseNotes>
+    <releaseNotes>解决.Where(t =&gt; t.IsDel == 0)当IsDel是可空类型且等于号右边是常量时不支持的问题</releaseNotes>
     <copyright>Copyright @ 2022</copyright>
   </metadata>
   <files>
