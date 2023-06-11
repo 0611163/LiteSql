@@ -34,16 +34,19 @@ namespace LiteSql
             }
             catch
             {
-                _tran.Tran.Rollback();
+                RollbackTransaction();
                 throw;
             }
             finally
             {
-                _tran.Tran.Dispose();
-                _tran.Tran = null;
-                _tran = null;
-                _conn.Tran = null;
-                _connFactory.Release(_conn);
+                if (_tran != null)
+                {
+                    _tran.Tran.Dispose();
+                    _tran.Tran = null;
+                    _tran = null;
+                    _conn.Tran = null;
+                    _connFactory.Release(_conn);
+                }
             }
         }
         #endregion
@@ -56,7 +59,21 @@ namespace LiteSql
         {
             if (_tran == null) return; //防止重复回滚
 
-            _tran.Tran.Rollback();
+            try
+            {
+                _tran.Tran.Rollback();
+            }
+            finally
+            {
+                if (_tran != null)
+                {
+                    _tran.Tran.Dispose();
+                    _tran.Tran = null;
+                    _tran = null;
+                    _conn.Tran = null;
+                    _connFactory.Release(_conn);
+                }
+            }
         }
         #endregion
 
