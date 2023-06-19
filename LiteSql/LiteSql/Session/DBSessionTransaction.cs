@@ -15,7 +15,17 @@ namespace LiteSql
         public DbTransactionExt BeginTransaction()
         {
             _conn = _connFactory.GetConnection(null);
-            _tran = new DbTransactionExt(_conn.Conn.BeginTransaction(), _conn);
+            try
+            {
+                _tran = new DbTransactionExt(_conn.Conn.BeginTransaction(), _conn);
+            }
+            catch
+            {
+                _conn.Tran = null;
+                _connFactory.Release(_conn);
+                _tran = null;
+                throw;
+            }
             return _tran;
         }
         #endregion
