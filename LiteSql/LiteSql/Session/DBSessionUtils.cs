@@ -203,19 +203,19 @@ namespace LiteSql
                     if (propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
                     {
                         propertyInfoEx.IsDBKey = true;
+                    }
 
-                        AutoIncrementAttribute modelAutoIncrementAttribute = modelType.GetCustomAttribute<AutoIncrementAttribute>();
-                        if (modelAutoIncrementAttribute != null)
+                    AutoIncrementAttribute modelAutoIncrementAttribute = modelType.GetCustomAttribute<AutoIncrementAttribute>();
+                    if (modelAutoIncrementAttribute != null)
+                    {
+                        propertyInfoEx.IsAutoIncrement = modelAutoIncrementAttribute.Value;
+                    }
+                    else
+                    {
+                        AutoIncrementAttribute propertyAutoIncrementAttribute = propertyInfo.GetCustomAttribute<AutoIncrementAttribute>();
+                        if (propertyAutoIncrementAttribute != null)
                         {
-                            propertyInfoEx.IsAutoIncrement = modelAutoIncrementAttribute.Value;
-                        }
-                        else
-                        {
-                            AutoIncrementAttribute propertyAutoIncrementAttribute = propertyInfo.GetCustomAttribute<AutoIncrementAttribute>();
-                            if (propertyAutoIncrementAttribute != null)
-                            {
-                                propertyInfoEx.IsAutoIncrement = propertyAutoIncrementAttribute.Value;
-                            }
+                            propertyInfoEx.IsAutoIncrement = propertyAutoIncrementAttribute.Value;
                         }
                     }
 
