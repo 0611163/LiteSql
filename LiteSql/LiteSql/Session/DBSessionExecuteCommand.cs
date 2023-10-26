@@ -320,6 +320,7 @@ namespace LiteSql
 
             using (DbCommand cmd = _provider.GetCommand(sqlString, conn.Conn))
             {
+                if (_tran != null) cmd.Transaction = _tran.Tran;
                 DbDataReader myReader = cmd.ExecuteReader();
                 return myReader;
             }
@@ -337,6 +338,7 @@ namespace LiteSql
 
             using (DbCommand cmd = _provider.GetCommand(sqlString, conn.Conn))
             {
+                if (_tran != null) cmd.Transaction = _tran.Tran;
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
                 return myReader;
             }
