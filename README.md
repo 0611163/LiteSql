@@ -2,7 +2,7 @@
 
 ## 简介
 
-一款使用原生SQL查询的轻量级ORM，支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access数据库。
+一款使用原生SQL查询的轻量级ORM，单表查询和SQL拼接查询条件支持Lambda表达式。支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access、ClickHouse等数据库。
 
 ## 经典示例
 
@@ -43,29 +43,44 @@ foreach (SysUser item in list)
 Assert.IsTrue(list.Count > 0);
 ```
 
+## 经典示例2：
+```C#
+var session = LiteSqlFactory.GetSession();
+List<BsOrder> list = session
+    .Sql<BsOrder>(@"
+        select o.*, u.user_name as OrderUserName, u.real_name as OrderUserRealName 
+        from bs_order o
+        left join sys_user u on u.id=o.order_userid")
+    .Where(o => o.Status == 0
+        && o.Remark.Contains("订单")
+        && o.OrderTime >= new DateTime(2010, 1, 1)
+        && o.OrderTime < DateTime.Now.Date.AddDays(1))
+    .Where<SysUser>(u => new long[] { 8, 9, 10 }.Contains(u.Id))
+    .Append("order by o.order_time desc, o.id asc")
+    .ToList();
+```
+
 ## 特点
 
 1. 支持Oracle、SQL Server、MySQL、PostgreSQL、SQLite五种数据库；另外只要ADO.NET支持的数据库，都可以很方便地通过实现IProvider接口支持，仅需写150行左右的代码
 2. 有配套的Model生成器
 3. 数据插入、更新、批量插入、批量更新，支持实体类、实体类集合，无需拼SQL；删除操作支持根据主键或查询条件删除；增删改支持联合主键
-4. 查询以原生SQL为主，Lambda表达式辅助
+4. 查询以原生SQL为主，查询Where条件可以拼接Lambda表达式
 5. 支持参数化查询，统一不同数据库的参数化查询SQL
 6. 支持连接多个数据源
 9. 支持手动分表
-10. 单表查询、单表分页查询、简单的连表查询支持Lambda表达式
-11. 支持原生SQL和Lambda表达式混写
-12. 支持拼接子查询；主查询、子查询可以分开拼接，逻辑更清晰
+10. 单表查询支持Lambda表达式
 
 ## 优点
 
 1. 比较简单，学习成本低
-2. 查询以原生SQL为主，简单Lambda表达式辅助
+2. 查询以原生SQL为主，Lambda表达式辅助
 3. 代码量仅4000多行，更容易修改和掌控代码质量
 
 ## 缺点
 
 1. 对Lambda表达式的支持比较弱
-2. 复杂查询不支持Lambda表达式(子查询、分组统计查询、嵌套查询等不支持Lambda表达式写法)
+2. 复杂查询不支持Lambda表达式(连表查询、子查询、分组统计查询、嵌套查询等不支持Lambda表达式写法)
 
 ## 建议
 
@@ -76,7 +91,7 @@ Assert.IsTrue(list.Count > 0);
 ## 开发环境
 
 1. VS2022
-2. 目标框架：net45;netstandard2.0;net5.0;net6.0
+2. 目标框架：net45;netstandard2.0;net6.0
 3. 测试工程使用.NET Framework 4.5.2
 
 ## 配套Model生成器地址：
@@ -188,6 +203,35 @@ namespace DAL
 
     }
 }
+```
+
+5. 依赖注入
+```C#
+var builder = WebApplication.CreateBuilder(args);
+
+var db = new LiteSqlClient(builder.Configuration.GetConnectionString("DefaultConnection"), new MySQLProvider());
+var secondDB = new LiteSqlClient<SecondDbFlag>(builder.Configuration.GetConnectionString("SecondConnection"), new MySQLProvider());
+
+// Add services to the container.
+// 注册数据库ILiteSqlClient
+builder.Services.AddSingleton<ILiteSqlClient>(db);
+// 注册第二个数据库ILiteSqlClient
+builder.Services.AddSingleton<ILiteSqlClient<SecondDbFlag>>(secondDB);
+// 注册数据库DbSession
+builder.Services.AddScoped<IDbSession>(serviceProvider =>
+{
+    return serviceProvider.GetService<ILiteSqlClient>().GetSession();
+});
+// 注册第二个数据库DbSession
+builder.Services.AddScoped<IDbSession<SecondDbFlag>>(serviceProvider =>
+{
+    return serviceProvider.GetService<ILiteSqlClient<SecondDbFlag>>().GetSession();
+});
+
+/// <summary>
+/// 第二个数据库标识
+/// </summary>
+public class SecondDbFlag { }
 ```
 
 ## 配套Model生成器
@@ -644,204 +688,6 @@ public void TestQueryByLambda6()
 }
 ```
 
-### 使用Lambda表达式联表分页查询(简单的联表查询，复杂情况请使用原生SQL或原生SQL和Lambda表达式混写)
-
-```C#
-public void TestQueryByLambda7()
-{
-    var session = LiteSqlFactory.GetSession();
-
-    ISqlQueryable<BsOrder> sql = session.Queryable<BsOrder>();
-
-    int total;
-    List<string> idsNotIn = new List<string>() { "100007", "100008", "100009" };
-
-    List<BsOrder> list = sql
-        .Select<SysUser>(u => u.UserName, t => t.OrderUserName)
-        .Select<SysUser>(u => u.RealName, t => t.OrderUserRealName)
-        .LeftJoin<SysUser>((t, u) => t.OrderUserid == u.Id)
-        .LeftJoin<BsOrderDetail>((t, d) => t.Id == d.OrderId)
-        .Where<SysUser, BsOrderDetail>((t, u, d) => t.Remark.Contains("订单") && u.CreateUserid == "1" && d.GoodsName != null)
-        .WhereIf<BsOrder>(true, t => t.Remark.Contains("测试"))
-        .WhereIf<BsOrder>(true, t => !idsNotIn.Contains(t.Id))
-        .WhereIf<SysUser>(true, u => u.CreateUserid == "1")
-        .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-        .ToPageList(1, 20, out total);
-
-    foreach (BsOrder item in list)
-    {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-}
-```
-
-### 原生SQL和Lambda表达式混写
-
-```C#
-public void TestQueryByLambda9()
-{
-    var session = LiteSqlFactory.GetSession();
-
-    ISqlQueryable<BsOrder> sql = session.CreateSql<BsOrder>(@"
-        select t.*, u.real_name as OrderUserRealName
-        from bs_order t
-        left join sys_user u on t.order_userid=u.id");
-
-    List<BsOrder> list = sql.Where(t => t.Status == int.Parse("0")
-        && t.Status == new BsOrder().Status
-        && t.Remark.Contains("订单")
-        && t.Remark != null
-        && t.OrderTime >= new DateTime(2010, 1, 1)
-        && t.OrderTime <= DateTime.Now.AddDays(1))
-        .WhereIf<SysUser>(true, u => u.CreateTime < DateTime.Now)
-        .OrderByDescending(t => t.OrderTime).OrderBy(t => t.Id)
-        .ToList();
-
-    foreach (BsOrder item in list)
-    {
-        Console.WriteLine(ModelToStringUtil.ToString(item));
-    }
-}
-```
-
-```C#
-DateTime? startTime = null;
-
-var session = LiteSqlFactory.GetSession();
-
-session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-List<SysUser> list = session.Queryable<SysUser>() //Lambda写法
-
-    //拼SQL写法
-    .Append<SysUser>(@" where t.create_userid = @CreateUserId 
-        and t.password like @Password
-        and t.id in @Ids",
-        new
-        {
-            CreateUserId = "1",
-            Password = "%345%",
-            Ids = session.ForList(new List<int> { 1, 2, 9, 10, 11 })
-        })
-
-    .Where(t => !t.RealName.Contains("管理员")) //Lambda写法
-
-    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) }) //拼SQL写法
-
-    .Where<SysUser>(t => t.Id <= 20) //Lambda写法
-
-    .AppendIf(startTime.HasValue, " and t.create_time >= @StartTime ", new { StartTime = startTime }) //拼SQL写法
-
-    .Append(" and t.create_time <= @EndTime ", new { EndTime = new DateTime(2022, 8, 1) }) //拼SQL写法
-
-    .QueryList<SysUser>(); //如果上一句是拼SQL写法，就用QueryList
-    //.ToList(); //如果上一句是Lambda写法，就用ToList
-
-long id = session.Queryable<SysUser>().Where(t => t.Id == 1).First().Id;
-Assert.IsTrue(id == 1);
-
-foreach (SysUser item in list)
-{
-    Console.WriteLine(ModelToStringUtil.ToString(item));
-}
-Assert.IsTrue(list.Count > 0);
-```
-
-### 拼接子SQL
-
-```C#
-var session = LiteSqlFactory.GetSession();
-
-session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-var subSql = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => !t.RealName.Contains("管理员"));
-
-var subSql2 = session.CreateSql<SysUser>().Select(t => new { t.Id }).Where(t => t.Id <= 20);
-
-var sql = session.Queryable<SysUser>()
-
-    .Where(t => t.Password.Contains("345"))
-
-    .Append(" and id in ", subSql)
-
-    .Append<SysUser>(@" and t.create_time >= @StartTime", new { StartTime = new DateTime(2020, 1, 1) })
-
-    .Append<SysUser>(" and id in ", subSql2)
-
-    .Where(t => t.Password.Contains("234"));
-
-var sql2 = session.Queryable<SysUser>().Where(t => t.RealName.Contains("管理员"));
-
-sql.Append(" union all ", sql2);
-
-List<SysUser> list = sql.QueryList<SysUser>();
-
-foreach (SysUser item in list)
-{
-    Console.WriteLine(ModelToStringUtil.ToString(item));
-}
-Assert.IsTrue(list.Count > 0);
-Assert.IsTrue(list.Count(t => t.RealName.Contains("管理员")) > 0);
-Assert.IsTrue(list.Count(t => t.Id > 20) == 0);
-```
-
-### 拼接子查询
-
-```C#
-var session = LiteSqlFactory.GetSession();
-
-session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-List<SysUser> list = session.Queryable<SysUser>(
-    t => new
-    {
-        t.RealName,
-        t.CreateUserid
-    })
-    .Select("count(id) as Count")
-    .Where(t => t.Id >= 0)
-    .GroupBy<SysUser>("t.real_name, t.create_userid")
-    .Having<SysUser>("real_name like @Name1 or real_name like @Name2", new
-    {
-        Name1 = "%管理员%",
-        Name2 = "%测试%"
-    })
-    .ToList();
-
-foreach (SysUser item in list)
-{
-    Console.WriteLine(ModelToStringUtil.ToString(item));
-}
-Assert.IsTrue(list.Count > 0);
-```
-
-```C#
-var session = LiteSqlFactory.GetSession();
-
-session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
-
-List<SysUser> list = session.CreateSql<SysUser>()
-    .Select(t => new
-    {
-        t.RealName,
-        t.CreateUserid
-    })
-    .Select(session.CreateSql(@"(
-            select count(1) 
-            from bs_order o 
-            where o.order_userid = t.id
-            and o.status = @Status
-        ) as OrderCount", new { Status = 0 }))
-    .Where(t => t.Id >= 0)
-    .ToList();
-
-foreach (SysUser item in list)
-{
-    Console.WriteLine(ModelToStringUtil.ToString(item));
-}
-Assert.IsTrue(list.Count > 0);
-```
-
 ## 手动分表
 
 ### 定义LiteSqlFactory类
@@ -888,9 +734,8 @@ namespace DAL
 ### 数据插入
 
 ```C#
-SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-
-var session = LiteSqlFactory.GetSession(splitTableMapping);
+var session = LiteSqlFactory.GetSession();
+session.SetTableNameMap<SysUser>("sys_user_202208");
 
 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
@@ -903,9 +748,8 @@ Console.WriteLine("插入成功, user.Id=" + user.Id);
 ### 数据更新
 
 ```C#
-SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-
-var session = LiteSqlFactory.GetSession(splitTableMapping);
+var session = LiteSqlFactory.GetSession();
+session.SetTableNameMap<SysUser>("sys_user_202208");
 
 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
@@ -921,9 +765,8 @@ session.Update(user);
 ### 数据删除
 
 ```C#
-SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-
-var session = LiteSqlFactory.GetSession(splitTableMapping);
+var session = LiteSqlFactory.GetSession();
+session.SetTableNameMap<SysUser>("sys_user_202208");
 
 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
@@ -936,7 +779,8 @@ Console.WriteLine(deleteCount2 + "条数据已删除");
 ### 数据查询
 
 ```C#
-var session = LiteSqlFactory.GetSession(splitTableMapping);
+var session = LiteSqlFactory.GetSession();
+session.SetTableNameMap<SysUser>("sys_user_202208");
 
 session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
@@ -1305,8 +1149,6 @@ namespace LiteSql.Provider
 
 #### ColumnTypeUtil工具类
 
-类型转换暂时只写了DateTime和String类型，需要补充
-
 ```C#
 using System;
 using System.Collections.Generic;
@@ -1321,17 +1163,82 @@ namespace LiteSql.Provider
     {
         public static DbType GetDBType(object value)
         {
-            Type type = value.GetType();
-            if (type == typeof(DateTime))
+            if (value != null)
             {
-                return DbType.DateTime;
-            }
-            else if (type == typeof(string))
-            {
-                return DbType.String;
+                Type type = value.GetType();
+                if (type == typeof(DateTime) || type == typeof(DateTime?))
+                {
+                    return DbType.DateTime;
+                }
+                else if (type == typeof(string))
+                {
+                    return DbType.String;
+                }
+                else if (type == typeof(float) || type == typeof(float?))
+                {
+                    return DbType.Double;
+                }
+                else if (type == typeof(double) || type == typeof(double?))
+                {
+                    return DbType.Double;
+                }
+                else if (type == typeof(decimal) || type == typeof(decimal?))
+                {
+                    return DbType.Decimal;
+                }
+                else if (type == typeof(short) || type == typeof(short?))
+                {
+                    return DbType.Int16;
+                }
+                else if (type == typeof(int) || type == typeof(int?))
+                {
+                    return DbType.Int32;
+                }
+                else if (type == typeof(long) || type == typeof(long?))
+                {
+                    return DbType.Int64;
+                }
             }
             return DbType.String;
         }
+
+        public static string GetDBTypeName(Type parameterType)
+        {
+            if (parameterType == typeof(DateTime) || parameterType == typeof(DateTime?))
+            {
+                return "DateTime";
+            }
+            else if (parameterType == typeof(string))
+            {
+                return "String";
+            }
+            else if (parameterType == typeof(float) || parameterType == typeof(float?))
+            {
+                return "Float32";
+            }
+            else if (parameterType == typeof(double) || parameterType == typeof(double?))
+            {
+                return "Float64";
+            }
+            else if (parameterType == typeof(decimal) || parameterType == typeof(decimal?))
+            {
+                return "Float64";
+            }
+            else if (parameterType == typeof(short) || parameterType == typeof(short?))
+            {
+                return "Int16";
+            }
+            else if (parameterType == typeof(int) || parameterType == typeof(int?))
+            {
+                return "Int32";
+            }
+            else if (parameterType == typeof(long) || parameterType == typeof(long?))
+            {
+                return "Int64";
+            }
+            return "String";
+        }
+
     }
 }
 ```
@@ -1397,12 +1304,9 @@ namespace ClickHouseTest
 #### 实体类
 
 ```C#
-using LiteSql;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace Models
 {
