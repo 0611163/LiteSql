@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,7 +11,7 @@ namespace LiteSql
     /// <summary>
     /// 类的属性信息扩展
     /// </summary>
-    public class PropertyInfoEx
+    internal class PropertyInfoEx
     {
         /// <summary>
         /// 类的属性信息
@@ -33,6 +34,11 @@ namespace LiteSql
         public bool IsDBField { get; set; }
 
         /// <summary>
+        /// 数据库字段特性
+        /// </summary>
+        public ColumnAttribute DBFieldAttribute { get; set; }
+
+        /// <summary>
         /// 是否主键
         /// </summary>
         public bool IsDBKey { get; set; }
@@ -41,6 +47,11 @@ namespace LiteSql
         /// 是否自增(null表示未配置)
         /// </summary>
         public bool? IsAutoIncrement { get; set; }
+
+        /// <summary>
+        /// 是否只读
+        /// </summary>
+        public bool IsReadOnly { get; set; }
 
         /// <summary>
         /// 类的属性信息扩展

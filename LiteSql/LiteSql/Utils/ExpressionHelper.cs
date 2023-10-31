@@ -8,25 +8,26 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LiteSql
 {
     /// <summary>
     /// 表达式树解析
     /// </summary>
-    public class ExpressionHelper<T>
+    internal class ExpressionHelper<T>
     {
         #region 变量
-        private ISqlString _sqlString;
         private IProvider _provider;
         private HashSet<string> _dbParameterNames;
         private SqlStringMethod _SqlStringMethod;
+
+        internal string Alias { get; set; }
         #endregion
 
         #region 构造函数
-        public ExpressionHelper(ISqlString sqlString, IProvider provider, HashSet<string> dbParameterNames, SqlStringMethod sqlStringMethod)
+        public ExpressionHelper(IProvider provider, HashSet<string> dbParameterNames, SqlStringMethod sqlStringMethod)
         {
-            _sqlString = sqlString;
             _provider = provider;
             _dbParameterNames = dbParameterNames;
             _SqlStringMethod = sqlStringMethod;
@@ -104,8 +105,8 @@ namespace LiteSql
             }
             else if (exp.NodeType == ExpressionType.MemberAccess) // 支持 order by
             {
-                ExpValue expValue = VisitMember(exp as MemberExpression, null);
-                result.Sql = string.Format("{0}.{1}", expValue.MemberParentName, expValue.MemberDBField);
+                ExpMemberValue memberValue = VisitMember(exp as MemberExpression, null);
+                result.Sql = string.Format("{0}.{1}", memberValue.MemberParentName, memberValue.MemberDBField);
             }
             else if (exp.NodeType == ExpressionType.NotEqual ||
                  exp.NodeType == ExpressionType.GreaterThan ||
@@ -119,7 +120,14 @@ namespace LiteSql
             else if (exp.NodeType == ExpressionType.Not) //支持 not in
             {
                 UnaryExpression unaryExp = exp as UnaryExpression;
-                result = VisitMethodCall(unaryExp.Operand as MethodCallExpression, exp);
+                if (unaryExp.Operand is MethodCallExpression)
+                {
+                    result = VisitMethodCall(unaryExp.Operand as MethodCallExpression, exp);
+                }
+                else
+                {
+                    throw new Exception("不支持");
+                }
             }
             else
             {
@@ -141,8 +149,15 @@ namespace LiteSql
             ExpValue left = VisitConditions(exp.Left);
             ExpValue right = VisitConditions(exp.Right);
 
-            result.Sql = string.Format(" ({0} {1} {2}) ", left.Sql, ToSqlOperator(exp.NodeType), right.Sql);
-            result.Type = ExpValueType.SqlAndDbParameter;
+            var sqlOperator = ToSqlOperator(exp.NodeType);
+            if (sqlOperator == "AND")
+            {
+                result.Sql = string.Format(" {0} {1} {2} ", left.Sql, sqlOperator, right.Sql);
+            }
+            else
+            {
+                result.Sql = string.Format(" ({0} {1} {2}) ", left.Sql, sqlOperator, right.Sql);
+            }
 
             result.DbParameters.AddRange(left.DbParameters);
             result.DbParameters.AddRange(right.DbParameters);
@@ -161,11 +176,10 @@ namespace LiteSql
 
             if (_SqlStringMethod == SqlStringMethod.LeftJoin)
             {
-                ExpValue left = VisitMember(exp.Left);
-                ExpValue right = VisitMember(exp.Right);
+                ExpMemberValue left = VisitMember(exp.Left);
+                ExpMemberValue right = VisitMember(exp.Right);
 
                 result.Sql = string.Format("{0}.{1} = {2}.{3}", left.MemberParentName, left.MemberDBField, right.MemberParentName, right.MemberDBField);
-                result.Type = ExpValueType.SqlAndDbParameter;
             }
             else
             {
@@ -177,13 +191,25 @@ namespace LiteSql
                     exp.NodeType == ExpressionType.LessThanOrEqual ||
                     exp.NodeType == ExpressionType.Equal)
                 {
-                    ExpValue left = VisitMember(exp.Left);
-                    ExpValue right = VisitValue(exp.Right);
+                    ExpMemberValue left;
+                    object right;
+                    var isrRversed = false;
+                    if (IsMember(exp.Left))
+                    {
+                        left = VisitMember(exp.Left);
+                        right = VisitValue(exp.Right);
+                    }
+                    else
+                    {
+                        left = VisitMember(exp.Right);
+                        right = VisitValue(exp.Left);
+                        isrRversed = true;
+                    }
 
                     left.MemberAliasName = GetAliasName(left.MemberAliasName);
                     _dbParameterNames.Add(left.MemberAliasName);
 
-                    if (right.Value == null)
+                    if (right == null)
                     {
                         if (exp.NodeType == ExpressionType.Not ||
                             exp.NodeType == ExpressionType.NotEqual)
@@ -201,20 +227,20 @@ namespace LiteSql
                     }
                     else
                     {
-                        if (right.Value.GetType() == typeof(DateTime))
+                        if (right.GetType() == typeof(DateTime))
                         {
-                            SqlValue sqlValue = new SqlValue(right.Value);
+                            SqlValue sqlValue = new SqlValue(right);
                             Type parameterType = sqlValue.Value == null ? typeof(object) : sqlValue.Value.GetType();
                             string markKey = _provider.GetParameterName(left.MemberAliasName, parameterType);
 
-                            result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
-                            result.Sql = string.Format(" ({0}.{1} {2} {3}) ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), sqlValue.Sql.Replace("{0}", markKey));
+                            result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right));
+                            result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType, isrRversed), sqlValue.Sql.Replace("{0}", markKey));
                         }
                         else
                         {
-                            string markKey = _provider.GetParameterName(left.MemberAliasName, right.Value.GetType());
-                            result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right.Value));
-                            result.Sql = string.Format(" ({0}.{1} {2} {3}) ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType), markKey);
+                            string markKey = _provider.GetParameterName(left.MemberAliasName, right.GetType());
+                            result.DbParameters.Add(_provider.GetDbParameter(left.MemberAliasName, right));
+                            result.Sql = string.Format(" {0}.{1} {2} {3} ", left.MemberParentName, left.MemberDBField, ToSqlOperator(exp.NodeType, isrRversed), markKey);
                         }
                     }
                 }
@@ -243,13 +269,13 @@ namespace LiteSql
                     if (exp.Method.Name == "Contains") sqlValue = new SqlValue("%" + InvokeValue(exp.Arguments[0]).ToString() + "%");
                     if (exp.Method.Name == "StartsWith") sqlValue = new SqlValue(InvokeValue(exp.Arguments[0]).ToString() + "%");
                     if (exp.Method.Name == "EndsWith") sqlValue = new SqlValue("%" + InvokeValue(exp.Arguments[0]).ToString());
-                    ExpValue expValue = VisitMember(exp.Object as MemberExpression, null);
+                    ExpMemberValue memberValue = VisitMember(exp.Object as MemberExpression, null);
 
-                    expValue.MemberAliasName = GetAliasName(expValue.MemberAliasName);
-                    _dbParameterNames.Add(expValue.MemberAliasName);
+                    memberValue.MemberAliasName = GetAliasName(memberValue.MemberAliasName);
+                    _dbParameterNames.Add(memberValue.MemberAliasName);
 
                     Type parameterType = sqlValue.Value.GetType();
-                    string markKey = _provider.GetParameterName(expValue.MemberAliasName, parameterType);
+                    string markKey = _provider.GetParameterName(memberValue.MemberAliasName, parameterType);
 
                     string not = string.Empty;
                     if (parent != null && parent.NodeType == ExpressionType.Not) // not like
@@ -257,35 +283,35 @@ namespace LiteSql
                         not = "not";
                     }
 
-                    result.Sql = string.Format("{0}.{1} {2} like {3}", expValue.MemberParentName, expValue.MemberDBField, not, sqlValue.Sql.Replace("{0}", markKey));
-                    result.DbParameters.Add(_provider.GetDbParameter(expValue.MemberAliasName, sqlValue.Value));
+                    result.Sql = string.Format("{0}.{1} {2} like {3}", memberValue.MemberParentName, memberValue.MemberDBField, not, sqlValue.Sql.Replace("{0}", markKey));
+                    result.DbParameters.Add(_provider.GetDbParameter(memberValue.MemberAliasName, sqlValue.Value));
                 }
                 else // 支持 in 和 not in 例: t => idList.Contains(t.Id)
                 {
                     if (exp.Method.Name == "Contains")
                     {
                         SqlValue sqlValue = null;
-                        ExpValue expValue = null;
+                        ExpMemberValue memberValue = null;
                         if (exp.Object != null) //List
                         {
-                            sqlValue = _sqlString.ForList((IList)InvokeValue(exp.Object));
+                            sqlValue = _provider.ForList((IList)InvokeValue(exp.Object));
 
-                            expValue = VisitMember(exp.Arguments[0], null);
+                            memberValue = VisitMember(exp.Arguments[0], null);
 
 
                         }
                         else //数组
                         {
-                            sqlValue = _sqlString.ForList((IList)InvokeValue(exp.Arguments[0]));
+                            sqlValue = _provider.ForList((IList)InvokeValue(exp.Arguments[0]));
 
-                            expValue = VisitMember(exp.Arguments[1], null);
+                            memberValue = VisitMember(exp.Arguments[1], null);
                         }
 
-                        expValue.MemberAliasName = GetAliasName(expValue.MemberAliasName);
-                        _dbParameterNames.Add(expValue.MemberAliasName);
+                        memberValue.MemberAliasName = GetAliasName(memberValue.MemberAliasName);
+                        _dbParameterNames.Add(memberValue.MemberAliasName);
 
                         Type parameterType = sqlValue.Value.GetType();
-                        string markKey = _provider.GetParameterName(expValue.MemberAliasName, parameterType);
+                        string markKey = _provider.GetParameterName(memberValue.MemberAliasName, parameterType);
 
                         string inOrNotIn = string.Empty;
                         if (parent != null && parent.NodeType == ExpressionType.Not)
@@ -297,7 +323,7 @@ namespace LiteSql
                             inOrNotIn = "in";
                         }
 
-                        result.Sql = string.Format("{0}.{1} {2} {3}", expValue.MemberParentName, expValue.MemberDBField, inOrNotIn, sqlValue.Sql.Replace("{0}", markKey));
+                        result.Sql = string.Format("{0}.{1} {2} {3}", memberValue.MemberParentName, memberValue.MemberDBField, inOrNotIn, sqlValue.Sql.Replace("{0}", markKey));
 
                         string[] keyArr = sqlValue.Sql.Replace("(", string.Empty).Replace(")", string.Empty).Replace("@", string.Empty).Split(',');
                         IList valueList = (IList)sqlValue.Value;
@@ -318,55 +344,6 @@ namespace LiteSql
                     }
                 }
             }
-            else // 支持 ToString、Parse 等其它方法
-            {
-                result.Value = ReflectionValue(exp, null);
-                result.Type = ExpValueType.OnlyValue;
-            }
-
-            return result;
-        }
-        #endregion
-
-        #region VisitValue 取值
-        /// <summary>
-        /// 第一级
-        /// </summary>
-        public ExpValue VisitValue(Expression exp, MemberExpression parent = null)
-        {
-            ExpValue result = new ExpValue();
-
-            if (exp.NodeType == ExpressionType.Call) // 例: t => t.Status == int.Parse("0") 例: t => t.OrderTime <= DateTime.Now.AddDays(1)
-            {
-                result = VisitMethodCall(exp as MethodCallExpression);
-            }
-            else if (exp.NodeType == ExpressionType.New) // 例: t => t.OrderTime > new DateTime(2020, 1, 1)
-            {
-                result = VisitNew(exp as NewExpression);
-            }
-            else if (exp.NodeType == ExpressionType.MemberAccess)
-            {
-                MemberExpression memberExp = exp as MemberExpression;
-                if (memberExp.Expression is MemberExpression) // 支持对象变量的属性 例: t => t.OrderTime > time.startTime.Value 例: t => t.Remark.Contains(order.Remark)
-                {
-                    result = VisitValue(memberExp.Expression, memberExp);
-                }
-                else
-                {
-                    object obj = ReflectionValue(exp, parent); // 例: t => t.OrderTime < DateTime.Now  例: t => t.Remark.Contains(new BsOrder().Remark)
-                    result.Value = obj;
-                    result.Type = ExpValueType.OnlyValue;
-                }
-            }
-            else if (exp.NodeType == ExpressionType.Constant) // 支持常量、null
-            {
-                result.Value = VisitConstant(exp);
-                result.Type = ExpValueType.OnlyValue;
-            }
-            else if (exp.NodeType == ExpressionType.Convert) // 字段是可空类型的情况
-            {
-                result = VisitConvert(exp);
-            }
             else
             {
                 throw new Exception("不支持");
@@ -380,9 +357,9 @@ namespace LiteSql
         /// <summary>
         /// 字段或属性
         /// </summary>
-        public ExpValue VisitMember(Expression exp, MemberExpression parent = null)
+        public ExpMemberValue VisitMember(Expression exp, MemberExpression parent = null)
         {
-            ExpValue result = new ExpValue();
+            ExpMemberValue result = new ExpMemberValue();
 
             if (exp.NodeType == ExpressionType.MemberAccess)
             {
@@ -395,7 +372,11 @@ namespace LiteSql
                     result.MemberDBField = GetDbField(mebmerExp.Member.Name, mebmerExp.Expression.Type);
                     result.MemberName = mebmerExp.Member.Name;
                     result.MemberAliasName = mebmerExp.Member.Name;
-                    result.Type = ExpValueType.MemberValue;
+
+                    if (Alias == null && mebmerExp.Expression.Type == typeof(T))
+                    {
+                        Alias = parameterExp.Name;
+                    }
                 }
                 else
                 {
@@ -415,14 +396,130 @@ namespace LiteSql
         }
         #endregion
 
+        #region VisitValue 取值
+        /// <summary>
+        /// 第一级
+        /// </summary>
+        public object VisitValue(Expression exp, MemberExpression parent = null)
+        {
+            object result = new object();
+
+            if (exp.NodeType == ExpressionType.Call) // 例: t => t.Status == int.Parse("0") 例: t => t.OrderTime <= DateTime.Now.AddDays(1)
+            {
+                result = ReflectionValue(exp, null);
+            }
+            else if (exp.NodeType == ExpressionType.New) // 例: t => t.OrderTime > new DateTime(2020, 1, 1)
+            {
+                result = VisitNew(exp as NewExpression);
+            }
+            else if (exp.NodeType == ExpressionType.MemberAccess)
+            {
+                MemberExpression memberExp = exp as MemberExpression;
+                if (memberExp.Expression is MemberExpression) // 支持对象变量的属性 例: t => t.OrderTime > time.startTime.Value 例: t => t.Remark.Contains(order.Remark)
+                {
+                    result = VisitValue(memberExp.Expression, memberExp);
+                }
+                else
+                {
+                    result = ReflectionValue(exp, parent); // 例: t => t.OrderTime < DateTime.Now  例: t => t.Remark.Contains(new BsOrder().Remark)
+                }
+            }
+            else if (exp.NodeType == ExpressionType.Constant) // 支持常量、null
+            {
+                result = VisitConstant(exp);
+            }
+            else if (exp.NodeType == ExpressionType.Convert) // 字段是可空类型的情况
+            {
+                result = VisitConvert(exp);
+            }
+            else
+            {
+                throw new Exception("不支持");
+            }
+
+            return result;
+        }
+        #endregion
+
         #region InvokeValue
         public object InvokeValue(Expression exp)
         {
-            object result = string.Empty;
+            object result;
 
             if (exp.NodeType == ExpressionType.Constant)  //常量
             {
                 result = VisitConstant(exp);
+            }
+            else if (exp.NodeType == ExpressionType.MemberAccess)
+            {
+                var memberExp = exp as MemberExpression;
+                if (memberExp.Expression is ConstantExpression)
+                {
+                    var target = VisitConstant(memberExp.Expression);
+                    result = GetMemberValue(memberExp.Member, target);
+                }
+                else if (memberExp.Expression is NewExpression newExp)
+                {
+                    var target = VisitNew(newExp);
+                    result = GetMemberValue(memberExp.Member, target);
+                }
+                else if (memberExp.Type == typeof(DateTime))
+                {
+                    if (memberExp.Expression == null)
+                    {
+                        result = GetMemberValue(memberExp.Member, null);
+                    }
+                    else
+                    {
+                        var target = InvokeValue(memberExp.Expression);
+                        result = GetMemberValue(memberExp.Member, target);
+                    }
+                }
+                else
+                {
+                    result = ReflectionValue(memberExp.Expression, memberExp);
+                }
+            }
+            else if (exp is MethodCallExpression methodCallExp)
+            {
+                result = InvokeCall(methodCallExp);
+            }
+            else if (exp.NodeType == ExpressionType.Convert)
+            {
+                result = VisitConvert(exp);
+            }
+            else if (exp is NewArrayExpression newArrayExp)
+            {
+                ArrayList arr = new ArrayList();
+                foreach (var item in newArrayExp.Expressions)
+                {
+                    var val = InvokeValue(item);
+                    arr.Add(val);
+                }
+                result = arr;
+            }
+            else if (exp is ListInitExpression)
+            {
+                ArrayList arr = new ArrayList();
+                if (exp.CanReduce)
+                {
+                    var blockExpression = exp.Reduce() as BlockExpression;
+                    var expressions = blockExpression.Expressions.Skip(1).Take(blockExpression.Expressions.Count - 2).ToList();
+                    for (int i = 0; i < expressions.Count; i++)
+                    {
+                        var methodCallExpression = expressions[i] as MethodCallExpression;
+                        foreach (var item in methodCallExpression.Arguments)
+                        {
+                            var val = InvokeValue(item);
+                            arr.Add(val);
+                        }
+                    }
+                }
+                result = arr;
+            }
+            else if (exp is NewExpression newExp)
+            {
+                result = VisitNew(newExp);
             }
             else
             {
@@ -436,14 +533,99 @@ namespace LiteSql
         #region ReflectionValue
         private object ReflectionValue(Expression member, MemberExpression parent)
         {
-            object result = Expression.Lambda(member).Compile().DynamicInvoke();
+            object result;
 
-            if (result != null && result.GetType().IsClass && result.GetType() != typeof(string) && parent != null)
+            if (member == null)
             {
-                result = Expression.Lambda(parent).Compile().DynamicInvoke();
+                if (parent.Type == typeof(DateTime))
+                {
+                    result = GetMemberValue(parent.Member, null);
+                }
+                else
+                {
+                    result = Expression.Lambda(parent).Compile().DynamicInvoke();
+                }
+            }
+            else if (parent != null && parent.NodeType == ExpressionType.MemberAccess)
+            {
+                if (parent.Expression is MemberExpression)
+                {
+                    var target = ReflectionValue(parent.Expression, null);
+                    result = GetMemberValue(parent.Member, target);
+                }
+                else if (parent.Expression is ConstantExpression)
+                {
+                    var target = VisitConstant(parent.Expression);
+                    result = GetMemberValue(parent.Member, target);
+                }
+                else
+                {
+                    result = Expression.Lambda(member).Compile().DynamicInvoke();
+                }
+            }
+            else if (parent == null && member.NodeType == ExpressionType.MemberAccess)
+            {
+                var memberExp = member as MemberExpression;
+                if (memberExp.Expression is ConstantExpression)
+                {
+                    var target = VisitConstant(memberExp.Expression);
+                    result = GetMemberValue(memberExp.Member, target);
+                }
+                else if (memberExp.Expression is NewExpression newExp)
+                {
+                    var expValue = VisitNew(newExp);
+                    result = GetMemberValue(memberExp.Member, expValue);
+                }
+                else if (memberExp.Type == typeof(DateTime))
+                {
+                    result = GetMemberValue(memberExp.Member, null);
+                }
+                else
+                {
+                    result = Expression.Lambda(member).Compile().DynamicInvoke();
+                }
+            }
+            else if (parent == null && member.NodeType == ExpressionType.Call)
+            {
+                result = InvokeCall(member as MethodCallExpression);
+            }
+            else if (parent == null && member.NodeType == ExpressionType.Convert)
+            {
+                result = VisitConvert(member);
+            }
+            else
+            {
+                result = Expression.Lambda(member).Compile().DynamicInvoke();
+
+                if (result != null && result.GetType().IsClass && result.GetType() != typeof(string) && parent != null)
+                {
+                    result = Expression.Lambda(parent).Compile().DynamicInvoke();
+                }
             }
 
             return result;
+        }
+        #endregion
+
+        #region InvokeCall
+        private object InvokeCall(MethodCallExpression exp)
+        {
+            var arguments = new List<object>();
+
+            foreach (var item in exp.Arguments)
+            {
+                arguments.Add(InvokeValue(item));
+            }
+
+            if (exp.Object == null)
+            {
+                return exp.Method.Invoke(this, arguments.ToArray());
+            }
+            else
+            {
+                var obj = InvokeValue(exp.Object);
+                return exp.Method.Invoke(obj, arguments.ToArray());
+            }
         }
         #endregion
 
@@ -469,9 +651,9 @@ namespace LiteSql
         /// <summary>
         /// New 表达式
         /// </summary>
-        public ExpValue VisitNew(NewExpression exp)
+        public object VisitNew(NewExpression exp)
         {
-            ExpValue result = new ExpValue();
+            object result;
 
             List<object> args = new List<object>();
             foreach (Expression argExp in exp.Arguments.ToArray())
@@ -479,8 +661,7 @@ namespace LiteSql
                 args.Add(InvokeValue(argExp));
             }
 
-            result.Value = exp.Constructor.Invoke(args.ToArray());
-            result.Type = ExpValueType.OnlyValue;
+            result = exp.Constructor.Invoke(args.ToArray());
 
             return result;
         }
@@ -490,9 +671,9 @@ namespace LiteSql
         /// <summary>
         /// Convert 表达式
         /// </summary>
-        public ExpValue VisitConvert(Expression exp)
+        public object VisitConvert(Expression exp)
         {
-            ExpValue result = new ExpValue();
+            object result;
 
             Expression operandExp = (exp as UnaryExpression).Operand;
             if (operandExp is UnaryExpression)
@@ -505,8 +686,15 @@ namespace LiteSql
             }
             else if (operandExp is ConstantExpression)
             {
-                result.Value = VisitConstant(operandExp);
-                result.Type = ExpValueType.OnlyValue;
+                result = VisitConstant(operandExp);
+            }
+            else if (operandExp is NewExpression)
+            {
+                result = VisitNew(operandExp as NewExpression);
+            }
+            else if (operandExp is MethodCallExpression)
+            {
+                result = VisitValue(operandExp);
             }
             else
             {
@@ -518,32 +706,63 @@ namespace LiteSql
         #endregion
 
         #region ToSqlOperator
-        private string ToSqlOperator(ExpressionType type)
+        private string ToSqlOperator(ExpressionType type, bool isReversed = false)
         {
-            switch (type)
+            if (!isReversed)
             {
-                case (ExpressionType.AndAlso):
-                case (ExpressionType.And):
-                    return "AND";
-                case (ExpressionType.OrElse):
-                case (ExpressionType.Or):
-                    return "OR";
-                case (ExpressionType.Not):
-                    return "NOT";
-                case (ExpressionType.NotEqual):
-                    return "<>";
-                case ExpressionType.GreaterThan:
-                    return ">";
-                case ExpressionType.GreaterThanOrEqual:
-                    return ">=";
-                case ExpressionType.LessThan:
-                    return "<";
-                case ExpressionType.LessThanOrEqual:
-                    return "<=";
-                case (ExpressionType.Equal):
-                    return "=";
-                default:
-                    throw new Exception("不支持该方法");
+                switch (type)
+                {
+                    case (ExpressionType.AndAlso):
+                    case (ExpressionType.And):
+                        return "AND";
+                    case (ExpressionType.OrElse):
+                    case (ExpressionType.Or):
+                        return "OR";
+                    case (ExpressionType.Not):
+                        return "NOT";
+                    case (ExpressionType.NotEqual):
+                        return "<>";
+                    case ExpressionType.GreaterThan:
+                        return ">";
+                    case ExpressionType.GreaterThanOrEqual:
+                        return ">=";
+                    case ExpressionType.LessThan:
+                        return "<";
+                    case ExpressionType.LessThanOrEqual:
+                        return "<=";
+                    case (ExpressionType.Equal):
+                        return "=";
+                    default:
+                        throw new Exception("不支持该方法");
+                }
+            }
+            else
+            {
+                switch (type)
+                {
+                    case (ExpressionType.AndAlso):
+                    case (ExpressionType.And):
+                        return "AND";
+                    case (ExpressionType.OrElse):
+                    case (ExpressionType.Or):
+                        return "OR";
+                    case (ExpressionType.Not):
+                        return "NOT";
+                    case (ExpressionType.NotEqual):
+                        return "<>";
+                    case ExpressionType.GreaterThan:
+                        return "<";
+                    case ExpressionType.GreaterThanOrEqual:
+                        return "<=";
+                    case ExpressionType.LessThan:
+                        return ">";
+                    case ExpressionType.LessThanOrEqual:
+                        return ">=";
+                    case (ExpressionType.Equal):
+                        return "=";
+                    default:
+                        throw new Exception("不支持该方法");
+                }
             }
         }
         #endregion
@@ -551,31 +770,25 @@ namespace LiteSql
         #region GetDbField
         private string GetDbField(string name, Type type)
         {
-            string result = string.Empty;
-
-            foreach (PropertyInfoEx propertyInfoEx in DBSession.GetEntityProperties(type))
+            var dict = DbSession.GetEntityPropertiesDict(type);
+            if (dict.TryGetValue(name, out PropertyInfoEx propInfoEx))
             {
-                PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
+                PropertyInfo propertyInfo = propInfoEx.PropertyInfo;
 
-                if (propertyInfo.Name.ToUpper() == name.ToUpper())
+                ColumnAttribute dbFieldAttribute = propInfoEx.DBFieldAttribute;
+                if (dbFieldAttribute != null && dbFieldAttribute.Name != null)
                 {
-                    ColumnAttribute isDBFieldAttribute = propertyInfo.GetCustomAttribute<ColumnAttribute>();
-                    if (isDBFieldAttribute != null && isDBFieldAttribute.FieldName != null)
-                    {
-                        return _provider.OpenQuote + isDBFieldAttribute.FieldName + _provider.CloseQuote;
-                    }
-                    else
-                    {
-                        return _provider.OpenQuote + propertyInfo.Name + _provider.CloseQuote;
-                    }
+                    return _provider.OpenQuote + dbFieldAttribute.Name + _provider.CloseQuote;
+                }
+                else
+                {
+                    return _provider.OpenQuote + propertyInfo.Name + _provider.CloseQuote;
                 }
             }
-            if (string.IsNullOrWhiteSpace(result))
+            else
             {
-
+                throw new Exception($"GetDbField错误, name={name}, type={type.Name}");
             }
-
-            return result;
         }
         #endregion
 
@@ -642,6 +855,45 @@ namespace LiteSql
                 }
             }
             return new Tuple<string, List<DbParameter>>(sql, newParamList);
+        }
+        #endregion
+
+        #region GetMemberValue
+        private object GetMemberValue(MemberInfo propertyOrField, object target)
+        {
+            if (propertyOrField is PropertyInfo propertyInfo)
+            {
+                return propertyInfo.GetValue(target, null);
+            }
+            else if (propertyOrField is FieldInfo fieldInfo)
+            {
+                return fieldInfo.GetValue(target);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("propertyOrField", "Expected a property or field, not " + propertyOrField);
+            }
+        }
+        #endregion
+
+        #region IsMember
+        private bool IsMember(Expression exp)
+        {
+            if (exp is MemberExpression memberExp)
+            {
+                if (memberExp.Expression is ParameterExpression)
+                {
+                    return true;
+                }
+            }
+            else if (exp.NodeType == ExpressionType.Convert)
+            {
+                if (exp is UnaryExpression unaryExp)
+                {
+                    return IsMember(unaryExp.Operand);
+                }
+            }
+            return false;
         }
         #endregion
 

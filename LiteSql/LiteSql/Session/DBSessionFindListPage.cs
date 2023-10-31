@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region QueryPage<T> 分页查询列表
         /// <summary>

@@ -1,15 +1,16 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region 变量
         /// <summary>
@@ -32,7 +33,8 @@ namespace LiteSql
 
             if (!_oldObjs.ContainsKey(obj))
             {
-                object cloneObj = ModelMapper<T>.Map(obj);
+                object cloneObj;
+                cloneObj = ModelMapper<T>.Map(obj);
                 _oldObjs.TryAdd(obj, cloneObj);
             }
         }
@@ -49,6 +51,7 @@ namespace LiteSql
         }
         #endregion
 
+
         #region Update 修改
         /// <summary>
         /// 修改
@@ -58,9 +61,6 @@ namespace LiteSql
             //object oldObj = Find(obj);
             object oldObj;
             _oldObjs.TryGetValue(obj, out oldObj);
-            if (oldObj == null) oldObj = Find(obj);
-
-            if (oldObj == null) throw new Exception("无法获取到旧数据");
 
             StringBuilder strSql = new StringBuilder();
             int savedCount = 0;
@@ -69,7 +69,21 @@ namespace LiteSql
 
             if (savedCount > 0)
             {
-                Execute(strSql.ToString(), parameters);
+                OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+                var conn = GetConnection(_tran);
+
+                try
+                {
+                    Execute(strSql.ToString(), parameters);
+                }
+                finally
+                {
+                    if (_tran == null)
+                    {
+                        if (conn.State != ConnectionState.Closed) conn.Close();
+                    }
+                }
             }
         }
         #endregion
@@ -83,9 +97,6 @@ namespace LiteSql
             //object oldObj = await FindAsync(obj);
             object oldObj;
             _oldObjs.TryGetValue(obj, out oldObj);
-            if (oldObj == null) oldObj = Find(obj);
-
-            if (oldObj == null) throw new Exception("无法获取到旧数据");
 
             StringBuilder strSql = new StringBuilder();
             int savedCount = 0;
@@ -94,7 +105,21 @@ namespace LiteSql
 
             if (savedCount > 0)
             {
-                await ExecuteAsync(strSql.ToString(), parameters);
+                OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+                var conn = GetConnection(_tran);
+
+                try
+                {
+                    await ExecuteAsync(strSql.ToString(), parameters);
+                }
+                finally
+                {
+                    if (_tran == null)
+                    {
+                        if (conn.State != ConnectionState.Closed) conn.Close();
+                    }
+                }
             }
         }
         #endregion
@@ -125,9 +150,6 @@ namespace LiteSql
                     //object oldObj = Find(obj);
                     object oldObj;
                     _oldObjs.TryGetValue(obj, out oldObj);
-                    if (oldObj == null) oldObj = Find(obj);
-
-                    if (oldObj == null) throw new Exception("无法获取到旧数据");
 
                     newList.Add(obj);
                     oldList.Add((T)oldObj);
@@ -141,7 +163,21 @@ namespace LiteSql
 
                 if (savedCount > 0)
                 {
-                    Execute(strSql.ToString(), parameters);
+                    OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+                    var conn = GetConnection(_tran);
+
+                    try
+                    {
+                        Execute(strSql.ToString(), parameters);
+                    }
+                    finally
+                    {
+                        if (_tran == null)
+                        {
+                            if (conn.State != ConnectionState.Closed) conn.Close();
+                        }
+                    }
                 }
             }
         }
@@ -173,9 +209,6 @@ namespace LiteSql
                     //object oldObj = Find(obj);
                     object oldObj;
                     _oldObjs.TryGetValue(obj, out oldObj);
-                    if (oldObj == null) oldObj = Find(obj);
-
-                    if (oldObj == null) throw new Exception("无法获取到旧数据");
 
                     newList.Add(obj);
                     oldList.Add((T)oldObj);
@@ -189,7 +222,21 @@ namespace LiteSql
 
                 if (savedCount > 0)
                 {
-                    await ExecuteAsync(strSql.ToString(), parameters);
+                    OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+                    var conn = GetConnection(_tran);
+
+                    try
+                    {
+                        await ExecuteAsync(strSql.ToString(), parameters);
+                    }
+                    finally
+                    {
+                        if (_tran == null)
+                        {
+                            if (conn.State != ConnectionState.Closed) conn.Close();
+                        }
+                    }
                 }
             }
         }
@@ -210,14 +257,16 @@ namespace LiteSql
             {
                 PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
 
-                if (propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).Length > 0 && !propertyInfoEx.IsDBKey)
+                if (propertyInfoEx.IsReadOnly) continue;
+
+                if (propertyInfoEx.IsDBField && !propertyInfoEx.IsDBKey)
                 {
-                    object oldVal = propertyInfo.GetValue(oldObj, null);
+                    object oldVal = oldObj == null ? null : propertyInfo.GetValue(oldObj, null);
                     object val = propertyInfo.GetValue(obj, null);
-                    if (!object.Equals(oldVal, val))
+                    if (oldObj == null || !object.Equals(oldVal, val))
                     {
                         sbPros.Append(string.Format(" {0}={1},", string.Format("{0}{1}{2}", _provider.OpenQuote, propertyInfoEx.FieldName, _provider.CloseQuote), _provider.GetParameterName(propertyInfoEx.FieldName, propertyInfoEx.PropertyInfo.PropertyType)));
-                        DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName, propertyInfoEx.PropertyInfo.PropertyType), val == null ? DBNull.Value : val);
+                        DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName, propertyInfoEx.PropertyInfo.PropertyType), val);
                         paramList.Add(param);
                         savedCount++;
                     }
@@ -260,11 +309,13 @@ namespace LiteSql
                 {
                     PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
 
-                    if (propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).Length > 0 && !propertyInfoEx.IsDBKey)
+                    if (propertyInfoEx.IsReadOnly) continue;
+
+                    if (propertyInfoEx.IsDBField && !propertyInfoEx.IsDBKey)
                     {
-                        object oldVal = propertyInfo.GetValue(oldObj, null);
+                        object oldVal = oldObj == null ? null : propertyInfo.GetValue(oldObj, null);
                         object val = propertyInfo.GetValue(obj, null);
-                        if (!object.Equals(oldVal, val))
+                        if (oldObj == null || !object.Equals(oldVal, val))
                         {
                             sbPros.Append(string.Format(" {0}={1},", string.Format("{0}{1}{2}", _provider.OpenQuote, propertyInfoEx.FieldName, _provider.CloseQuote), _provider.GetParameterName(propertyInfoEx.FieldName + n, propertyInfoEx.PropertyInfo.PropertyType)));
                             DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName + n, propertyInfoEx.PropertyInfo.PropertyType), val);

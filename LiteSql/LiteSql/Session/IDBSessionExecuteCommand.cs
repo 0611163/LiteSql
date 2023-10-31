@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial interface IDBSession
+    public partial interface IDbSession
     {
         #region SQL打印
         /// <summary>
@@ -28,36 +28,6 @@ namespace LiteSql
         /// 是否存在
         /// </summary>
         Task<bool> ExistsAsync(string sqlString);
-
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="sqlString">SQL语句</param>
-        /// <returns>影响的记录数</returns>
-        int Execute(string sqlString);
-
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="sqlString">SQL语句</param>
-        /// <returns>影响的记录数</returns>
-        Task<int> ExecuteAsync(string sqlString);
-
-        /// <summary>
-        /// 执行SQL语句，返回一个值
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        object ExecuteScalar(string SQLString, DbParameter[] cmdParms);
-
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        Task<object> ExecuteScalarAsync(string SQLString, DbParameter[] cmdParms);
 
         /// <summary>
         /// 查询单个值
@@ -113,22 +83,6 @@ namespace LiteSql
         #endregion
 
         #region 执行带参数的SQL语句
-
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        int Execute(string SQLString, DbParameter[] cmdParms);
-
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        Task<int> ExecuteAsync(string SQLString, DbParameter[] cmdParms);
 
         /// <summary>
         /// 是否存在

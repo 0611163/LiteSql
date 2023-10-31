@@ -4,7 +4,7 @@ using System.Data.Common;
 
 namespace OracleTest
 {
-    public class OracleProvider : OracleProviderBase, IDBProvider
+    public class OracleProvider : OracleProviderBase, IDbProvider
     {
         #region 创建 DbConnection
         public override DbConnection CreateConnection(string connectionString)

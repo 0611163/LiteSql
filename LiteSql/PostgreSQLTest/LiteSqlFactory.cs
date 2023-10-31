@@ -11,7 +11,7 @@ namespace PostgreSQLTest
     public class LiteSqlFactory
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.PostgreSQL, new PostgreSQLProvider());
+        private static ILiteSql _liteSqlClient = new LiteSql.LiteSql(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.PostgreSQL, new PostgreSQLProvider());
         #endregion
 
         #region 获取 IDBSession

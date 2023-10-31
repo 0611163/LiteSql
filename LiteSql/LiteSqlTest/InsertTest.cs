@@ -69,10 +69,10 @@ namespace LiteSqlTest
 
             var session = LiteSqlFactory.GetSession();
 
-            bool bl = session.CreateSql("select * from bs_order where id=@Id", new { Id = id }).Exists();
+            bool bl = session.Sql("select * from bs_order where id=@Id", new { Id = id }).Exists();
             Assert.IsTrue(bl);
 
-            long count = session.CreateSql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = id }).QueryCount();
+            long count = session.Sql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = id }).QueryCount();
             Assert.IsTrue(count == 3);
         }
         #endregion
@@ -105,7 +105,7 @@ namespace LiteSqlTest
 
             var session = LiteSqlFactory.GetSession();
 
-            bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = user.Id }).Exists();
+            bool bl = session.Sql("select * from sys_user where id=@Id", new { Id = user.Id }).Exists();
             Assert.IsTrue(bl);
         }
         #endregion
@@ -125,7 +125,7 @@ namespace LiteSqlTest
             Assert.IsTrue(id > 0);
             var session = LiteSqlFactory.GetSession();
 
-            bool bl = session.CreateSql("select * from sys_user where id=@Id", new { Id = id }).Exists();
+            bool bl = session.Sql("select * from sys_user where id=@Id", new { Id = id }).Exists();
             Assert.IsTrue(bl);
         }
         #endregion
@@ -187,10 +187,10 @@ namespace LiteSqlTest
 
             session = LiteSqlFactory.GetSession();
 
-            bool bl = session.CreateSql("select * from bs_order where id=@Id", new { Id = order.Id }).Exists();
+            bool bl = session.Sql("select * from bs_order where id=@Id", new { Id = order.Id }).Exists();
             Assert.IsFalse(bl);
 
-            long count = session.CreateSql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = order.Id }).QueryCount();
+            long count = session.Sql("select * from bs_order_detail where order_id=@OrderId", new { OrderId = order.Id }).QueryCount();
             Assert.IsTrue(count == 0);
         }
         #endregion

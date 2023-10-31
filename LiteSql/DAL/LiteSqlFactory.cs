@@ -7,7 +7,9 @@ namespace DAL
     public class LiteSqlFactory
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.MySQL, new MySQLProvider());
+        private static ILiteSqlClient _db = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), new MySQLProvider());
+
+        public static ILiteSqlClient Db => _db;
         #endregion
 
         #region 获取 IDBSession
@@ -15,9 +17,9 @@ namespace DAL
         /// 获取 IDBSession
         /// </summary>
         /// <param name="splitTableMapping">分表映射</param>
-        public static IDBSession GetSession(SplitTableMapping splitTableMapping = null)
+        public static IDbSession GetSession(SplitTableMapping splitTableMapping = null)
         {
-            return _liteSqlClient.GetSession(splitTableMapping);
+            return _db.GetSession(splitTableMapping);
         }
         #endregion
 
@@ -26,9 +28,9 @@ namespace DAL
         /// 获取 IDBSession (异步)
         /// </summary>
         /// <param name="splitTableMapping">分表映射</param>
-        public static async Task<IDBSession> GetSessionAsync(SplitTableMapping splitTableMapping = null)
+        public static async Task<IDbSession> GetSessionAsync(SplitTableMapping splitTableMapping = null)
         {
-            return await _liteSqlClient.GetSessionAsync(splitTableMapping);
+            return await _db.GetSessionAsync(splitTableMapping);
         }
         #endregion
 

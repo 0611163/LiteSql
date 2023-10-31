@@ -1,28 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Data;
+using System.Data.Common;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
+        /// <summary>
+        /// 事务关联的数据库连接
+        /// </summary>
+        private DbConnection _connForTran;
+
         #region 开始事务
         /// <summary>
         /// 开始事务
         /// </summary>
-        public DbTransactionExt BeginTransaction()
+        public DbTransaction BeginTransaction()
         {
-            _conn = _connFactory.GetConnection(null);
+            return BeginTransaction(IsolationLevel.Unspecified);
+        }
+
+        /// <summary>
+        /// 开始事务
+        /// </summary>
+        public DbTransaction BeginTransaction(IsolationLevel isolationLevel)
+        {
+            var conn = GetConnection();
+            if (conn.State == ConnectionState.Closed) conn.Open();
             try
             {
-                _tran = new DbTransactionExt(_conn.Conn.BeginTransaction(), _conn);
+                _tran = conn.BeginTransaction(isolationLevel);
+                _connForTran = _tran.Connection;
             }
             catch
             {
-                _conn.Tran = null;
-                _connFactory.Release(_conn);
+                if (conn.State != ConnectionState.Closed) conn.Close();
                 _tran = null;
                 throw;
             }
@@ -40,7 +51,7 @@ namespace LiteSql
 
             try
             {
-                _tran.Tran.Commit();
+                _tran.Commit();
             }
             catch
             {
@@ -51,11 +62,13 @@ namespace LiteSql
             {
                 if (_tran != null)
                 {
-                    _tran.Tran.Dispose();
-                    _tran.Tran = null;
+                    if (_connForTran != null)
+                    {
+                        if (_connForTran.State != ConnectionState.Closed) _connForTran.Close();
+                        _connForTran = null;
+                    }
+                    _tran.Dispose();
                     _tran = null;
-                    _conn.Tran = null;
-                    _connFactory.Release(_conn);
                 }
             }
         }
@@ -71,17 +84,19 @@ namespace LiteSql
 
             try
             {
-                _tran.Tran.Rollback();
+                _tran.Rollback();
             }
             finally
             {
                 if (_tran != null)
                 {
-                    _tran.Tran.Dispose();
-                    _tran.Tran = null;
+                    if (_connForTran != null)
+                    {
+                        if (_connForTran.State != ConnectionState.Closed) _connForTran.Close();
+                        _connForTran = null;
+                    }
+                    _tran.Dispose();
                     _tran = null;
-                    _conn.Tran = null;
-                    _connFactory.Release(_conn);
                 }
             }
         }

@@ -60,7 +60,6 @@
     <Compile Include="AsyncTest.cs" />
     <Compile Include="BatchInsertTest.cs" />
     <Compile Include="BatchUpdateTest.cs" />
-    <Compile Include="DapperTest.cs" />
     <Compile Include="DeleteTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="LambdaTest.cs" />
@@ -68,6 +67,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryTest.cs" />
     <Compile Include="SplitTableTest.cs" />
+    <Compile Include="SqlStringTest.cs" />
     <Compile Include="UpdateTest.cs" />
     <Compile Include="ValuesTest.cs" />
   </ItemGroup>

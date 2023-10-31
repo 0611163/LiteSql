@@ -1,18 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial interface IDBSession
+    public partial interface IDbSession
     {
         #region 开始事务
         /// <summary>
         /// 开始事务
         /// </summary>
-        DbTransactionExt BeginTransaction();
+        DbTransaction BeginTransaction();
+
+        /// <summary>
+        /// 开始事务
+        /// </summary>
+        DbTransaction BeginTransaction(IsolationLevel isolationLevel);
         #endregion
 
         #region 提交事务

@@ -77,38 +77,36 @@ namespace DAL
         /// </summary>
         public async Task<string> InsertAsync(BsOrder order, List<BsOrderDetail> detailList)
         {
-            using (var session = await LiteSqlFactory.GetSessionAsync())
+            var session = await LiteSqlFactory.GetSessionAsync();
+            try
             {
-                try
+                session.BeginTransaction();
+
+                order.Id = Guid.NewGuid().ToString("N");
+                order.CreateTime = DateTime.Now;
+
+                decimal amount = 0;
+                foreach (BsOrderDetail detail in detailList)
                 {
-                    session.BeginTransaction();
-
-                    order.Id = Guid.NewGuid().ToString("N");
-                    order.CreateTime = DateTime.Now;
-
-                    decimal amount = 0;
-                    foreach (BsOrderDetail detail in detailList)
-                    {
-                        detail.Id = Guid.NewGuid().ToString("N");
-                        detail.OrderId = order.Id;
-                        detail.CreateTime = DateTime.Now;
-                        amount += detail.Price * detail.Quantity;
-                        await session.InsertAsync(detail);
-                    }
-                    order.Amount = amount;
-
-                    await session.InsertAsync(order);
-
-                    session.CommitTransaction();
-
-                    return order.Id;
+                    detail.Id = Guid.NewGuid().ToString("N");
+                    detail.OrderId = order.Id;
+                    detail.CreateTime = DateTime.Now;
+                    amount += detail.Price * detail.Quantity;
+                    await session.InsertAsync(detail);
                 }
-                catch (Exception ex)
-                {
-                    session.RollbackTransaction();
-                    Console.WriteLine(ex.ToString());
-                    throw;
-                }
+                order.Amount = amount;
+
+                await session.InsertAsync(order);
+
+                session.CommitTransaction();
+
+                return order.Id;
+            }
+            catch (Exception ex)
+            {
+                session.RollbackTransaction();
+                Console.WriteLine(ex.ToString());
+                throw;
             }
         }
         #endregion
@@ -281,19 +279,31 @@ namespace DAL
         {
             var session = LiteSqlFactory.GetSession();
 
-            ISqlString sql = session.CreateSql(@"
+            ISqlString sql = session.Sql(@"
                 select t.*, u.real_name as OrderUserRealName
                 from bs_order t
                 left join sys_user u on t.order_userid=u.id
                 where 1=1");
 
-            sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            if (status.HasValue)
+            {
+                sql.Append(" and t.status=@status", status);
+            }
 
-            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @Remark", new { Remark = "%" + remark + "%" });
+            if (!string.IsNullOrWhiteSpace(remark))
+            {
+                sql.Append(" and t.remark like @Remark", new { Remark = "%" + remark + "%" });
+            }
 
-            sql.AppendIf(startTime.HasValue, " and t.order_time>=@startTime ", startTime);
+            if (startTime.HasValue)
+            {
+                sql.Append(" and t.order_time>=@startTime ", startTime);
+            }
 
-            sql.AppendIf(endTime.HasValue, " and t.order_time<=@endTime ", endTime);
+            if (endTime.HasValue)
+            {
+                sql.Append(" and t.order_time<=@endTime ", endTime);
+            }
 
             int index = 0;
             string[] idArr = ids.Split(',');
@@ -315,19 +325,19 @@ namespace DAL
         {
             var session = LiteSqlFactory.GetSession();
 
-            ISqlString sql = session.CreateSql(@"
+            ISqlString sql = session.Sql(@"
                 select t.*, u.real_name as OrderUserRealName
                 from bs_order t
                 left join sys_user u on t.order_userid=u.id
                 where 1=1");
 
-            sql.AppendIf(status.HasValue, " and t.status=@status", status);
+            if (status.HasValue) sql.Append(" and t.status=@status", status);
 
-            sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
+            if (!string.IsNullOrWhiteSpace(remark)) sql.Append(" and t.remark like concat('%',@remark,'%')", remark);
 
-            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            if (startTime.HasValue) sql.Append(" and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            if (endTime.HasValue) sql.Append(" and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
             sql.Append(" order by t.order_time desc, t.id asc ");
 
@@ -346,7 +356,7 @@ namespace DAL
 
             session.OnExecuting = (s, p) => Console.WriteLine(s);
 
-            ISqlString sql = session.CreateSql(@"
+            ISqlString sql = session.Sql(@"
                 select t.*, u.real_name as OrderUserRealName
                 from bs_order t
                 left join sys_user u on t.order_userid=u.id
@@ -356,9 +366,9 @@ namespace DAL
 
             sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
             sql.Append(" order by t.order_time desc, t.id asc ");
 
@@ -376,7 +386,7 @@ namespace DAL
         {
             var session = LiteSqlFactory.GetSession();
 
-            ISqlString sql = session.CreateSql(@"
+            ISqlString sql = session.Sql(@"
                 select t.*, u.real_name as OrderUserRealName
                 from bs_order t
                 left join sys_user u on t.order_userid=u.id
@@ -386,9 +396,9 @@ namespace DAL
 
             sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like concat('%',@remark,'%')", remark);
 
-            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", () => startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(startTime.HasValue, " and t.order_time>=STR_TO_DATE(@startTime, '%Y-%m-%d %H:%i:%s') ", startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", () => endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            sql.AppendIf(endTime.HasValue, " and t.order_time<=STR_TO_DATE(@endTime, '%Y-%m-%d %H:%i:%s') ", endTime.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
             string orderby = " order by t.order_time desc, t.id asc ";
 
@@ -406,7 +416,7 @@ namespace DAL
         {
             var session = LiteSqlFactory.GetSession();
 
-            ISqlString sql = session.CreateSql(@"
+            ISqlString sql = session.Sql(@"
                 select t.*, u.real_name as OrderUserRealName
                 from bs_order t
                 left join sys_user u on t.order_userid=u.id
@@ -416,9 +426,9 @@ namespace DAL
 
             sql.AppendIf(!string.IsNullOrWhiteSpace(remark), " and t.remark like @remark", "%" + remark + "%");
 
-            sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", () => startTime);
+            sql.AppendIf(startTime.HasValue, " and t.order_time >= @startTime ", startTime);
 
-            sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", () => endTime);
+            sql.AppendIf(endTime.HasValue, " and t.order_time <= @endTime ", endTime);
 
             sql.Append(" and t.id in @ids ", sql.ForList(ids.Split(',').ToList()));
 

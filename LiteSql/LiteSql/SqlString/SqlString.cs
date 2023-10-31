@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,6 +12,272 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
+    /// <summary>
+    /// 参数化查询SQL字符串
+    /// </summary>
+    public class SqlString<T> : SqlString, ISqlString<T> where T : new()
+    {
+        #region 构造函数
+        public SqlString(IProvider provider, IDbSession session, string sql = null, params object[] args) : base(provider, session, sql, args)
+        {
+
+        }
+
+        public SqlString(IProvider provider, IDbSession session, string sql, DbParameter[] args) : base(provider, session, sql, args)
+        {
+
+        }
+        #endregion
+
+        #region Append
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
+        public new ISqlString<T> Append(string sql, params object[] args)
+        {
+            base.Append(sql, args);
+            return this;
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
+        /// <param name="sql">SQL</param>
+        /// <param name="args">参数</param>
+        public new ISqlString<T> AppendIf(bool condition, string sql, params object[] args)
+        {
+            base.AppendIf(condition, sql, args);
+            return this;
+        }
+        #endregion
+
+        #region Where
+        /// <summary>
+        /// 追加参数化查询条件SQL
+        /// </summary>
+        /// <param name="expression">Lambda 表达式</param>
+        public ISqlString<T> Where(Expression<Func<T, object>> expression)
+        {
+            try
+            {
+                ExpressionHelper<T> condition = new ExpressionHelper<T>(_provider, DbParameterNames, SqlStringMethod.Where);
+
+                DbParameter[] dbParameters;
+                string result = condition.VisitLambda(expression, out dbParameters);
+
+                if (dbParameters != null)
+                {
+                    result = ParamsAddRange(dbParameters, result);
+                }
+
+                if (Sql.ToString().Contains(" where "))
+                {
+                    Sql.Append(" and " + result);
+                }
+                else
+                {
+                    Sql.Append(" where " + result);
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+            return this;
+        }
+        #endregion
+
+        #region Where
+        /// <summary>
+        /// 追加参数化查询条件SQL
+        /// </summary>
+        /// <param name="expression">Lambda 表达式</param>
+        public ISqlString<T> Where<U>(Expression<Func<U, object>> expression)
+        {
+            try
+            {
+                ExpressionHelper<U> condition = new ExpressionHelper<U>(_provider, DbParameterNames, SqlStringMethod.Where);
+
+                DbParameter[] dbParameters;
+                string result = condition.VisitLambda(expression, out dbParameters);
+
+                if (dbParameters != null)
+                {
+                    result = ParamsAddRange(dbParameters, result);
+                }
+
+                if (Sql.ToString().Contains(" where "))
+                {
+                    Sql.Append(" and " + result);
+                }
+                else
+                {
+                    Sql.Append(" where " + result);
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+            return this;
+        }
+        #endregion
+
+        #region 实现增删改查接口
+
+        #region ToList
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        public List<T> ToList()
+        {
+            return _session.QueryList<T>(this.SQL, this.Params);
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        public async Task<List<T>> ToListAsync()
+        {
+            return await _session.QueryListAsync<T>(this.SQL, this.Params);
+        }
+        #endregion
+
+        #region ToPageList
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        public List<T> ToPageList(string orderby, int page, int pageSize)
+        {
+            return _session.QueryPage<T>(this.SQL, orderby, pageSize, page, this.Params);
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        public async Task<List<T>> ToPageListAsync(string orderby, int page, int pageSize)
+        {
+            return await _session.QueryPageAsync<T>(this.SQL, orderby, pageSize, page, this.Params);
+        }
+        #endregion
+
+        #region Count
+        /// <summary>
+        /// 返回数量
+        /// </summary>
+        public long Count()
+        {
+            return _session.QueryCount(this.SQL, this.Params);
+        }
+
+        /// <summary>
+        /// 返回数量
+        /// </summary>
+        public async Task<long> CountAsync()
+        {
+            return await _session.QueryCountAsync(this.SQL, this.Params);
+        }
+        #endregion
+
+        #region First
+        /// <summary>
+        /// 返回数量
+        /// </summary>
+        public T First()
+        {
+            return _session.Query<T>(this.SQL, this.Params);
+        }
+
+        /// <summary>
+        /// 返回数量
+        /// </summary>
+        public async Task<T> FirstAsync()
+        {
+            return await _session.QueryAsync<T>(this.SQL, this.Params);
+        }
+        #endregion
+
+        #region Exists
+        /// <summary>
+        /// 是否存在
+        /// </summary>
+        public new bool Exists()
+        {
+            return _session.Exists(this.SQL, this.Params);
+        }
+
+        /// <summary>
+        /// 返回数量
+        /// </summary>
+        public new async Task<bool> ExistsAsync()
+        {
+            return await _session.ExistsAsync(this.SQL, this.Params);
+        }
+        #endregion
+
+        #region Delete
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public int Delete()
+        {
+            string[] sqlParts = this.SQL.Split(new string[] { " where " }, StringSplitOptions.None);
+            string right;
+            if (sqlParts.Length > 1)
+            {
+                right = sqlParts[1];
+            }
+            else
+            {
+                right = sqlParts[0];
+            }
+
+            Regex regex = new Regex("[\\(]?[\\s]*([\\w]+\\.)", RegexOptions.IgnoreCase);
+            Match match = regex.Match(right);
+            if (match.Success)
+            {
+                right = right.Replace(match.Groups[1].Value, " ");
+            }
+
+            return _session.DeleteByCondition<T>(right, this.Params);
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public Task<int> DeleteAsync()
+        {
+            string[] sqlParts = this.SQL.Split(new string[] { " where " }, StringSplitOptions.None);
+            string right;
+            if (sqlParts.Length > 1)
+            {
+                right = sqlParts[1];
+            }
+            else
+            {
+                right = sqlParts[0];
+            }
+
+            Regex regex = new Regex("[\\(]?[\\s]*([\\w]+\\.)", RegexOptions.IgnoreCase);
+            Match match = regex.Match(right);
+            if (match.Success)
+            {
+                right = right.Replace(match.Groups[1].Value, " ");
+            }
+
+            return _session.DeleteByConditionAsync<T>(right, this.Params);
+        }
+        #endregion
+
+        #endregion
+
+    }
+
     /// <summary>
     /// 参数化查询SQL字符串
     /// </summary>
@@ -37,27 +304,60 @@ namespace LiteSql
         public string SQL { get { return _sql.ToString(); } }
 
         /// <summary>
+        /// 参数化查询的SQL
+        /// </summary>
+        internal StringBuilder Sql
+        {
+            get
+            {
+                return _sql;
+            }
+            set
+            {
+                _sql = value;
+            }
+        }
+
+        /// <summary>
         /// SQL参数的参数名称(防止参数名称重名)
         /// </summary>
         protected HashSet<string> _dbParameterNames = new HashSet<string>();
 
-        protected IDBSession _session;
-
-        protected DBSession _dbSession;
-
         /// <summary>
-        /// 子查询SQL集合
+        /// SQL参数的参数名称(防止参数名称重名)
         /// </summary>
-        protected List<string> _subSqls = new List<string>();
+        internal HashSet<string> DbParameterNames
+        {
+            get
+            {
+                return _dbParameterNames;
+            }
+        }
+
+        protected IDbSession _session;
+
+        protected DbSession _dbSession;
 
         #endregion
 
         #region 构造函数
-        public SqlString(IProvider provider, IDBSession session, string sql = null, params object[] args)
+        public SqlString(IProvider provider, IDbSession session, string sql = null, params object[] args)
         {
             _provider = provider;
             _session = session;
-            _dbSession = session as DBSession;
+            _dbSession = session as DbSession;
+
+            if (sql != null)
+            {
+                Append(sql, args);
+            }
+        }
+
+        public SqlString(IProvider provider, IDbSession session, string sql, DbParameter[] args)
+        {
+            _provider = provider;
+            _session = session;
+            _dbSession = session as DbSession;
 
             if (sql != null)
             {
@@ -71,82 +371,43 @@ namespace LiteSql
         /// 追加参数化SQL
         /// </summary>
         /// <param name="sql">SQL</param>
+        /// <param name="args">参数</param>
+        public ISqlString Append(string sql, DbParameter[] args)
+        {
+            if (args != null)
+            {
+                foreach (var param in args)
+                {
+                    _params.Add(param.ParameterName, param);
+                }
+            }
+
+            _sql.Append(string.Format(" {0} ", sql.Trim()));
+
+            return this;
+        }
+
+        /// <summary>
+        /// 追加参数化SQL
+        /// </summary>
+        /// <param name="sql">SQL</param>
         /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
         public ISqlString Append(string sql, params object[] args)
         {
             if (args == null) throw new Exception("参数args不能为null");
 
-            //匿名对象处理
-            bool anonymousType = false;
-            Dictionary<string, object> dictValues = new Dictionary<string, object>();
-            if (args.Length == 1)
-            {
-                Type type = args[0].GetType();
-                if (type.Name.Contains("<>f__AnonymousType"))
-                {
-                    anonymousType = true;
-                    PropertyInfo[] props = type.GetProperties();
-                    foreach (PropertyInfo propInfo in props)
-                    {
-                        dictValues.Add(propInfo.Name, propInfo.GetValue(args[0]));
-                    }
-                }
-            }
+            //从匿名对象获取参数(参数名称、参数值)
+            Dictionary<string, object> anonymousValues = GetAnonymousParameters(out bool isAnonymous, args);
 
-            //获取SQL中的参数
-            Dictionary<string, object> dict = new Dictionary<string, object>();
-            MatchCollection mc = _regex.Matches(sql);
-            int argIndex = 0;
-            foreach (Match m in mc)
-            {
-                string val1 = m.Groups[1].Value;
-                if (!dict.ContainsKey(val1))
-                {
-                    dict.Add(val1, null);
-                    Type parameterType = typeof(object);
-                    if (anonymousType)
-                    {
-                        if (dictValues.ContainsKey(val1))
-                        {
-                            object obj = dictValues[val1];
-                            if (obj != null) parameterType = obj.GetType();
-                        }
-                    }
-                    else
-                    {
-                        if (argIndex < args.Length)
-                        {
-                            object obj = args[argIndex];
-                            if (obj != null) parameterType = obj.GetType();
-                        }
-                    }
-                    sql = ReplaceSql(sql, m.Value, val1, parameterType);
-                }
-            }
+            //获取SQL中的参数(参数名称、参数值)
+            Dictionary<string, object> dict = GetParametersFromSql(ref sql, isAnonymous, anonymousValues, args);
 
-            if (!anonymousType && args.Length < dict.Keys.Count) throw new Exception("SqlString.AppendFormat参数不够");
+            if (!isAnonymous && args.Length < dict.Count) throw new Exception("SqlString.AppendFormat参数不够");
 
-            List<string> keyList = dict.Keys.ToList();
-            for (int i = 0; i < keyList.Count; i++)
+            foreach (string name in dict.Keys)
             {
-                string key = keyList[i];
-                object value;
-                if (anonymousType)
-                {
-                    if (dictValues.ContainsKey(key))
-                    {
-                        value = dictValues[key];
-                    }
-                    else
-                    {
-                        throw new Exception("参数" + key + "缺少值");
-                    }
-                }
-                else
-                {
-                    value = args[i];
-                }
-                Type valueType = value != null ? value.GetType() : null;
+                object value = dict[name];
+                Type valueType = value?.GetType();
 
                 if (valueType == typeof(SqlValue))
                 {
@@ -154,14 +415,14 @@ namespace LiteSql
                     Type parameterType = sqlValue.Value.GetType();
                     if (sqlValue.Value.GetType().Name != typeof(List<>).Name)
                     {
-                        string markKey = _provider.GetParameterName(key, parameterType);
+                        string markKey = _provider.GetParameterName(name, parameterType);
                         sql = sql.Replace(markKey, sqlValue.Sql.Replace("{0}", markKey));
-                        DbParameter param = _provider.GetDbParameter(key, sqlValue.Value);
+                        DbParameter param = _provider.GetDbParameter(name, sqlValue.Value);
                         _params.Add(param.ParameterName, param);
                     }
                     else
                     {
-                        string markKey = _provider.GetParameterName(key, parameterType);
+                        string markKey = _provider.GetParameterName(name, parameterType);
                         sql = sql.Replace(markKey, sqlValue.Sql.Replace("{0}", markKey));
                         string[] keyArr = sqlValue.Sql.Replace("(", string.Empty).Replace(")", string.Empty).Replace("@", string.Empty).Split(',');
                         IList valueList = (IList)sqlValue.Value;
@@ -175,7 +436,7 @@ namespace LiteSql
                 }
                 else
                 {
-                    DbParameter param = _provider.GetDbParameter(key, value);
+                    DbParameter param = _provider.GetDbParameter(name, value);
                     _params.Add(param.ParameterName, param);
                 }
             }
@@ -184,83 +445,74 @@ namespace LiteSql
 
             return this;
         }
-        #endregion
 
-        #region Append
         /// <summary>
-        /// 追加参数化SQL
+        /// 从匿名对象中获取参数
+        /// 返回参数名称、参数值字典
         /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> Append<T>(string sql, params object[] args) where T : new()
+        private Dictionary<string, object> GetAnonymousParameters(out bool isAnonymous, params object[] args)
         {
-            return ConvertToQueryable<T>(Append(sql, args), "Append<T>");
+            isAnonymous = false;
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            if (args?.Length == 1)
+            {
+                Type type = args[0].GetType();
+                if (type.Name.Contains("<>f__AnonymousType"))
+                {
+                    isAnonymous = true;
+                    PropertyInfo[] props = type.GetProperties();
+                    foreach (PropertyInfo propInfo in props)
+                    {
+                        dict.Add(propInfo.Name, propInfo.GetValue(args[0]));
+                    }
+                }
+            }
+            return dict;
         }
 
         /// <summary>
-        /// 追加参数化SQL
+        /// 获取SQL中的参数
+        /// 返回参数名称、参数值字典
         /// </summary>
-        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
-        /// <param name="subSql">子SQL</param>
-        public ISqlString Append(string sql, ISqlString subSql)
+        private Dictionary<string, object> GetParametersFromSql(ref string sql, bool isAnonymous, Dictionary<string, object> anonymousValues, params object[] args)
         {
-            string newSubSql = ParamsAddRange(subSql.Params, subSql.SQL);
-            if (sql.Contains("{0}"))
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            MatchCollection mc = _regex.Matches(sql);
+            int argIndex = 0;
+            foreach (Match m in mc)
             {
-                sql = sql.Replace("{0}", newSubSql);
-            }
-            else
-            {
-                sql = sql + " (" + newSubSql + ")";
-            }
-            _sql.Append(sql);
-            return this;
-        }
+                var oldSql = m.Value;
+                string name = m.Groups[1].Value;
 
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL，插入到子SQL的前面，或者插入到{0}的位置</param>
-        /// <param name="subSql">子SQL</param>
-        public ISqlQueryable<T> Append<T>(string sql, ISqlString subSql) where T : new()
-        {
-            string newSubSql = ParamsAddRange(subSql.Params, subSql.SQL);
-            if (sql.Contains("{0}"))
-            {
-                sql = sql.Replace("{0}", newSubSql);
+                if (!dict.ContainsKey(name))
+                {
+                    Type parameterType = typeof(object);
+                    if (isAnonymous)
+                    {
+                        if (anonymousValues.ContainsKey(name))
+                        {
+                            object obj = anonymousValues[name];
+                            parameterType = obj?.GetType();
+                            dict.Add(name, obj);
+                        }
+                    }
+                    else
+                    {
+                        if (argIndex < args?.Length)
+                        {
+                            object obj = args[argIndex++];
+                            parameterType = obj?.GetType();
+                            dict.Add(name, obj);
+                        }
+                    }
+                    sql = ReplaceSql(sql, oldSql, name, parameterType);
+                }
             }
-            else
-            {
-                sql = sql + " (" + newSubSql + ")";
-            }
-            _sql.Append(sql);
-            return ConvertToQueryable<T>(this, "Append<T>");
+            return dict;
         }
         #endregion
 
         #region AppendIf
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params object[] args) where T : new()
-        {
-            return ConvertToQueryable<T>(AppendIf(condition, sql, args), "AppendIf<T>");
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
-        /// <param name="sql">SQL</param>
-        /// <param name="argsFunc">参数</param>
-        public ISqlQueryable<T> AppendIf<T>(bool condition, string sql, params Func<object>[] argsFunc) where T : new()
-        {
-            return ConvertToQueryable<T>(AppendIf(condition, sql, argsFunc), "AppendIf<T>");
-        }
-
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
@@ -275,280 +527,6 @@ namespace LiteSql
             }
 
             return this;
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
-        /// <param name="sql">SQL</param>
-        /// <param name="argsFunc">参数</param>
-        public ISqlString AppendIf(bool condition, string sql, params Func<object>[] argsFunc)
-        {
-            if (condition)
-            {
-                object[] args = new object[argsFunc.Length];
-                for (int i = 0; i < argsFunc.Length; i++)
-                {
-                    args[i] = argsFunc[i]();
-                }
-
-                Append(sql, args);
-            }
-
-            return this;
-        }
-        #endregion
-
-        #region LeftJoin
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString LeftJoin(string sql, params object[] args)
-        {
-            return Append("left join " + sql, args);
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> LeftJoin<T>(string sql, params object[] args) where T : new()
-        {
-            return Append<T>("left join " + sql, args);
-        }
-        #endregion
-
-        #region InnerJoin
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString InnerJoin(string sql, params object[] args)
-        {
-            return Append("inner join " + sql, args);
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> InnerJoin<T>(string sql, params object[] args) where T : new()
-        {
-            return Append<T>("inner join " + sql, args);
-        }
-        #endregion
-
-        #region RightJoin
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString RightJoin(string sql, params object[] args)
-        {
-            return Append("right join " + sql, args);
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> RightJoin<T>(string sql, params object[] args) where T : new()
-        {
-            return Append<T>("right join " + sql, args);
-        }
-        #endregion
-
-        #region Where
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString Where(string sql, params object[] args)
-        {
-            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
-            {
-                return Append("and " + sql, args);
-            }
-            else
-            {
-                return Append("where " + sql, args);
-            }
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> Where<T>(string sql, params object[] args) where T : new()
-        {
-            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
-            {
-                return Append<T>("and " + sql, args);
-            }
-            else
-            {
-                return Append<T>("where " + sql, args);
-            }
-        }
-        #endregion
-
-        #region WhereIf
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString WhereIf(bool condition, string sql, params object[] args)
-        {
-            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
-            {
-                return AppendIf(condition, "and " + sql, args);
-            }
-            else
-            {
-                return AppendIf(condition, "where " + sql, args);
-            }
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="condition">当condition等于true时追加SQL，等于false时不追加SQL</param>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> WhereIf<T>(bool condition, string sql, params object[] args) where T : new()
-        {
-            if (RemoveSubSqls(_sql.ToString()).Contains(" where "))
-            {
-                return AppendIf<T>(condition, "and " + sql, args);
-            }
-            else
-            {
-                return AppendIf<T>(condition, "where " + sql, args);
-            }
-        }
-        #endregion
-
-        #region Having
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString Having(string sql, params object[] args)
-        {
-            if (RemoveSubSqls(_sql.ToString()).Contains(" having "))
-            {
-                return Append("and " + sql, args);
-            }
-            else
-            {
-                return Append("having " + sql, args);
-            }
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> Having<T>(string sql, params object[] args) where T : new()
-        {
-            if (RemoveSubSqls(_sql.ToString()).Contains(" having "))
-            {
-                return Append<T>("and " + sql, args);
-            }
-            else
-            {
-                return Append<T>("having " + sql, args);
-            }
-        }
-        #endregion
-
-        #region Group By
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString GroupBy(string sql, params object[] args)
-        {
-            return Append("group by " + sql, args);
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> GroupBy<T>(string sql, params object[] args) where T : new()
-        {
-            return Append<T>("group by " + sql, args);
-        }
-        #endregion
-
-        #region Order By
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlString OrderBy(string sql, params object[] args)
-        {
-            return Append("order by " + sql, args);
-        }
-
-        /// <summary>
-        /// 追加参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数(支持多个参数或者把多个参数放在一个匿名对象中)</param>
-        public ISqlQueryable<T> OrderBy<T>(string sql, params object[] args) where T : new()
-        {
-            return Append<T>("order by " + sql, args);
-        }
-        #endregion
-
-        #region AppendFormat
-        /// <summary>
-        /// 封装 StringBuilder AppendFormat 追加非参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数</param>
-        public ISqlQueryable<T> AppendFormat<T>(string sql, params object[] args) where T : new()
-        {
-            return ConvertToQueryable<T>(AppendFormat(sql, args), "AppendFormat<T>");
-        }
-
-        /// <summary>
-        /// 封装 StringBuilder AppendFormat 追加非参数化SQL
-        /// </summary>
-        /// <param name="sql">SQL</param>
-        /// <param name="args">参数</param>
-        public ISqlString AppendFormat(string sql, params object[] args)
-        {
-            if (_regex.IsMatch(sql)) throw new Exception("追加参数化SQL请使用Append");
-            _sql.AppendFormat(string.Format(" {0} ", sql.Trim()), args);
-
-            return this;
-        }
-        #endregion
-
-        #region ToString
-        public string ToString()
-        {
-            return _sql.ToString();
         }
         #endregion
 
@@ -566,6 +544,7 @@ namespace LiteSql
         private string ReplaceSql(string sql, string oldStr, string name, Type parameterType)
         {
             string newStr = _provider.GetParameterName(name, parameterType);
+            if (newStr == oldStr) return sql;
             return sql.Replace(oldStr, newStr);
         }
         #endregion
@@ -580,26 +559,11 @@ namespace LiteSql
         }
         #endregion
 
-        #region RemoveSubSqls
-        /// <summary>
-        /// 返回移除子查询后的SQL
-        /// </summary>
-        protected string RemoveSubSqls(string sql)
-        {
-            StringBuilder sb = new StringBuilder(sql);
-            foreach (string subSql in _subSqls)
-            {
-                sb.Replace(subSql, string.Empty);
-            }
-            return sb.ToString();
-        }
-        #endregion
-
         #region ParamsAddRange
         /// <summary>
         /// 批量添加参数
         /// </summary>
-        protected string ParamsAddRange(DbParameter[] cmdParams, string sql)
+        internal string ParamsAddRange(DbParameter[] cmdParams, string sql)
         {
             foreach (DbParameter param in cmdParams)
             {
@@ -631,36 +595,17 @@ namespace LiteSql
                     {
                         sql = regex2.Replace(sql, newParamName + " ", 1);
                     }
+                    else if (regex3.IsMatch(sql))
+                    {
+                        sql = regex3.Replace(sql, newParamName + ",", 1);
+                    }
                     else
                     {
-                        sql = regex3.Replace(sql, newParamName + " ", 1);
+
                     }
                 }
             }
             return sql;
-        }
-        #endregion
-
-        #region ConvertToQueryable<T>
-        /// <summary>
-        /// 转成ISqlQueryable
-        /// </summary>
-        private ISqlQueryable<T> ConvertToQueryable<T>(ISqlString sqlString, string message) where T : new()
-        {
-            if (sqlString is ISqlQueryable<T>)
-            {
-                return sqlString as ISqlQueryable<T>;
-            }
-            else
-            {
-                string typeName = string.Empty;
-                Type[] genericArgs = sqlString.GetType().GetGenericArguments();
-                if (genericArgs.Length > 0)
-                {
-                    typeName = genericArgs[0].Name;
-                }
-                throw new Exception(message + "泛型类型不匹配，应为：" + typeName + "，实际为：" + typeof(T).Name);
-            }
         }
         #endregion
 

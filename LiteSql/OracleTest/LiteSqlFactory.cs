@@ -7,7 +7,7 @@ namespace OracleTest
     public class LiteSqlFactory
     {
         #region 变量
-        private static ILiteSqlClient _liteSqlClient = new LiteSqlClient(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.Oracle, new OracleProvider());
+        private static ILiteSql _liteSqlClient = new LiteSql.LiteSql(ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString(), DBType.Oracle, new OracleProvider());
         #endregion
 
         #region 获取 IDBSession

@@ -7,20 +7,10 @@ using System.Threading.Tasks;
 namespace LiteSql
 {
     /// <summary>
-    /// 数据库类型
+    /// 标识该属性是只读的
     /// </summary>
-    public enum DBType
+    [Serializable, AttributeUsage(AttributeTargets.Property)]
+    public class ReadOnlyAttribute : Attribute
     {
-        MySQL,
-
-        Oracle,
-
-        MSSQL,
-
-        SQLite,
-
-        Access,
-
-        PostgreSQL
     }
 }

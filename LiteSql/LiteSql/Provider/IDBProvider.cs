@@ -5,7 +5,7 @@ namespace LiteSql
     /// <summary>
     /// 数据库实现接口
     /// </summary>
-    public interface IDBProvider
+    public interface IDbProvider
     {
         /// <summary>
         /// 创建 DbConnection

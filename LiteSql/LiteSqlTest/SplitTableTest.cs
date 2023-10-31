@@ -42,16 +42,15 @@ namespace LiteSqlTest
             user.CreateUserid = "1";
             user.CreateTime = DateTime.Now;
 
-            SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-
-            var session = LiteSqlFactory.GetSession(splitTableMapping);
+            var session = LiteSqlFactory.GetSession();
+            session.SetTableNameMap<SysUser>("sys_user_202208");
 
             session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
             user.Id = session.InsertReturnId(user, "select @@IDENTITY");
             Console.WriteLine("插入成功, user.Id=" + user.Id);
 
-            SysUser userInfo = session.CreateSql(
+            SysUser userInfo = session.Sql(
                 "select * from sys_user_202208 where id = @Id", new { user.Id })
                 .Query<SysUser>();
             Assert.IsTrue(userInfo != null);
@@ -107,9 +106,8 @@ namespace LiteSqlTest
             long userId = 10;
             SysUser user = null;
 
-            SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-
-            var session = LiteSqlFactory.GetSession(splitTableMapping);
+            var session = LiteSqlFactory.GetSession();
+            session.SetTableNameMap<SysUser>("sys_user_202208");
 
             user = session.QueryById<SysUser>(userId);
 
@@ -125,7 +123,7 @@ namespace LiteSqlTest
 
                 session.Update(user);
 
-                SysUser userInfo = session.CreateSql(
+                SysUser userInfo = session.Sql(
                     "select * from sys_user_202208 where Remark like @Remark", new { Remark = "测试修改分表数据%" })
                     .Query<SysUser>();
                 Assert.IsTrue(userInfo.Remark == user.Remark);
@@ -143,8 +141,8 @@ namespace LiteSqlTest
         [TestMethod]
         public void Test4Delete()
         {
-            SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-            var session = LiteSqlFactory.GetSession(splitTableMapping);
+            var session = LiteSqlFactory.GetSession();
+            session.SetTableNameMap<SysUser>("sys_user_202208");
 
             session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
@@ -159,10 +157,9 @@ namespace LiteSqlTest
         [TestMethod]
         public void Test3Query()
         {
-            SplitTableMapping splitTableMapping = new SplitTableMapping(typeof(SysUser), "sys_user_202208");
-
             List<SysUser> list = new List<SysUser>();
-            var session = LiteSqlFactory.GetSession(splitTableMapping);
+            var session = LiteSqlFactory.GetSession();
+            session.SetTableNameMap<SysUser>("sys_user_202208");
 
             session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 

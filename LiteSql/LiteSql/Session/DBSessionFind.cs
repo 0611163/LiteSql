@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region QueryById<T> 根据Id查询实体
         /// <summary>
@@ -170,7 +171,6 @@ namespace LiteSql
         }
         #endregion
 
-
         #region Find 根据实体查询实体
         /// <summary>
         /// 根据实体查询实体
@@ -209,32 +209,26 @@ namespace LiteSql
             IDataReader rd = null;
             bool hasValue = false;
 
-            using (_conn = _connFactory.GetConnection(_tran))
-            {
-                try
-                {
-                    if (cmdParams == null)
-                    {
-                        rd = ExecuteReader(sql, _conn);
-                    }
-                    else
-                    {
-                        rd = ExecuteReader(sql, cmdParams, _conn);
-                    }
+            var conn = GetConnection(_tran);
 
-                    DataReaderToEntity(type, rd, ref result, ref hasValue);
-                }
-                catch
+            try
+            {
+                if (cmdParams == null)
                 {
-                    throw;
+                    rd = ExecuteReader(sql, conn);
                 }
-                finally
+                else
                 {
-                    if (rd != null && !rd.IsClosed)
-                    {
-                        rd.Close();
-                        rd.Dispose();
-                    }
+                    rd = ExecuteReader(sql, cmdParams, conn);
+                }
+
+                DataReaderToEntity(type, rd, ref result, ref hasValue);
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
                 }
             }
 
@@ -259,32 +253,26 @@ namespace LiteSql
             IDataReader rd = null;
             bool hasValue = false;
 
-            using (_conn = _connFactory.GetConnection(_tran))
-            {
-                try
-                {
-                    if (cmdParams == null)
-                    {
-                        rd = await ExecuteReaderAsync(sql, _conn);
-                    }
-                    else
-                    {
-                        rd = await ExecuteReaderAsync(sql, cmdParams, _conn);
-                    }
+            var conn = GetConnection(_tran);
 
-                    DataReaderToEntity(type, rd, ref result, ref hasValue);
-                }
-                catch
+            try
+            {
+                if (cmdParams == null)
                 {
-                    throw;
+                    rd = await ExecuteReaderAsync(sql, conn);
                 }
-                finally
+                else
                 {
-                    if (rd != null && !rd.IsClosed)
-                    {
-                        rd.Close();
-                        rd.Dispose();
-                    }
+                    rd = await ExecuteReaderAsync(sql, cmdParams, conn);
+                }
+
+                DataReaderToEntity(type, rd, ref result, ref hasValue);
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
                 }
             }
 

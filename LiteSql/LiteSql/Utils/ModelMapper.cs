@@ -11,11 +11,28 @@ namespace LiteSql
     /// <summary>
     /// 相同类型的实体类映射
     /// </summary>
-    public static class ModelMapper<T>
+    internal static class ModelMapper<T>
     {
         private static Func<T, T> _func = null;
 
-        static ModelMapper()
+        private static object _lock = new object();
+
+        /// <summary>
+        /// 实体类映射
+        /// </summary>
+        public static object Map(T source)
+        {
+            lock (_lock)
+            {
+                if (_func == null)
+                {
+                    _func = CreateMapFunc();
+                }
+            }
+            return _func.Invoke(source);
+        }
+
+        private static Func<T, T> CreateMapFunc()
         {
             ParameterExpression parameterExpression = Expression.Parameter(typeof(T), "t");
 
@@ -33,15 +50,7 @@ namespace LiteSql
             MemberInitExpression memberInitExpression = Expression.MemberInit(Expression.New(typeof(T)), memberBindings);
 
             Expression<Func<T, T>> lamada = Expression.Lambda<Func<T, T>>(memberInitExpression, parameterExpression);
-            _func = lamada.Compile();
-        }
-
-        /// <summary>
-        /// 实体类映射
-        /// </summary>
-        public static object Map(T source)
-        {
-            return _func.Invoke(source);
+            return lamada.Compile();
         }
 
     }

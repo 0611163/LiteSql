@@ -11,38 +11,37 @@ using System.Threading.Tasks;
 namespace LiteSql
 {
     /// <summary>
-    /// IDBSession接口
-    /// 一个IDBSession实例对应一个数据库连接，一个IDBSession实例只有一个数据库连接
-    /// IDBSession不是线程安全的，不能跨线程使用
+    /// IDbSession接口实例表示与数据库的会话
+    /// 一个IDbSession实例对应一个数据库连接，一个IDbSession实例只有一个数据库连接
+    /// IDbSession不是线程安全的，不能跨线程使用
     /// </summary>
-    public partial interface IDBSession : IDisposable
+    public interface IDbSession<TFlag> : IDbSession { }
+
+    /// <summary>
+    /// IDbSession接口实例表示与数据库的会话
+    /// 一个IDbSession实例对应一个数据库连接，一个IDbSession实例只有一个数据库连接
+    /// IDbSession不是线程安全的，不能跨线程使用
+    /// </summary>
+    public partial interface IDbSession
     {
         #region 创建SqlString对象
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        ISqlString CreateSql(string sql = null, params object[] args);
-        #endregion
+        ISqlString Sql(string sql = null, params object[] args);
 
-        #region 创建SqlString对象
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        ISqlQueryable<T> CreateSql<T>(string sql = null, params object[] args) where T : new();
+        ISqlString<T> Sql<T>(string sql = null, params object[] args) where T : new();
+        #endregion
 
+        #region 创建SqlQueryable对象
         /// <summary>
         /// 创建IQueryable
         /// </summary>
         /// <typeparam name="T">实体类型</typeparam>
-        /// <param name="alias">别名，默认值t</param>
-        ISqlQueryable<T> Queryable<T>(string alias = null) where T : new();
-
-        /// <summary>
-        /// 创建IQueryable
-        /// </summary>
-        /// <typeparam name="T">实体类型</typeparam>
-        /// <param name="expression">返回匿名对象的表达式</param>
-        ISqlQueryable<T> Queryable<T>(Expression<Func<T, object>> expression) where T : new();
+        ISqlQueryable<T> Queryable<T>() where T : new();
         #endregion
 
         #region 查询下一个ID
@@ -60,16 +59,26 @@ namespace LiteSql
         SqlValue ForList(IList list);
         #endregion
 
-        #region 从连接池池获取连接
+        #region 获取数据库连接
         /// <summary>
-        /// 从连接池池获取连接
+        /// 获取数据库连接
         /// </summary>
-        DbConnectionExt GetConnection(DbTransactionExt _tran = null);
+        DbConnection GetConnection(DbTransaction tran = null);
 
         /// <summary>
-        /// 从连接池池获取连接
+        /// 获取数据库连接
         /// </summary>
-        Task<DbConnectionExt> GetConnectionAsync(DbTransactionExt _tran = null);
+        Task<DbConnection> GetConnectionAsync(DbTransaction tran = null);
+
+        /// <summary>
+        /// 获取数据库连接，已经Open
+        /// </summary>
+        DbConnection GetOpenedConnection(DbTransaction tran = null);
+
+        /// <summary>
+        /// 获取数据库连接，已经Open
+        /// </summary>
+        Task<DbConnection> GetOpenedConnectionAsync(DbTransaction tran = null);
         #endregion
 
     }

@@ -78,13 +78,11 @@ namespace LiteSqlTest
 
             m_BsOrderDal.Update(order, order.DetailList);
 
-            using (var session = LiteSqlFactory.GetSession())
-            {
-                BsOrder orderInfo = session.CreateSql(
-                    "select * from bs_order where Id like @Id", new { Id = order.Id })
-                    .Query<BsOrder>();
-                Assert.IsTrue(orderInfo.Remark == order.Remark);
-            }
+            var session = LiteSqlFactory.GetSession();
+            BsOrder orderInfo = session.Sql(
+                "select * from bs_order where Id like @Id", new { Id = order.Id })
+                .Query<BsOrder>();
+            Assert.IsTrue(orderInfo.Remark == order.Remark);
         }
         #endregion
 
@@ -96,26 +94,24 @@ namespace LiteSqlTest
             SysUser user = m_SysUserDal.Get(userId);
             if (user != null)
             {
-                using (var session = LiteSqlFactory.GetSession())
+                var session = LiteSqlFactory.GetSession();
+                session.OnExecuting = (s, p) =>
                 {
-                    session.OnExecuting = (s, p) =>
-                    {
-                        Console.WriteLine(s); //打印SQL
-                    };
+                    Console.WriteLine(s); //打印SQL
+                };
 
-                    session.AttachOld(user);
+                session.AttachOld(user);
 
-                    user.UpdateUserid = "1";
-                    user.Remark = "测试修改用户" + _rnd.Next(1, 100);
+                user.UpdateUserid = "1";
+                user.Remark = "测试修改用户" + _rnd.Next(1, 100);
 
-                    user.UpdateTime = DateTime.Now;
-                    session.Update(user);
+                user.UpdateTime = DateTime.Now;
+                session.Update(user);
 
-                    SysUser userInfo = session.CreateSql(
-                        "select * from sys_user where Id = @Id", new { Id = userId })
-                        .Query<SysUser>();
-                    Assert.IsTrue(userInfo.Remark == user.Remark);
-                }
+                SysUser userInfo = session.Sql(
+                    "select * from sys_user where Id = @Id", new { Id = userId })
+                    .Query<SysUser>();
+                Assert.IsTrue(userInfo.Remark == user.Remark);
                 Console.WriteLine("用户 ID=" + user.Id + " 已修改");
             }
             else
@@ -138,13 +134,11 @@ namespace LiteSqlTest
                 await m_SysUserDal.UpdateAsync(user);
                 Console.WriteLine("用户 ID=" + user.Id + " 已修改");
 
-                using (var session = LiteSqlFactory.GetSession())
-                {
-                    SysUser userInfo = session.CreateSql(
-                        "select * from sys_user where Id like @Id", new { Id = userId })
-                        .Query<SysUser>();
-                    Assert.IsTrue(userInfo.Remark == user.Remark);
-                }
+                var session = LiteSqlFactory.GetSession();
+                SysUser userInfo = session.Sql(
+                    "select * from sys_user where Id like @Id", new { Id = userId })
+                    .Query<SysUser>();
+                Assert.IsTrue(userInfo.Remark == user.Remark);
             }
             else
             {

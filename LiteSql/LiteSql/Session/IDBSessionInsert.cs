@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial interface IDBSession
+    public partial interface IDbSession
     {
         /// <summary>
         /// 添加
@@ -31,12 +31,12 @@ namespace LiteSql
         /// <summary>
         /// 批量添加
         /// </summary>
-        void Insert<T>(List<T> obj);
+        void Insert<T>(List<T> list);
 
         /// <summary>
         /// 批量添加
         /// </summary>
-        Task InsertAsync<T>(List<T> obj);
+        Task InsertAsync<T>(List<T> list);
 
         /// <summary>
         /// 批量添加
@@ -47,5 +47,6 @@ namespace LiteSql
         /// 批量添加
         /// </summary>
         Task InsertAsync<T>(List<T> list, int pageSize);
+
     }
 }

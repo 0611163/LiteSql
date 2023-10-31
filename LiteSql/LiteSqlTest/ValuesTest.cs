@@ -19,7 +19,7 @@ namespace LiteSqlTest
     {
         #region 变量
         private Random _rnd = new Random();
-        private IDBSession session = LiteSqlFactory.GetSession();
+        private IDbSession session = LiteSqlFactory.GetSession();
         #endregion
 
         #region 构造函数
@@ -85,7 +85,8 @@ namespace LiteSqlTest
         [TestMethod]
         public void Test2QuerySingle()
         {
-            ValuesInfo2 info = session.Queryable<ValuesInfo2>().First();
+            var guidValue = new Guid("181d4961-2b35-4a18-96a7-9334740160ba");
+            ValuesInfo2 info = session.Queryable<ValuesInfo2>().Where(t => t.GuidValue == new Guid("181d4961-2b35-4a18-96a7-9334740160ba")).First();
             Assert.IsTrue(info != null);
 
             Console.WriteLine(ModelToStringUtil.ToString(info));

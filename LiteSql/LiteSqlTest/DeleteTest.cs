@@ -53,7 +53,7 @@ namespace LiteSqlTest
 
             session.OnExecuting = (s, p) => Console.WriteLine(s); //打印SQL
 
-            session.CreateSql("id>@Id", 20).Delete<SysUser>();
+            session.Sql("id>@Id", 20).Delete<SysUser>();
             session.Queryable<SysUser>().Where(t => t.Id > 20).Delete();
 
             long count = session.QueryCount("select * from sys_user where id>20");
@@ -67,16 +67,19 @@ namespace LiteSqlTest
         {
             var session = LiteSqlFactory.GetSession();
 
-            session.OnExecuting = (sql, param) => Console.WriteLine(sql); //打印SQL
+            session.OnExecuting = (sql, param) =>
+            {
+                Console.WriteLine(sql); //打印SQL
+            };
 
-            int rows = session.CreateSql<BsOrder>("id not like @Id", new { Id = "10000_" }).Delete();
+            int rows = session.Sql("id not like @Id", new { Id = "10000_" }).Delete<BsOrder>();
             Console.WriteLine("BsOrder表" + rows + "行已删除");
-            rows = session.CreateSql("order_id not like @OrderId", new { OrderId = "10000_" }).Delete<BsOrderDetail>();
+            rows = session.Sql("order_id not like @OrderId", new { OrderId = "10000_" }).Delete<BsOrderDetail>();
             Console.WriteLine("BsOrderDetail表" + rows + "行已删除");
 
-            long count = session.CreateSql("select * from bs_order where id not like @Id", new { Id = "10000_" }).QueryCount();
+            long count = session.Sql("select * from bs_order where id not like @Id", new { Id = "10000_" }).QueryCount();
             Assert.IsTrue(count == 0);
-            count = session.CreateSql("select * from bs_order_detail where order_id not like @OrderId", new { OrderId = "10000_" }).QueryCount();
+            count = session.Sql("select * from bs_order_detail where order_id not like @OrderId", new { OrderId = "10000_" }).QueryCount();
             Assert.IsTrue(count == 0);
         }
         #endregion

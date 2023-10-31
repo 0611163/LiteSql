@@ -118,7 +118,7 @@ namespace PerformanceTest
             {
                 Log("删除 开始");
                 var session = LiteSqlFactory.GetSession();
-                session.CreateSql("id>@Id", 12).DeleteByCondition<SysUser>();
+                session.Sql("id>@Id", 12).DeleteByCondition<SysUser>();
                 Log("删除 完成");
             });
         }
@@ -356,7 +356,7 @@ namespace PerformanceTest
                     List<SysUser> userList = new List<SysUser>();
                     for (int page = 1; page <= pageCount; page++)
                     {
-                        ISqlString sql = session.CreateSql(@"
+                        ISqlString sql = session.Sql(@"
                             select t.* 
                             from sys_user t 
                             where 1=1 
@@ -395,7 +395,7 @@ namespace PerformanceTest
                     {
                         var session = LiteSqlFactory.GetSession();
 
-                        ISqlString sql = session.CreateSql(@"
+                        ISqlString sql = session.Sql(@"
                             select t.* 
                             from sys_user t 
                             where t.id > @id 

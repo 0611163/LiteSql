@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region QueryList<T> 查询列表
         /// <summary>
@@ -17,32 +17,24 @@ namespace LiteSql
         /// </summary>
         public List<T> QueryList<T>(string sql) where T : new()
         {
-            List<T> list = new List<T>();
-            IDataReader rd = null;
+            SqlFilter(ref sql);
+            OnExecuting?.Invoke(sql, null);
 
-            using (_conn = _connFactory.GetConnection(_tran))
+            var conn = GetConnection(_tran);
+
+            try
             {
-                try
-                {
-                    rd = ExecuteReader(sql, _conn);
+                IDataReader rd = ExecuteReader(sql, conn);
 
-                    DataReaderToList(rd, ref list);
-                }
-                catch
+                return DataReaderToList<T>(rd);
+            }
+            finally
+            {
+                if (_tran == null)
                 {
-                    throw;
-                }
-                finally
-                {
-                    if (rd != null && !rd.IsClosed)
-                    {
-                        rd.Close();
-                        rd.Dispose();
-                    }
+                    if (conn.State != ConnectionState.Closed) conn.Close();
                 }
             }
-
-            return list;
         }
         #endregion
 
@@ -52,32 +44,24 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> QueryListAsync<T>(string sql) where T : new()
         {
-            List<T> list = new List<T>();
-            IDataReader rd = null;
+            SqlFilter(ref sql);
+            OnExecuting?.Invoke(sql, null);
 
-            using (_conn = _connFactory.GetConnection(_tran))
+            var conn = GetConnection(_tran);
+
+            try
             {
-                try
-                {
-                    rd = await ExecuteReaderAsync(sql, _conn);
+                IDataReader rd = await ExecuteReaderAsync(sql, conn);
 
-                    DataReaderToList(rd, ref list);
-                }
-                catch
+                return DataReaderToList<T>(rd);
+            }
+            finally
+            {
+                if (_tran == null)
                 {
-                    throw;
-                }
-                finally
-                {
-                    if (rd != null && !rd.IsClosed)
-                    {
-                        rd.Close();
-                        rd.Dispose();
-                    }
+                    if (conn.State != ConnectionState.Closed) conn.Close();
                 }
             }
-
-            return list;
         }
         #endregion
 
@@ -88,32 +72,23 @@ namespace LiteSql
         /// </summary>
         public List<T> QueryList<T>(string sql, DbParameter[] cmdParms) where T : new()
         {
-            List<T> list = new List<T>();
-            IDataReader rd = null;
+            OnExecuting?.Invoke(sql, cmdParms);
 
-            using (_conn = _connFactory.GetConnection(_tran))
+            var conn = GetConnection(_tran);
+
+            try
             {
-                try
-                {
-                    rd = ExecuteReader(sql, cmdParms, _conn);
+                IDataReader rd = ExecuteReader(sql, cmdParms, conn);
 
-                    DataReaderToList(rd, ref list);
-                }
-                catch
+                return DataReaderToList<T>(rd);
+            }
+            finally
+            {
+                if (_tran == null)
                 {
-                    throw;
-                }
-                finally
-                {
-                    if (rd != null && !rd.IsClosed)
-                    {
-                        rd.Close();
-                        rd.Dispose();
-                    }
+                    if (conn.State != ConnectionState.Closed) conn.Close();
                 }
             }
-
-            return list;
         }
         #endregion
 
@@ -123,35 +98,25 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> QueryListAsync<T>(string sql, DbParameter[] cmdParms) where T : new()
         {
-            List<T> list = new List<T>();
-            IDataReader rd = null;
+            OnExecuting?.Invoke(sql, cmdParms);
 
-            using (_conn = _connFactory.GetConnection(_tran))
+            var conn = GetConnection(_tran);
+
+            try
             {
-                try
-                {
-                    rd = await ExecuteReaderAsync(sql, cmdParms, _conn);
+                IDataReader rd = await ExecuteReaderAsync(sql, cmdParms, conn);
 
-                    DataReaderToList(rd, ref list);
-                }
-                catch
+                return DataReaderToList<T>(rd);
+            }
+            finally
+            {
+                if (_tran == null)
                 {
-                    throw;
-                }
-                finally
-                {
-                    if (rd != null && !rd.IsClosed)
-                    {
-                        rd.Close();
-                        rd.Dispose();
-                    }
+                    if (conn.State != ConnectionState.Closed) conn.Close();
                 }
             }
-
-            return list;
         }
         #endregion
-
 
         #region 查询列表(传SqlString)
         /// <summary>
@@ -176,8 +141,10 @@ namespace LiteSql
         /// <summary>
         /// DataReaderToList
         /// </summary>
-        private void DataReaderToList<T>(IDataReader rd, ref List<T> list) where T : new()
+        private List<T> DataReaderToList<T>(IDataReader rd) where T : new()
         {
+            List<T> list = new List<T>();
+
             if (typeof(T) == typeof(int))
             {
                 while (rd.Read())
@@ -220,6 +187,8 @@ namespace LiteSql
                     list.Add(obj);
                 }
             }
+
+            return list;
         }
         #endregion
 

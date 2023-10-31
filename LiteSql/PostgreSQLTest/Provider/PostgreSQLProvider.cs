@@ -4,7 +4,7 @@ using System.Data.Common;
 
 namespace PostgreSQLTest
 {
-    public class PostgreSQLProvider : PostgreSQLProviderBase, IDBProvider
+    public class PostgreSQLProvider : PostgreSQLProviderBase, IDbProvider
     {
         #region 创建 DbConnection
         public override DbConnection CreateConnection(string connectionString)

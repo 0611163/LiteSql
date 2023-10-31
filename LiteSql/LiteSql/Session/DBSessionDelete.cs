@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region DeleteById<T> 根据Id删除
         /// <summary>
@@ -45,6 +46,8 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType)));
 
+            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
+
             return Execute(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -74,7 +77,7 @@ namespace LiteSql
         /// <summary>
         /// 根据Id删除
         /// </summary>
-        public Task<int> DeleteByIdAsync<T>(string id)
+        public async Task<int> DeleteByIdAsync<T>(string id)
         {
             Type type = typeof(T);
             StringBuilder sbSql = new StringBuilder();
@@ -86,7 +89,9 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType)));
 
-            return ExecuteAsync(sbSql.ToString(), cmdParms);
+            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
+
+            return await ExecuteAsync(sbSql.ToString(), cmdParms);
         }
         #endregion
 
@@ -116,6 +121,8 @@ namespace LiteSql
             sbSql.Remove(sbSql.Length - 1, 1);
             sbSql.Append(")");
 
+            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
+
             return Execute(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -124,7 +131,7 @@ namespace LiteSql
         /// <summary>
         /// 根据Id集合删除
         /// </summary>
-        public Task<int> BatchDeleteByIdsAsync<T>(string ids)
+        public async Task<int> BatchDeleteByIdsAsync<T>(string ids)
         {
             if (string.IsNullOrWhiteSpace(ids)) throw new Exception("ids 不能为空");
 
@@ -145,7 +152,9 @@ namespace LiteSql
             sbSql.Remove(sbSql.Length - 1, 1);
             sbSql.Append(")");
 
-            return ExecuteAsync(sbSql.ToString(), cmdParms);
+            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
+
+            return await ExecuteAsync(sbSql.ToString(), cmdParms);
         }
         #endregion
 
@@ -190,7 +199,9 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
-            return Execute(sbSql.ToString());
+            OnExecuting?.Invoke(sbSql.ToString(), null);
+
+            return Execute(sbSql.ToString(), null);
         }
         #endregion
 
@@ -198,7 +209,7 @@ namespace LiteSql
         /// <summary>
         /// 根据条件删除
         /// </summary>
-        public Task<int> DeleteByConditionAsync(Type type, string condition)
+        public async Task<int> DeleteByConditionAsync(Type type, string condition)
         {
             if (string.IsNullOrWhiteSpace(condition)) throw new Exception("condition 不能为空");
 
@@ -207,10 +218,11 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
-            return ExecuteAsync(sbSql.ToString());
+            OnExecuting?.Invoke(sbSql.ToString(), null);
+
+            return await ExecuteAsync(sbSql.ToString(), null);
         }
         #endregion
-
 
         #region DeleteByCondition<T> 根据条件删除(参数化查询)
         /// <summary>
@@ -252,6 +264,8 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
+            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
+
             return Execute(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -260,7 +274,7 @@ namespace LiteSql
         /// <summary>
         /// 根据条件删除
         /// </summary>
-        public Task<int> DeleteByConditionAsync(Type type, string condition, DbParameter[] cmdParms)
+        public async Task<int> DeleteByConditionAsync(Type type, string condition, DbParameter[] cmdParms)
         {
             if (string.IsNullOrWhiteSpace(condition)) throw new Exception("condition 不能为空");
 
@@ -269,7 +283,9 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
-            return ExecuteAsync(sbSql.ToString(), cmdParms);
+            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
+
+            return await ExecuteAsync(sbSql.ToString(), cmdParms);
         }
         #endregion
 

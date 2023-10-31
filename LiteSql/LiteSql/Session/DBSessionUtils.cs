@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Common;
@@ -7,151 +8,22 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
-        #region ConvertValue 转换数据
-        /// <summary>
-        /// 转换数据
-        /// </summary>
-        private static object ConvertValue(object rdValue, Type fieldType)
-        {
-            if (fieldType == typeof(string))
-            {
-                return Convert.ToString(rdValue);
-            }
-            if (fieldType == typeof(Guid))
-            {
-                return new Guid(Convert.ToString(rdValue));
-            }
-            else if (fieldType == typeof(char))
-            {
-                return Convert.ToChar(rdValue);
-            }
-            else if (fieldType == typeof(byte))
-            {
-                return Convert.ToByte(rdValue);
-            }
-            else if (fieldType == typeof(sbyte))
-            {
-                return Convert.ToSByte(rdValue);
-            }
-            else if (fieldType == typeof(short))
-            {
-                return Convert.ToInt16(rdValue);
-            }
-            else if (fieldType == typeof(ushort))
-            {
-                return Convert.ToUInt16(rdValue);
-            }
-            else if (fieldType == typeof(int))
-            {
-                return Convert.ToInt32(rdValue);
-            }
-            else if (fieldType == typeof(uint))
-            {
-                return Convert.ToUInt32(rdValue);
-            }
-            else if (fieldType == typeof(long))
-            {
-                return Convert.ToInt64(rdValue);
-            }
-            else if (fieldType == typeof(ulong))
-            {
-                return Convert.ToUInt64(rdValue);
-            }
-            else if (fieldType == typeof(float))
-            {
-                return Convert.ToDouble(rdValue);
-            }
-            else if (fieldType == typeof(double))
-            {
-                return Convert.ToDouble(rdValue);
-            }
-            else if (fieldType == typeof(decimal))
-            {
-                return Convert.ToDecimal(rdValue);
-            }
-            else if (fieldType == typeof(bool))
-            {
-                return Convert.ToBoolean(rdValue);
-            }
-            else if (fieldType == typeof(DateTime))
-            {
-                return Convert.ToDateTime(rdValue);
-            }
-            else if (fieldType == typeof(Guid?))
-            {
-                return new Guid(Convert.ToString(rdValue));
-            }
-            else if (fieldType == typeof(char?))
-            {
-                return Convert.ToChar(rdValue);
-            }
-            else if (fieldType == typeof(byte?))
-            {
-                return Convert.ToByte(rdValue);
-            }
-            else if (fieldType == typeof(sbyte?))
-            {
-                return Convert.ToSByte(rdValue);
-            }
-            else if (fieldType == typeof(short?))
-            {
-                return Convert.ToInt16(rdValue);
-            }
-            else if (fieldType == typeof(ushort?))
-            {
-                return Convert.ToUInt16(rdValue);
-            }
-            else if (fieldType == typeof(int?))
-            {
-                return Convert.ToInt32(rdValue);
-            }
-            else if (fieldType == typeof(uint?))
-            {
-                return Convert.ToUInt32(rdValue);
-            }
-            else if (fieldType == typeof(long?))
-            {
-                return Convert.ToInt64(rdValue);
-            }
-            else if (fieldType == typeof(ulong?))
-            {
-                return Convert.ToUInt64(rdValue);
-            }
-            else if (fieldType == typeof(float?))
-            {
-                return Convert.ToDouble(rdValue);
-            }
-            else if (fieldType == typeof(double?))
-            {
-                return Convert.ToDouble(rdValue);
-            }
-            else if (fieldType == typeof(decimal?))
-            {
-                return Convert.ToDecimal(rdValue);
-            }
-            else if (fieldType == typeof(bool?))
-            {
-                return Convert.ToBoolean(rdValue);
-            }
-            else if (fieldType == typeof(DateTime?))
-            {
-                return Convert.ToDateTime(rdValue);
-            }
+        private static object _lockGetEntityPropertiesDict = new object();
 
-            return rdValue;
-        }
-        #endregion
+        private static ConcurrentDictionary<Type, object> _dictEntityPropertiesDict = new ConcurrentDictionary<Type, object>();
 
         #region 获取主键名称
         /// <summary>
         /// 获取主键名称
         /// </summary>
-        public static string GetIdName(Type type, out Type idType)
+        internal static string GetIdName(Type type, out Type idType)
         {
             PropertyInfoEx[] propertyInfoList = GetEntityProperties(type);
             foreach (PropertyInfoEx propertyInfoEx in propertyInfoList)
@@ -171,7 +43,7 @@ namespace LiteSql
         /// <summary>
         /// 获取实体类属性
         /// </summary>
-        public static PropertyInfoEx[] GetEntityProperties(Type type)
+        internal static PropertyInfoEx[] GetEntityProperties(Type type)
         {
             return PropertiesCache.TryGet<PropertyInfoEx[]>(type, modelType =>
             {
@@ -181,12 +53,12 @@ namespace LiteSql
                 {
                     PropertyInfoEx propertyInfoEx = new PropertyInfoEx(propertyInfo);
 
-                    ColumnAttribute dbFieldAttribute = propertyInfo.GetCustomAttribute<ColumnAttribute>();
+                    ColumnAttribute dbFieldAttribute = propertyInfo.GetCustomAttribute<ColumnAttribute>(false);
                     if (dbFieldAttribute != null)
                     {
-                        if (!string.IsNullOrWhiteSpace(dbFieldAttribute.FieldName))
+                        if (!string.IsNullOrWhiteSpace(dbFieldAttribute.Name))
                         {
-                            propertyInfoEx.FieldName = dbFieldAttribute.FieldName;
+                            propertyInfoEx.FieldName = dbFieldAttribute.Name;
                         }
                         else
                         {
@@ -194,6 +66,7 @@ namespace LiteSql
                         }
 
                         propertyInfoEx.IsDBField = true;
+                        propertyInfoEx.DBFieldAttribute = dbFieldAttribute;
                     }
                     else
                     {
@@ -204,24 +77,48 @@ namespace LiteSql
                     {
                         propertyInfoEx.IsDBKey = true;
 
-                        AutoIncrementAttribute modelAutoIncrementAttribute = modelType.GetCustomAttribute<AutoIncrementAttribute>();
+                        AutoIncrementAttribute modelAutoIncrementAttribute = modelType.GetCustomAttribute<AutoIncrementAttribute>(false);
                         if (modelAutoIncrementAttribute != null)
                         {
                             propertyInfoEx.IsAutoIncrement = modelAutoIncrementAttribute.Value;
                         }
                     }
 
-                    AutoIncrementAttribute propertyAutoIncrementAttribute = propertyInfo.GetCustomAttribute<AutoIncrementAttribute>();
+                    AutoIncrementAttribute propertyAutoIncrementAttribute = propertyInfo.GetCustomAttribute<AutoIncrementAttribute>(false);
                     if (propertyAutoIncrementAttribute != null)
                     {
                         propertyInfoEx.IsAutoIncrement = propertyAutoIncrementAttribute.Value;
                     }
+
+                    ReadOnlyAttribute readOnlyAttribute = propertyInfo.GetCustomAttribute<ReadOnlyAttribute>(false);
+                    propertyInfoEx.IsReadOnly = readOnlyAttribute != null;
 
                     propertyInfoEx.FieldNameUpper = propertyInfoEx.FieldName.ToUpper();
                     result.Add(propertyInfoEx);
                 }
                 return result.ToArray();
             });
+        }
+
+        /// <summary>
+        /// 获取实体类属性
+        /// </summary>
+        internal static Dictionary<string, PropertyInfoEx> GetEntityPropertiesDict(Type type)
+        {
+            lock (_lockGetEntityPropertiesDict)
+            {
+                if (_dictEntityPropertiesDict.TryGetValue(type, out object obj))
+                {
+                    return (Dictionary<string, PropertyInfoEx>)obj;
+                }
+                else
+                {
+                    var properties = GetEntityProperties(type);
+                    var dict = properties.ToDictionary(t => t.PropertyInfo.Name);
+                    _dictEntityPropertiesDict.TryAdd(type, dict);
+                    return dict;
+                }
+            }
         }
         #endregion
 
@@ -260,20 +157,16 @@ namespace LiteSql
         /// <summary>
         /// 判断是否是自增的主键
         /// </summary>
-        private static bool IsAutoIncrementPk(Type modelType, PropertyInfoEx propertyInfoEx, bool autoIncrement)
+        private static bool IsAutoIncrementPk(PropertyInfoEx propertyInfoEx)
         {
-            if (propertyInfoEx.IsDBKey)
+            if (propertyInfoEx.IsAutoIncrement != null)
             {
-                if (propertyInfoEx.IsAutoIncrement != null)
-                {
-                    return propertyInfoEx.IsAutoIncrement.Value;
-                }
-                else
-                {
-                    return autoIncrement;
-                }
+                return propertyInfoEx.IsAutoIncrement.Value;
             }
-            return false;
+            else
+            {
+                return false;
+            }
         }
         #endregion
 
@@ -283,26 +176,44 @@ namespace LiteSql
         /// </summary>
         public string GetTableName(IProvider provider, Type type)
         {
-            if (_splitTableMapping == null)
+            if (_splitTableMapping != null && _splitTableMapping.Exists(type))
             {
-                TableAttribute dbTableAttribute = type.GetCustomAttribute<TableAttribute>();
-                if (dbTableAttribute != null && !string.IsNullOrWhiteSpace(dbTableAttribute.TableName))
+                string tableName = _splitTableMapping.GetTableName(type);
+                string schema = _splitTableMapping.GetSchema(type);
+                if (schema == null)
                 {
-                    return provider.OpenQuote + dbTableAttribute.TableName + provider.CloseQuote;
+                    return $"{provider.OpenQuote}{tableName}{provider.CloseQuote}";
                 }
                 else
                 {
-                    return provider.OpenQuote + type.Name + provider.CloseQuote;
+                    return $"{provider.OpenQuote}{schema}{provider.CloseQuote}.{provider.OpenQuote}{tableName}{provider.CloseQuote}";
                 }
             }
             else
             {
-                string tableName = _splitTableMapping.GetTableName(type);
-                if (tableName == null)
+                TableAttribute dbTableAttribute = type.GetCustomAttribute<TableAttribute>();
+                if (dbTableAttribute != null && !string.IsNullOrWhiteSpace(dbTableAttribute.Name))
                 {
-                    throw new Exception("缺少分表映射");
+                    if (dbTableAttribute.Schema == null)
+                    {
+                        return $"{provider.OpenQuote}{dbTableAttribute.Name}{provider.CloseQuote}";
+                    }
+                    else
+                    {
+                        return $"{provider.OpenQuote}{dbTableAttribute.Schema}{provider.CloseQuote}.{provider.OpenQuote}{dbTableAttribute.Name}{provider.CloseQuote}";
+                    }
                 }
-                return provider.OpenQuote + tableName + provider.CloseQuote;
+                else
+                {
+                    if (dbTableAttribute.Schema == null)
+                    {
+                        return $"{provider.OpenQuote}{type.Name}{provider.CloseQuote}";
+                    }
+                    else
+                    {
+                        return $"{provider.OpenQuote}{dbTableAttribute.Schema}{provider.CloseQuote}.{provider.OpenQuote}{type.Name}{provider.CloseQuote}";
+                    }
+                }
             }
         }
         #endregion
@@ -315,10 +226,9 @@ namespace LiteSql
         {
             sql = sql.Trim();
             string ignore = string.Empty;
-            string upperSql = sql.ToUpper();
             foreach (string keyword in _sqlFilteRegexDict.Keys)
             {
-                if (upperSql.IndexOf(keyword.ToUpper()) == 0)
+                if (sql.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     ignore = keyword;
                 }

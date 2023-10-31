@@ -24,7 +24,7 @@ namespace DAL
 
             var session = LiteSqlFactory.GetSession();
 
-            ISqlString sql = session.CreateSql("select * from bs_order_detail where order_id=@orderId order by order_num", orderId);
+            ISqlString sql = session.Sql("select * from bs_order_detail where order_id=@orderId order by order_num", orderId);
 
             return session.QueryList<BsOrderDetail>(sql);
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,23 +15,43 @@ using System.Threading.Tasks;
 /* ----------------------------------------------------------------------
 * 作    者：suxiang
 * 创建日期：2016年11月23日
-* 更新日期：2022年08月28日
+* 更新日期：2023年10月31日
 * ---------------------------------------------------------------------- */
 
 namespace LiteSql
 {
     /// <summary>
-    /// DBSession
-    /// 一个DBSession实例对应一个数据库连接，一个DBSession实例只有一个数据库连接
-    /// DBSession不是线程安全的，不能跨线程使用
+    /// DbSession实例表示与数据库的会话
+    /// 使用事务时，DbSession不是线程安全的
+    /// DbSession不建议定义成单例模式
     /// </summary>
-    public partial class DBSession : IDBSession
+    public partial class DbSession<TFlag> : DbSession, IDbSession<TFlag>
+    {
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        public DbSession(string connectionString, IProvider provider, SplitTableMapping splitTableMapping) : base(connectionString, provider, splitTableMapping) { }
+    }
+
+    /// <summary>
+    /// DbSession实例表示与数据库的会话
+    /// 使用事务时，DbSession不是线程安全的
+    /// DbSession不建议定义成单例模式
+    /// </summary>
+    public partial class DbSession : IDbSession
     {
         #region 静态变量
         /// <summary>
         /// SQL过滤正则
         /// </summary>
-        private static Dictionary<string, Regex> _sqlFilteRegexDict = new Dictionary<string, Regex>();
+        private static ConcurrentDictionary<string, Regex> _sqlFilteRegexDict = new ConcurrentDictionary<string, Regex>();
+
+        /// <summary>
+        /// 数据库字段名与实体类属性名映射
+        /// </summary>
+        private static ConcurrentDictionary<Type, bool> _dictForTypeMap = new ConcurrentDictionary<Type, bool>();
+
+        private static object _lockSetTypeMap = new object();
         #endregion
 
         #region 变量
@@ -42,12 +63,7 @@ namespace LiteSql
         /// <summary>
         /// 事务
         /// </summary>
-        private DbTransactionExt _tran;
-
-        /// <summary>
-        /// 数据库连接
-        /// </summary>
-        private DbConnectionExt _conn;
+        private DbTransaction _tran;
 
         /// <summary>
         /// 数据库实现
@@ -55,42 +71,33 @@ namespace LiteSql
         private IProvider _provider;
 
         /// <summary>
-        /// 数据库自增(全局设置)
-        /// </summary>
-        private bool _autoIncrement;
-
-        /// <summary>
         /// 分表映射
         /// </summary>
         private SplitTableMapping _splitTableMapping;
 
-        /// <summary>
-        /// 数据库连接池
-        /// </summary>
-        private DbConnectionFactory _connFactory;
         #endregion
 
         #region 静态构造函数
         /// <summary>
         /// 静态构造函数
         /// </summary>
-        static DBSession()
+        static DbSession()
         {
-            _sqlFilteRegexDict.Add("net localgroup ", new Regex("net[\\s]+localgroup[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("net user ", new Regex("net[\\s]+user[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("xp_cmdshell ", new Regex("xp_cmdshell[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("exec ", new Regex("exec[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("execute ", new Regex("execute[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("truncate ", new Regex("truncate[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("drop ", new Regex("drop[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("restore ", new Regex("restore[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("create ", new Regex("create[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("alter ", new Regex("alter[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("rename ", new Regex("rename[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("insert ", new Regex("insert[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("update ", new Regex("update[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("delete ", new Regex("delete[\\s]+", RegexOptions.IgnoreCase));
-            _sqlFilteRegexDict.Add("select ", new Regex("select[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("net localgroup ", new Regex("net[\\s]+localgroup[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("net user ", new Regex("net[\\s]+user[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("xp_cmdshell ", new Regex("xp_cmdshell[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("exec ", new Regex("exec[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("execute ", new Regex("execute[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("truncate ", new Regex("truncate[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("drop ", new Regex("drop[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("restore ", new Regex("restore[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("create ", new Regex("create[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("alter ", new Regex("alter[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("rename ", new Regex("rename[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("insert ", new Regex("insert[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("update ", new Regex("update[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("delete ", new Regex("delete[\\s]+", RegexOptions.IgnoreCase));
+            _sqlFilteRegexDict.TryAdd("select ", new Regex("select[\\s]+", RegexOptions.IgnoreCase));
         }
         #endregion
 
@@ -98,35 +105,11 @@ namespace LiteSql
         /// <summary>
         /// 构造函数
         /// </summary>
-        public DBSession(string connectionString, DBType dbType, SplitTableMapping splitTableMapping, DbConnectionFactory connFactory, bool autoIncrement = false)
+        public DbSession(string connectionString, IProvider provider, SplitTableMapping splitTableMapping)
         {
             _connectionString = connectionString;
-            _provider = ProviderFactory.CreateProvider(dbType);
-            _splitTableMapping = splitTableMapping;
-            _connFactory = connFactory;
-            _autoIncrement = autoIncrement;
-        }
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        public DBSession(string connectionString, Type providerType, SplitTableMapping splitTableMapping, DbConnectionFactory connFactory, bool autoIncrement = false)
-        {
-            _connectionString = connectionString;
-            _provider = ProviderFactory.CreateProvider(providerType);
-            _splitTableMapping = splitTableMapping;
-            _connFactory = connFactory;
-            _autoIncrement = autoIncrement;
-        }
-        #endregion
-
-        #region 资源释放
-        /// <summary>
-        /// 资源释放 为兼容旧版本，方法保留，方法体为空
-        /// </summary>
-        public void Dispose()
-        {
-
+            _provider = provider;
+            _splitTableMapping = splitTableMapping ?? new SplitTableMapping();
         }
         #endregion
 
@@ -134,7 +117,7 @@ namespace LiteSql
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        public ISqlString CreateSql(string sql = null, params object[] args)
+        public ISqlString Sql(string sql = null, params object[] args)
         {
             return new SqlString(_provider, this, sql, args);
         }
@@ -142,7 +125,7 @@ namespace LiteSql
         /// <summary>
         /// 创建SqlString对象
         /// </summary>
-        public ISqlQueryable<T> CreateSql<T>(string sql = null, params object[] args) where T : new()
+        public ISqlString<T> Sql<T>(string sql = null, params object[] args) where T : new()
         {
             return new SqlString<T>(_provider, this, sql, args);
         }
@@ -153,22 +136,10 @@ namespace LiteSql
         /// 创建IQueryable
         /// </summary>
         /// <typeparam name="T">实体类型</typeparam>
-        /// <param name="alias">别名，默认值t</param>
-        public ISqlQueryable<T> Queryable<T>(string alias = null) where T : new()
+        public ISqlQueryable<T> Queryable<T>() where T : new()
         {
-            SqlString<T> sqlString = new SqlString<T>(_provider, this, null);
-            return sqlString.Queryable(alias);
-        }
-
-        /// <summary>
-        /// 创建IQueryable
-        /// </summary>
-        /// <typeparam name="T">实体类型</typeparam>
-        /// <param name="expression">返回匿名对象的表达式</param>
-        public ISqlQueryable<T> Queryable<T>(Expression<Func<T, object>> expression) where T : new()
-        {
-            SqlString<T> sqlString = new SqlString<T>(_provider, this, null);
-            return sqlString.Select(expression);
+            SqlQueryable<T> sqlString = new SqlQueryable<T>(_provider, this, null);
+            return sqlString.Queryable();
         }
         #endregion
 
@@ -183,7 +154,6 @@ namespace LiteSql
 
             string idName = GetIdName(type, out _);
             string sql = _provider.CreateGetMaxIdSql(GetTableName(_provider, type), _provider.OpenQuote + idName + _provider.CloseQuote);
-
 
             object obj = ExecuteScalar(sql);
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -207,21 +177,69 @@ namespace LiteSql
         }
         #endregion
 
-        #region 从连接池池获取连接
+        #region 获取数据库连接
         /// <summary>
-        /// 从连接池池获取连接
+        /// 获取数据库连接
         /// </summary>
-        public DbConnectionExt GetConnection(DbTransactionExt _tran = null)
+        public DbConnection GetConnection(DbTransaction tran = null)
         {
-            return _connFactory.GetConnection(_tran);
+            if (tran != null)
+            {
+                return tran.Connection;
+            }
+            else
+            {
+                return _provider.CreateConnection(_connectionString);
+            }
         }
 
         /// <summary>
-        /// 从连接池池获取连接
+        /// 获取数据库连接
         /// </summary>
-        public Task<DbConnectionExt> GetConnectionAsync(DbTransactionExt _tran = null)
+        public Task<DbConnection> GetConnectionAsync(DbTransaction tran = null)
         {
-            return _connFactory.GetConnectionAsync(_tran);
+            if (tran != null)
+            {
+                return Task.FromResult(tran.Connection);
+            }
+            else
+            {
+                return Task.FromResult(_provider.CreateConnection(_connectionString));
+            }
+        }
+
+        /// <summary>
+        /// 获取数据库连接，已经Open
+        /// </summary>
+        public DbConnection GetOpenedConnection(DbTransaction tran = null)
+        {
+            if (tran != null)
+            {
+                return tran.Connection;
+            }
+            else
+            {
+                var conn = _provider.CreateConnection(_connectionString);
+                if (conn.State == ConnectionState.Closed) conn.Open();
+                return conn;
+            }
+        }
+
+        /// <summary>
+        /// 获取数据库连接，已经Open
+        /// </summary>
+        public async Task<DbConnection> GetOpenedConnectionAsync(DbTransaction tran = null)
+        {
+            if (tran != null)
+            {
+                return tran.Connection;
+            }
+            else
+            {
+                var conn = _provider.CreateConnection(_connectionString);
+                if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
+                return conn;
+            }
         }
         #endregion
 

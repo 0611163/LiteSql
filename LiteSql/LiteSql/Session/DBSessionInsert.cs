@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
@@ -8,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region Insert 添加
         /// <summary>
@@ -17,12 +19,25 @@ namespace LiteSql
         public void Insert(object obj)
         {
             StringBuilder strSql = new StringBuilder();
-            int savedCount = 0;
             DbParameter[] parameters = null;
 
-            PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
+            PrepareInsertSql(obj, ref strSql, ref parameters);
 
-            Execute(strSql.ToString(), parameters);
+            OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                Execute(strSql.ToString(), parameters);
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
         }
 
         /// <summary>
@@ -31,16 +46,27 @@ namespace LiteSql
         public long InsertReturnId(object obj, string selectIdSql)
         {
             StringBuilder strSql = new StringBuilder();
-            int savedCount = 0;
             DbParameter[] parameters = null;
 
-            PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
+            PrepareInsertSql(obj, ref strSql, ref parameters);
             strSql.Append(";" + selectIdSql + ";");
 
             OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-            object id = ExecuteScalar(strSql.ToString(), parameters);
-            return Convert.ToInt64(id);
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                object id = ExecuteScalar(strSql.ToString(), parameters);
+                return Convert.ToInt64(id);
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
         }
         #endregion
 
@@ -48,15 +74,28 @@ namespace LiteSql
         /// <summary>
         /// 添加
         /// </summary>
-        public Task InsertAsync(object obj)
+        public async Task InsertAsync(object obj)
         {
             StringBuilder strSql = new StringBuilder();
-            int savedCount = 0;
             DbParameter[] parameters = null;
 
-            PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
+            PrepareInsertSql(obj, ref strSql, ref parameters);
 
-            return ExecuteAsync(strSql.ToString(), parameters);
+            OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                await ExecuteAsync(strSql.ToString(), parameters);
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
         }
 
         /// <summary>
@@ -65,16 +104,27 @@ namespace LiteSql
         public async Task<long> InsertReturnIdAsync(object obj, string selectIdSql)
         {
             StringBuilder strSql = new StringBuilder();
-            int savedCount = 0;
             DbParameter[] parameters = null;
 
-            PrepareInsertSql(obj, _autoIncrement, ref strSql, ref parameters, ref savedCount);
+            PrepareInsertSql(obj, ref strSql, ref parameters);
             strSql.Append(";" + selectIdSql + ";");
 
             OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-            object id = await ExecuteScalarAsync(strSql.ToString(), parameters);
-            return Convert.ToInt64(id);
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                object id = await ExecuteScalarAsync(strSql.ToString(), parameters);
+                return Convert.ToInt64(id);
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
         }
         #endregion
 
@@ -98,9 +148,25 @@ namespace LiteSql
                 int savedCount = 0;
                 DbParameter[] parameters = null;
 
-                PrepareInsertSql<T>(list.Skip(i).Take(pageSize).ToList(), _autoIncrement, ref strSql, ref parameters, ref savedCount);
+                var listPage = list.Skip(i).Take(pageSize).ToList();
 
-                Execute(strSql.ToString(), parameters);
+                PrepareInsertSql<T>(listPage, ref strSql, ref parameters, ref savedCount);
+
+                OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+                var conn = GetConnection(_tran);
+
+                try
+                {
+                    Execute(strSql.ToString(), parameters);
+                }
+                finally
+                {
+                    if (_tran == null)
+                    {
+                        if (conn.State != ConnectionState.Closed) conn.Close();
+                    }
+                }
             }
         }
         #endregion
@@ -125,9 +191,25 @@ namespace LiteSql
                 int savedCount = 0;
                 DbParameter[] parameters = null;
 
-                PrepareInsertSql<T>(list.Skip(i).Take(pageSize).ToList(), _autoIncrement, ref strSql, ref parameters, ref savedCount);
+                var listPage = list.Skip(i).Take(pageSize).ToList();
 
-                await ExecuteAsync(strSql.ToString(), parameters);
+                PrepareInsertSql<T>(listPage, ref strSql, ref parameters, ref savedCount);
+
+                OnExecuting?.Invoke(strSql.ToString(), parameters);
+
+                var conn = GetConnection(_tran);
+
+                try
+                {
+                    await ExecuteAsync(strSql.ToString(), parameters);
+                }
+                finally
+                {
+                    if (_tran == null)
+                    {
+                        if (conn.State != ConnectionState.Closed) conn.Close();
+                    }
+                }
             }
         }
         #endregion
@@ -136,44 +218,35 @@ namespace LiteSql
         /// <summary>
         /// 准备Insert的SQL
         /// </summary>
-        private void PrepareInsertSql(object obj, bool autoIncrement, ref StringBuilder strSql, ref DbParameter[] parameters, ref int savedCount)
+        private void PrepareInsertSql(object obj, ref StringBuilder strSql, ref DbParameter[] parameters)
         {
             Type type = obj.GetType();
             strSql.Append(string.Format("insert into {0}(", GetTableName(_provider, type)));
             PropertyInfoEx[] propertyInfoList = GetEntityProperties(type);
             List<Tuple<string, Type>> propertyNameList = new List<Tuple<string, Type>>();
+            List<DbParameter> parameterList = new List<DbParameter>();
             foreach (PropertyInfoEx propertyInfoEx in propertyInfoList)
             {
                 PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
 
-                if (IsAutoIncrementPk(type, propertyInfoEx, autoIncrement)) continue;
+                if (IsAutoIncrementPk(propertyInfoEx)) continue;
 
-                if (propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).Length > 0)
+                if (propertyInfoEx.IsReadOnly) continue;
+
+                if (propertyInfoEx.IsDBField)
                 {
                     propertyNameList.Add(new Tuple<string, Type>(propertyInfoEx.FieldName, propertyInfoEx.PropertyInfo.PropertyType));
-                    savedCount++;
-                }
-            }
 
-            strSql.Append(string.Format("{0})", string.Join(",", propertyNameList.ConvertAll(a => string.Format("{0}{1}{2}", _provider.OpenQuote, a.Item1, _provider.CloseQuote)).ToArray())));
-            strSql.Append(string.Format(" values ({0})", string.Join(",", propertyNameList.ConvertAll<string>(a => _provider.GetParameterName(a.Item1, a.Item2)).ToArray())));
-            parameters = new DbParameter[savedCount];
-            int k = 0;
-            for (int i = 0; i < propertyInfoList.Length && savedCount > 0; i++)
-            {
-                PropertyInfoEx propertyInfoEx = propertyInfoList[i];
-                PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
-
-                if (IsAutoIncrementPk(type, propertyInfoEx, autoIncrement)) continue;
-
-                if (propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).Length > 0)
-                {
                     object val = propertyInfo.GetValue(obj, null);
                     Type parameterType = val == null ? typeof(object) : val.GetType();
-                    DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName, parameterType), val == null ? DBNull.Value : val);
-                    parameters[k++] = param;
+                    DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName, parameterType), val);
+                    parameterList.Add(param);
                 }
             }
+            parameters = parameterList.ToArray();
+
+            strSql.Append(string.Format("{0})", string.Join(",", propertyNameList.Select(a => string.Format("{0}{1}{2}", _provider.OpenQuote, a.Item1, _provider.CloseQuote)))));
+            strSql.Append(string.Format(" values ({0})", string.Join(",", propertyNameList.Select(a => _provider.GetParameterName(a.Item1, a.Item2)))));
         }
         #endregion
 
@@ -181,7 +254,7 @@ namespace LiteSql
         /// <summary>
         /// 准备批量Insert的SQL
         /// </summary>
-        private void PrepareInsertSql<T>(List<T> list, bool autoIncrement, ref StringBuilder strSql, ref DbParameter[] parameters, ref int savedCount)
+        private void PrepareInsertSql<T>(List<T> list, ref StringBuilder strSql, ref DbParameter[] parameters, ref int savedCount)
         {
             Type type = typeof(T);
             strSql.Append(string.Format("insert into {0}(", GetTableName(_provider, type)));
@@ -191,19 +264,21 @@ namespace LiteSql
             {
                 PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
 
-                if (IsAutoIncrementPk(type, propertyInfoEx, autoIncrement)) continue;
+                if (IsAutoIncrementPk(propertyInfoEx)) continue;
 
-                if (propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).Length > 0)
+                if (propertyInfoEx.IsReadOnly) continue;
+
+                if (propertyInfoEx.IsDBField)
                 {
                     propertyNameList.Add(new Tuple<string, Type>(propertyInfoEx.FieldName, propertyInfoEx.PropertyInfo.PropertyType));
                     savedCount++;
                 }
             }
 
-            strSql.Append(string.Format("{0}) values ", string.Join(",", propertyNameList.ConvertAll<string>(a => _provider.OpenQuote + a.Item1 + _provider.CloseQuote).ToArray())));
+            strSql.Append(string.Format("{0}) values ", string.Join(",", propertyNameList.Select(a => _provider.OpenQuote + a.Item1 + _provider.CloseQuote))));
             for (int i = 0; i < list.Count; i++)
             {
-                strSql.Append(string.Format(" ({0})", string.Join(",", propertyNameList.ConvertAll<string>(a => _provider.GetParameterName(a.Item1 + i, a.Item2)).ToArray())));
+                strSql.Append(string.Format(" ({0})", string.Join(",", propertyNameList.Select(a => _provider.GetParameterName(a.Item1 + i, a.Item2)))));
                 if (i != list.Count - 1)
                 {
                     strSql.Append(", ");
@@ -220,13 +295,15 @@ namespace LiteSql
                     PropertyInfoEx propertyInfoEx = propertyInfoList[i];
                     PropertyInfo propertyInfo = propertyInfoEx.PropertyInfo;
 
-                    if (IsAutoIncrementPk(type, propertyInfoEx, autoIncrement)) continue;
+                    if (IsAutoIncrementPk(propertyInfoEx)) continue;
 
-                    if (propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).Length > 0)
+                    if (propertyInfoEx.IsReadOnly) continue;
+
+                    if (propertyInfoEx.IsDBField)
                     {
                         object val = propertyInfo.GetValue(obj, null);
                         Type parameterType = val == null ? typeof(object) : val.GetType();
-                        DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName + n, parameterType), val == null ? DBNull.Value : val);
+                        DbParameter param = _provider.GetDbParameter(_provider.GetParameterName(propertyInfoEx.FieldName + n, parameterType), val);
                         parameters[k++] = param;
                     }
                 }

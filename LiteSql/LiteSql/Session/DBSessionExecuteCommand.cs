@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace LiteSql
 {
-    public partial class DBSession : IDBSession
+    public partial class DbSession : IDbSession
     {
         #region SQL打印
         /// <summary>
@@ -64,103 +66,6 @@ namespace LiteSql
         #endregion
 
 
-        #region Execute 执行SQL语句，返回影响的记录数
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="sqlString">SQL语句</param>
-        /// <returns>影响的记录数</returns>
-        public int Execute(string sqlString)
-        {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
-            using (_conn = _connFactory.GetConnection(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
-                {
-                    if (_tran != null) cmd.Transaction = _tran.Tran;
-                    int rows = cmd.ExecuteNonQuery();
-                    return rows;
-                }
-            }
-        }
-        #endregion
-
-        #region ExecuteAsync 执行SQL语句，返回影响的记录数
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="sqlString">SQL语句</param>
-        /// <returns>影响的记录数</returns>
-        public async Task<int> ExecuteAsync(string sqlString)
-        {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
-            using (_conn = await _connFactory.GetConnectionAsync(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(sqlString, _conn.Conn))
-                {
-                    if (_tran != null) cmd.Transaction = _tran.Tran;
-                    int rows = await cmd.ExecuteNonQueryAsync();
-                    return rows;
-                }
-            }
-        }
-        #endregion
-
-
-        #region ExecuteScalar 执行SQL语句，返回一个值
-        /// <summary>
-        /// 执行SQL语句，返回一个值
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <returns>影响的记录数</returns>
-        public object ExecuteScalar(string sqlString)
-        {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
-            using (_conn = _connFactory.GetConnection(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
-                {
-                    PrepareCommand(cmd, _conn.Conn, _tran, sqlString, null);
-                    object result = cmd.ExecuteScalar();
-                    cmd.Parameters.Clear();
-                    return result;
-                }
-            }
-        }
-        #endregion
-
-        #region ExecuteScalarAsync 执行SQL语句，返回影响的记录数
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <returns>影响的记录数</returns>
-        public async Task<object> ExecuteScalarAsync(string sqlString)
-        {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
-            using (_conn = await _connFactory.GetConnectionAsync(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
-                {
-                    await PrepareCommandAsync(cmd, _conn.Conn, _tran, sqlString, null);
-                    var task = cmd.ExecuteScalarAsync();
-                    object result = await task;
-                    cmd.Parameters.Clear();
-                    return result;
-                }
-            }
-        }
-        #endregion
-
-
         #region QuerySingle<T> 查询单个值
         /// <summary>
         /// 查询单个值
@@ -170,7 +75,6 @@ namespace LiteSql
         {
             SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, null);
-
 
             object obj = ExecuteScalar(sqlString);
 
@@ -308,146 +212,9 @@ namespace LiteSql
         }
         #endregion
 
-
-        #region ExecuteReader 执行查询语句，返回IDataReader
-        /// <summary>
-        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
-        /// </summary>
-        private DbDataReader ExecuteReader(string sqlString, DbConnectionExt conn)
-        {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
-            using (DbCommand cmd = _provider.GetCommand(sqlString, conn.Conn))
-            {
-                if (_tran != null) cmd.Transaction = _tran.Tran;
-                DbDataReader myReader = cmd.ExecuteReader();
-                return myReader;
-            }
-        }
         #endregion
 
-        #region ExecuteReaderAsync 执行查询语句，返回IDataReader
-        /// <summary>
-        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
-        /// </summary>
-        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbConnectionExt conn)
-        {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
-            using (DbCommand cmd = _provider.GetCommand(sqlString, conn.Conn))
-            {
-                if (_tran != null) cmd.Transaction = _tran.Tran;
-                DbDataReader myReader = await cmd.ExecuteReaderAsync();
-                return myReader;
-            }
-        }
-        #endregion
-
-        #endregion
-
-        #region 执行带参数的SQL语句
-
-        #region Execute 执行SQL语句，返回影响的记录数
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        public int Execute(string SQLString, DbParameter[] cmdParms)
-        {
-            OnExecuting?.Invoke(SQLString, cmdParms);
-
-            using (_conn = _connFactory.GetConnection(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
-                {
-                    PrepareCommand(cmd, _conn.Conn, _tran, SQLString, cmdParms);
-                    int rows = cmd.ExecuteNonQuery();
-                    cmd.Parameters.Clear();
-                    return rows;
-                }
-            }
-        }
-        #endregion
-
-        #region ExecuteAsync 执行SQL语句，返回影响的记录数
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        public async Task<int> ExecuteAsync(string SQLString, DbParameter[] cmdParms)
-        {
-            OnExecuting?.Invoke(SQLString, cmdParms);
-
-            using (_conn = await _connFactory.GetConnectionAsync(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
-                {
-                    await PrepareCommandAsync(cmd, _conn.Conn, _tran, SQLString, cmdParms);
-                    var task = cmd.ExecuteNonQueryAsync();
-                    int rows = await task;
-                    cmd.Parameters.Clear();
-                    return rows;
-                }
-            }
-        }
-        #endregion
-
-
-        #region ExecuteScalar 执行SQL语句，返回一个值
-        /// <summary>
-        /// 执行SQL语句，返回一个值
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        public object ExecuteScalar(string SQLString, DbParameter[] cmdParms)
-        {
-            OnExecuting?.Invoke(SQLString, cmdParms);
-
-            using (_conn = _connFactory.GetConnection(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
-                {
-                    PrepareCommand(cmd, _conn.Conn, _tran, SQLString, cmdParms);
-                    object result = cmd.ExecuteScalar();
-                    cmd.Parameters.Clear();
-                    return result;
-                }
-            }
-        }
-        #endregion
-
-        #region ExecuteScalarAsync 执行SQL语句，返回影响的记录数
-        /// <summary>
-        /// 执行SQL语句，返回影响的记录数
-        /// </summary>
-        /// <param name="SQLString">SQL语句</param>
-        /// <param name="cmdParms">参数</param>
-        /// <returns>影响的记录数</returns>
-        public async Task<object> ExecuteScalarAsync(string SQLString, DbParameter[] cmdParms)
-        {
-            OnExecuting?.Invoke(SQLString, cmdParms);
-
-            using (_conn = await _connFactory.GetConnectionAsync(_tran))
-            {
-                using (DbCommand cmd = _provider.GetCommand(_conn.Conn))
-                {
-                    await PrepareCommandAsync(cmd, _conn.Conn, _tran, SQLString, cmdParms);
-                    var task = cmd.ExecuteScalarAsync();
-                    object result = await task;
-                    cmd.Parameters.Clear();
-                    return result;
-                }
-            }
-        }
-        #endregion
-
+        #region 执行带参SQL语句
 
         #region Exists 是否存在
         /// <summary>
@@ -455,6 +222,7 @@ namespace LiteSql
         /// </summary>
         public bool Exists(string sqlString, DbParameter[] cmdParms)
         {
+            SqlFilter(ref sqlString);
             OnExecuting?.Invoke(sqlString, cmdParms);
 
             object obj = ExecuteScalar(sqlString, cmdParms);
@@ -649,85 +417,6 @@ namespace LiteSql
         }
         #endregion
 
-
-        #region ExecuteReader 执行查询语句，返回IDataReader
-        /// <summary>
-        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
-        /// </summary>
-        /// <param name="sqlString">查询语句</param>
-        ///  <param name="cmdParms">参数</param>
-        /// <returns>IDataReader</returns>
-        private DbDataReader ExecuteReader(string sqlString, DbParameter[] cmdParms, DbConnectionExt conn)
-        {
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
-            using (DbCommand cmd = _provider.GetCommand(conn.Conn))
-            {
-                PrepareCommand(cmd, conn.Conn, null, sqlString, cmdParms);
-                DbDataReader myReader = cmd.ExecuteReader();
-                cmd.Parameters.Clear();
-                return myReader;
-            }
-        }
-        #endregion
-
-        #region ExecuteReaderAsync 执行查询语句，返回IDataReader
-        /// <summary>
-        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
-        /// </summary>
-        /// <param name="sqlString">查询语句</param>
-        ///  <param name="cmdParms">参数</param>
-        /// <returns>IDataReader</returns>
-        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbParameter[] cmdParms, DbConnectionExt conn)
-        {
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
-            using (DbCommand cmd = _provider.GetCommand(conn.Conn))
-            {
-                await PrepareCommandAsync(cmd, conn.Conn, null, sqlString, cmdParms);
-                DbDataReader myReader = await cmd.ExecuteReaderAsync();
-                cmd.Parameters.Clear();
-                return myReader;
-            }
-        }
-        #endregion
-
-        #region PrepareCommand
-        private static void PrepareCommand(DbCommand cmd, DbConnection conn, DbTransactionExt trans, string cmdText, DbParameter[] cmdParms)
-        {
-            if (conn.State != ConnectionState.Open) conn.Open();
-            cmd.Connection = conn;
-            cmd.CommandText = cmdText;
-            if (trans != null) cmd.Transaction = trans.Tran;
-            cmd.CommandType = CommandType.Text;
-            if (cmdParms != null)
-            {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-            }
-        }
-        #endregion
-
-        #region PrepareCommandAsync
-        private static async Task PrepareCommandAsync(DbCommand cmd, DbConnection conn, DbTransactionExt trans, string cmdText, DbParameter[] cmdParms)
-        {
-            if (conn.State != ConnectionState.Open) await conn.OpenAsync();
-            cmd.Connection = conn;
-            cmd.CommandText = cmdText;
-            if (trans != null) cmd.Transaction = trans.Tran;
-            cmd.CommandType = CommandType.Text;
-            if (cmdParms != null)
-            {
-                foreach (DbParameter parm in cmdParms)
-                {
-                    cmd.Parameters.Add(parm);
-                }
-            }
-        }
-        #endregion
-
         #endregion
 
         #region 传SqlString
@@ -843,6 +532,324 @@ namespace LiteSql
             return QueryCountAsync(sql.SQL, sql.Params, pageSize);
         }
 
+        #endregion
+
+
+        #region ExecuteScalar 执行SQL语句，返回一个值
+        /// <summary>
+        /// 执行SQL语句，返回一个值
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <returns>影响的记录数</returns>
+        internal object ExecuteScalar(string sqlString)
+        {
+            SqlFilter(ref sqlString);
+            OnExecuting?.Invoke(sqlString, null);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                using (DbCommand cmd = _provider.GetCommand(conn))
+                {
+                    PrepareCommand(cmd, conn, _tran, sqlString, null);
+                    object result = cmd.ExecuteScalar();
+                    cmd.Parameters.Clear();
+                    return result;
+                }
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+        #endregion
+
+        #region ExecuteScalarAsync 执行SQL语句，返回影响的记录数
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <returns>影响的记录数</returns>
+        internal async Task<object> ExecuteScalarAsync(string sqlString)
+        {
+            SqlFilter(ref sqlString);
+            OnExecuting?.Invoke(sqlString, null);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                using (DbCommand cmd = _provider.GetCommand(conn))
+                {
+                    await PrepareCommandAsync(cmd, conn, _tran, sqlString, null);
+                    var task = cmd.ExecuteScalarAsync();
+                    object result = await task;
+                    cmd.Parameters.Clear();
+                    return result;
+                }
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+        #endregion
+
+        #region PrepareCommand
+        private static void PrepareCommand(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
+        {
+            if (conn.State != ConnectionState.Open) conn.Open();
+            cmd.Connection = conn;
+            cmd.CommandText = cmdText;
+            if (trans != null) cmd.Transaction = trans;
+            cmd.CommandType = CommandType.Text;
+            if (cmdParms != null)
+            {
+                foreach (DbParameter parm in cmdParms)
+                {
+                    cmd.Parameters.Add(parm);
+                }
+            }
+        }
+        #endregion
+
+        #region PrepareCommandAsync
+        private static async Task PrepareCommandAsync(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
+        {
+            if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+            cmd.Connection = conn;
+            cmd.CommandText = cmdText;
+            if (trans != null) cmd.Transaction = trans;
+            cmd.CommandType = CommandType.Text;
+            if (cmdParms != null)
+            {
+                foreach (DbParameter parm in cmdParms)
+                {
+                    cmd.Parameters.Add(parm);
+                }
+            }
+        }
+        #endregion
+
+        #region ExecuteScalar 执行SQL语句，返回一个值
+        /// <summary>
+        /// 执行SQL语句，返回一个值
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <param name="cmdParms">参数</param>
+        /// <returns>影响的记录数</returns>
+        internal object ExecuteScalar(string SQLString, DbParameter[] cmdParms)
+        {
+            OnExecuting?.Invoke(SQLString, cmdParms);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                using (DbCommand cmd = _provider.GetCommand(conn))
+                {
+                    PrepareCommand(cmd, conn, _tran, SQLString, cmdParms);
+                    object result = cmd.ExecuteScalar();
+                    cmd.Parameters.Clear();
+                    return result;
+                }
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+        #endregion
+
+        #region ExecuteScalarAsync 执行SQL语句，返回影响的记录数
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <param name="cmdParms">参数</param>
+        /// <returns>影响的记录数</returns>
+        internal async Task<object> ExecuteScalarAsync(string SQLString, DbParameter[] cmdParms)
+        {
+            OnExecuting?.Invoke(SQLString, cmdParms);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                using (DbCommand cmd = _provider.GetCommand(conn))
+                {
+                    await PrepareCommandAsync(cmd, conn, _tran, SQLString, cmdParms);
+                    var task = cmd.ExecuteScalarAsync();
+                    object result = await task;
+                    cmd.Parameters.Clear();
+                    return result;
+                }
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+        #endregion
+
+        #region Execute 执行SQL语句，返回影响的记录数
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <param name="cmdParms">参数</param>
+        /// <returns>影响的记录数</returns>
+        internal int Execute(string SQLString, DbParameter[] cmdParms)
+        {
+            OnExecuting?.Invoke(SQLString, cmdParms);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                using (DbCommand cmd = _provider.GetCommand(conn))
+                {
+                    PrepareCommand(cmd, conn, _tran, SQLString, cmdParms);
+                    int rows = cmd.ExecuteNonQuery();
+                    cmd.Parameters.Clear();
+                    return rows;
+                }
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+        #endregion
+
+        #region ExecuteAsync 执行SQL语句，返回影响的记录数
+        /// <summary>
+        /// 执行SQL语句，返回影响的记录数
+        /// </summary>
+        /// <param name="SQLString">SQL语句</param>
+        /// <param name="cmdParms">参数</param>
+        /// <returns>影响的记录数</returns>
+        internal async Task<int> ExecuteAsync(string SQLString, DbParameter[] cmdParms)
+        {
+            OnExecuting?.Invoke(SQLString, cmdParms);
+
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                using (DbCommand cmd = _provider.GetCommand(conn))
+                {
+                    await PrepareCommandAsync(cmd, conn, _tran, SQLString, cmdParms);
+                    var task = cmd.ExecuteNonQueryAsync();
+                    int rows = await task;
+                    cmd.Parameters.Clear();
+                    return rows;
+                }
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+        #endregion
+
+        #region ExecuteReader 执行查询语句，返回IDataReader
+        /// <summary>
+        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
+        /// </summary>
+        private DbDataReader ExecuteReader(string sqlString, DbConnection conn)
+        {
+            SqlFilter(ref sqlString);
+            OnExecuting?.Invoke(sqlString, null);
+
+            using (DbCommand cmd = _provider.GetCommand(sqlString, conn))
+            {
+                if (conn.State != ConnectionState.Open) conn.Open();
+                if (_tran != null) cmd.Transaction = _tran;
+                DbDataReader myReader = cmd.ExecuteReader();
+                return myReader;
+            }
+        }
+        #endregion
+
+        #region ExecuteReaderAsync 执行查询语句，返回IDataReader
+        /// <summary>
+        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
+        /// </summary>
+        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbConnection conn)
+        {
+            SqlFilter(ref sqlString);
+            OnExecuting?.Invoke(sqlString, null);
+
+            using (DbCommand cmd = _provider.GetCommand(sqlString, conn))
+            {
+                if (conn.State != ConnectionState.Open) conn.Open();
+                if (_tran != null) cmd.Transaction = _tran;
+                DbDataReader myReader = await cmd.ExecuteReaderAsync();
+                return myReader;
+            }
+        }
+        #endregion
+
+        #region ExecuteReader 执行查询语句，返回IDataReader
+        /// <summary>
+        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
+        /// </summary>
+        /// <param name="sqlString">查询语句</param>
+        ///  <param name="cmdParms">参数</param>
+        /// <returns>IDataReader</returns>
+        private DbDataReader ExecuteReader(string sqlString, DbParameter[] cmdParms, DbConnection conn)
+        {
+            OnExecuting?.Invoke(sqlString, cmdParms);
+
+            using (DbCommand cmd = _provider.GetCommand(conn))
+            {
+                PrepareCommand(cmd, conn, null, sqlString, cmdParms);
+                DbDataReader myReader = cmd.ExecuteReader();
+                cmd.Parameters.Clear();
+                return myReader;
+            }
+        }
+        #endregion
+
+        #region ExecuteReaderAsync 执行查询语句，返回IDataReader
+        /// <summary>
+        /// 执行查询语句，返回IDataReader ( 注意：调用该方法后，一定要对IDataReader进行Close )
+        /// </summary>
+        /// <param name="sqlString">查询语句</param>
+        ///  <param name="cmdParms">参数</param>
+        /// <returns>IDataReader</returns>
+        private async Task<DbDataReader> ExecuteReaderAsync(string sqlString, DbParameter[] cmdParms, DbConnection conn)
+        {
+            OnExecuting?.Invoke(sqlString, cmdParms);
+
+            using (DbCommand cmd = _provider.GetCommand(conn))
+            {
+                await PrepareCommandAsync(cmd, conn, null, sqlString, cmdParms);
+                DbDataReader myReader = await cmd.ExecuteReaderAsync();
+                cmd.Parameters.Clear();
+                return myReader;
+            }
+        }
         #endregion
 
     }
