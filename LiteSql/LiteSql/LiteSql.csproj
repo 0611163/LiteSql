@@ -6,9 +6,9 @@
         <Nullable>disable</Nullable>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>LiteSql</Title>
-        <AssemblyVersion>2.0.0</AssemblyVersion>
-        <FileVersion>2.0.0</FileVersion>
-        <Version>2.0.0</Version>
+        <AssemblyVersion>2.0.1</AssemblyVersion>
+        <FileVersion>2.0.1</FileVersion>
+        <Version>2.0.1</Version>
         <PackageId>LiteSql</PackageId>
         <PackageProjectUrl>https://github.com/0611163/LiteSql</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -19,8 +19,7 @@
             一款使用原生SQL查询的轻量级ORM，单表查询和SQL拼接查询条件支持Lambda表达式。支持Oracle、MSSQL、MySQL、PostgreSQL、SQLite、Access、ClickHouse等数据库。
         </Description>
         <PackageReleaseNotes>
-            更新内容：
-            重构，和Dapper.Lite保持一致
+            修复：删除多余的DbConnection创建
         </PackageReleaseNotes>
     </PropertyGroup>
 

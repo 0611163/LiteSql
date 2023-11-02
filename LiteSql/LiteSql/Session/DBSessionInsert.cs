@@ -25,19 +25,7 @@ namespace LiteSql
 
             OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-            var conn = GetConnection(_tran);
-
-            try
-            {
-                Execute(strSql.ToString(), parameters);
-            }
-            finally
-            {
-                if (_tran == null)
-                {
-                    if (conn.State != ConnectionState.Closed) conn.Close();
-                }
-            }
+            Execute(strSql.ToString(), parameters);
         }
 
         /// <summary>
@@ -53,20 +41,8 @@ namespace LiteSql
 
             OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-            var conn = GetConnection(_tran);
-
-            try
-            {
-                object id = ExecuteScalar(strSql.ToString(), parameters);
-                return Convert.ToInt64(id);
-            }
-            finally
-            {
-                if (_tran == null)
-                {
-                    if (conn.State != ConnectionState.Closed) conn.Close();
-                }
-            }
+            object id = ExecuteScalar(strSql.ToString(), parameters);
+            return Convert.ToInt64(id);
         }
         #endregion
 
@@ -83,19 +59,7 @@ namespace LiteSql
 
             OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-            var conn = GetConnection(_tran);
-
-            try
-            {
-                await ExecuteAsync(strSql.ToString(), parameters);
-            }
-            finally
-            {
-                if (_tran == null)
-                {
-                    if (conn.State != ConnectionState.Closed) conn.Close();
-                }
-            }
+            await ExecuteAsync(strSql.ToString(), parameters);
         }
 
         /// <summary>
@@ -111,20 +75,8 @@ namespace LiteSql
 
             OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-            var conn = GetConnection(_tran);
-
-            try
-            {
-                object id = await ExecuteScalarAsync(strSql.ToString(), parameters);
-                return Convert.ToInt64(id);
-            }
-            finally
-            {
-                if (_tran == null)
-                {
-                    if (conn.State != ConnectionState.Closed) conn.Close();
-                }
-            }
+            object id = await ExecuteScalarAsync(strSql.ToString(), parameters);
+            return Convert.ToInt64(id);
         }
         #endregion
 
@@ -154,19 +106,7 @@ namespace LiteSql
 
                 OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-                var conn = GetConnection(_tran);
-
-                try
-                {
-                    Execute(strSql.ToString(), parameters);
-                }
-                finally
-                {
-                    if (_tran == null)
-                    {
-                        if (conn.State != ConnectionState.Closed) conn.Close();
-                    }
-                }
+                Execute(strSql.ToString(), parameters);
             }
         }
         #endregion
@@ -197,19 +137,7 @@ namespace LiteSql
 
                 OnExecuting?.Invoke(strSql.ToString(), parameters);
 
-                var conn = GetConnection(_tran);
-
-                try
-                {
-                    await ExecuteAsync(strSql.ToString(), parameters);
-                }
-                finally
-                {
-                    if (_tran == null)
-                    {
-                        if (conn.State != ConnectionState.Closed) conn.Close();
-                    }
-                }
+                await ExecuteAsync(strSql.ToString(), parameters);
             }
         }
         #endregion
