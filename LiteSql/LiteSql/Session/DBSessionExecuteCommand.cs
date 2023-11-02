@@ -783,8 +783,7 @@ namespace LiteSql
 
             using (DbCommand cmd = _provider.GetCommand(sqlString, conn))
             {
-                if (conn.State != ConnectionState.Open) conn.Open();
-                if (_tran != null) cmd.Transaction = _tran;
+                PrepareCommand(cmd, conn, _tran, sqlString, null);
                 DbDataReader myReader = cmd.ExecuteReader();
                 return myReader;
             }
@@ -802,8 +801,7 @@ namespace LiteSql
 
             using (DbCommand cmd = _provider.GetCommand(sqlString, conn))
             {
-                if (conn.State != ConnectionState.Open) conn.Open();
-                if (_tran != null) cmd.Transaction = _tran;
+                await PrepareCommandAsync(cmd, conn, _tran, sqlString, null);
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
                 return myReader;
             }
