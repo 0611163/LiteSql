@@ -612,17 +612,17 @@ namespace LiteSql
         #region 实现ISqlString增删改查接口
 
         /// <summary>
-        /// 查询实体
+        /// 返回第一行的值，不存在则返回null
         /// </summary>
-        public T Query<T>() where T : new()
+        public T First<T>() where T : new()
         {
             return _session.Query<T>(this);
         }
 
         /// <summary>
-        /// 查询实体
+        /// 返回第一行的值，不存在则返回null
         /// </summary>
-        public Task<T> QueryAsync<T>() where T : new()
+        public Task<T> FirstAsync<T>() where T : new()
         {
             return _session.QueryAsync<T>(this);
         }
@@ -630,7 +630,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public List<T> QueryList<T>() where T : new()
+        public List<T> ToList<T>() where T : new()
         {
             return _session.QueryList<T>(this);
         }
@@ -638,7 +638,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public Task<List<T>> QueryListAsync<T>() where T : new()
+        public Task<List<T>> ToListAsync<T>() where T : new()
         {
             return _session.QueryListAsync<T>(this);
         }
@@ -646,7 +646,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询
         /// </summary>
-        public List<T> QueryPage<T>(string orderby, int pageSize, int currentPage) where T : new()
+        public List<T> ToPageList<T>(string orderby, int pageSize, int currentPage) where T : new()
         {
             return _session.QueryPage<T>(this, orderby, pageSize, currentPage);
         }
@@ -654,45 +654,9 @@ namespace LiteSql
         /// <summary>
         /// 分页查询
         /// </summary>
-        public Task<List<T>> QueryPageAsync<T>(string orderby, int pageSize, int currentPage) where T : new()
+        public Task<List<T>> ToPageListAsync<T>(string orderby, int pageSize, int currentPage) where T : new()
         {
             return _session.QueryPageAsync<T>(this, orderby, pageSize, currentPage);
-        }
-
-        /// <summary>
-        /// 条件删除
-        /// </summary>
-        [Obsolete]
-        public int DeleteByCondition<T>()
-        {
-            return _session.DeleteByCondition<T>(this);
-        }
-
-        /// <summary>
-        /// 条件删除
-        /// </summary>
-        [Obsolete]
-        public Task<int> DeleteByConditionAsync<T>()
-        {
-            return _session.DeleteByConditionAsync<T>(this);
-        }
-
-        /// <summary>
-        /// 条件删除
-        /// </summary>
-        [Obsolete]
-        public int DeleteByCondition(Type type)
-        {
-            return _session.DeleteByCondition(type, this);
-        }
-
-        /// <summary>
-        /// 条件删除
-        /// </summary>
-        [Obsolete]
-        public Task<int> DeleteByConditionAsync(Type type)
-        {
-            return _session.DeleteByConditionAsync(type, this);
         }
 
         /// <summary>
@@ -823,6 +787,98 @@ namespace LiteSql
             return _session.QueryCountAsync(this, pageSize);
         }
 
+        #endregion
+
+        #region Obsolete 增删改查接口
+        /// <summary>
+        /// 查询实体
+        /// </summary>
+        [Obsolete]
+        public T Query<T>() where T : new()
+        {
+            return _session.Query<T>(this);
+        }
+
+        /// <summary>
+        /// 查询实体
+        /// </summary>
+        [Obsolete]
+        public Task<T> QueryAsync<T>() where T : new()
+        {
+            return _session.QueryAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        [Obsolete]
+        public List<T> QueryList<T>() where T : new()
+        {
+            return _session.QueryList<T>(this);
+        }
+
+        /// <summary>
+        /// 查询列表
+        /// </summary>
+        [Obsolete]
+        public Task<List<T>> QueryListAsync<T>() where T : new()
+        {
+            return _session.QueryListAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 分页查询
+        /// </summary>
+        [Obsolete]
+        public List<T> QueryPage<T>(string orderby, int pageSize, int currentPage) where T : new()
+        {
+            return _session.QueryPage<T>(this, orderby, pageSize, currentPage);
+        }
+
+        /// <summary>
+        /// 分页查询
+        /// </summary>
+        [Obsolete]
+        public Task<List<T>> QueryPageAsync<T>(string orderby, int pageSize, int currentPage) where T : new()
+        {
+            return _session.QueryPageAsync<T>(this, orderby, pageSize, currentPage);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        [Obsolete]
+        public int DeleteByCondition<T>()
+        {
+            return _session.DeleteByCondition<T>(this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        [Obsolete]
+        public Task<int> DeleteByConditionAsync<T>()
+        {
+            return _session.DeleteByConditionAsync<T>(this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        [Obsolete]
+        public int DeleteByCondition(Type type)
+        {
+            return _session.DeleteByCondition(type, this);
+        }
+
+        /// <summary>
+        /// 条件删除
+        /// </summary>
+        [Obsolete]
+        public Task<int> DeleteByConditionAsync(Type type)
+        {
+            return _session.DeleteByConditionAsync(type, this);
+        }
         #endregion
 
     }

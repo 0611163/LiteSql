@@ -15,6 +15,7 @@ namespace LiteSql
     /// </summary>
     public interface ISqlQueryable<T> where T : new()
     {
+        #region 变量
         /// <summary>
         /// 参数化查询的SQL
         /// </summary>
@@ -24,7 +25,9 @@ namespace LiteSql
         /// 参数化查询的参数
         /// </summary>
         DbParameter[] Params { get; }
+        #endregion
 
+        #region Where
         /// <summary>
         /// 追加参数化SQL
         /// </summary>
@@ -36,17 +39,23 @@ namespace LiteSql
         /// </summary>
         /// <param name="expression">Lambda 表达式</param>
         ISqlQueryable<T> Where<U>(Expression<Func<U, object>> expression);
+        #endregion
 
+        #region OrderBy
         /// <summary>
         /// 追加 order by SQL
         /// </summary>
         ISqlQueryable<T> OrderBy(Expression<Func<T, object>> expression);
+        #endregion
 
+        #region OrderByDescending
         /// <summary>
         /// 追加 order by SQL
         /// </summary>
         ISqlQueryable<T> OrderByDescending(Expression<Func<T, object>> expression);
+        #endregion
 
+        #region 增删改查接口
         /// <summary>
         /// 执行查询
         /// </summary>
@@ -78,12 +87,12 @@ namespace LiteSql
         Task<long> CountAsync();
 
         /// <summary>
-        /// 返回数量
+        /// 返回第一行的值，不存在则返回null
         /// </summary>
         T First();
 
         /// <summary>
-        /// 返回数量
+        /// 返回第一行的值，不存在则返回null
         /// </summary>
         Task<T> FirstAsync();
 
@@ -106,6 +115,7 @@ namespace LiteSql
         /// 删除
         /// </summary>
         Task<int> DeleteAsync();
+        #endregion
 
     }
 }
