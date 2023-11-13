@@ -6,9 +6,9 @@
         <Nullable>disable</Nullable>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>LiteSql</Title>
-        <AssemblyVersion>2.0.2</AssemblyVersion>
-        <FileVersion>2.0.2</FileVersion>
-        <Version>2.0.2</Version>
+        <AssemblyVersion>2.0.3</AssemblyVersion>
+        <FileVersion>2.0.3</FileVersion>
+        <Version>2.0.3</Version>
         <PackageId>LiteSql</PackageId>
         <PackageProjectUrl>https://github.com/0611163/LiteSql</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -20,7 +20,7 @@
         </Description>
         <PackageReleaseNotes>
             更新内容：
-            ISqlString查询接口变更，旧接口标记为Obsolete
+            内部代码有两处漏传事务参数
         </PackageReleaseNotes>
     </PropertyGroup>
 

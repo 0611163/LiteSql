@@ -821,7 +821,7 @@ namespace LiteSql
 
             using (DbCommand cmd = _provider.GetCommand(conn))
             {
-                PrepareCommand(cmd, conn, null, sqlString, cmdParms);
+                PrepareCommand(cmd, conn, _tran, sqlString, cmdParms);
                 DbDataReader myReader = cmd.ExecuteReader();
                 cmd.Parameters.Clear();
                 return myReader;
@@ -842,7 +842,7 @@ namespace LiteSql
 
             using (DbCommand cmd = _provider.GetCommand(conn))
             {
-                await PrepareCommandAsync(cmd, conn, null, sqlString, cmdParms);
+                await PrepareCommandAsync(cmd, conn, _tran, sqlString, cmdParms);
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
                 cmd.Parameters.Clear();
                 return myReader;
