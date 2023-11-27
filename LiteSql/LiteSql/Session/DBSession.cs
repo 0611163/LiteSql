@@ -75,6 +75,16 @@ namespace LiteSql
         /// </summary>
         private SplitTableMapping _splitTableMapping;
 
+        /// <summary>
+        /// 事务
+        /// </summary>
+        public DbTransaction Tran => _tran;
+
+        /// <summary>
+        /// 数据库连接
+        /// </summary>
+        public DbConnection Conn => _tran?.Connection;
+
         #endregion
 
         #region 静态构造函数

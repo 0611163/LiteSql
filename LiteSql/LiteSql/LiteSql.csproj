@@ -6,9 +6,9 @@
         <Nullable>disable</Nullable>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>LiteSql</Title>
-        <AssemblyVersion>2.0.3</AssemblyVersion>
-        <FileVersion>2.0.3</FileVersion>
-        <Version>2.0.3</Version>
+        <AssemblyVersion>2.0.6</AssemblyVersion>
+        <FileVersion>2.0.6</FileVersion>
+        <Version>2.0.6</Version>
         <PackageId>LiteSql</PackageId>
         <PackageProjectUrl>https://github.com/0611163/LiteSql</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -20,7 +20,8 @@
         </Description>
         <PackageReleaseNotes>
             更新内容：
-            内部代码有两处漏传事务参数
+            1. IDbSession接口增加Tran(当前数据库会话的事务)和Conn(当前数据库会话的数据库连接)属性
+            2. IDbSession接口的BeginTransaction方法不再返回DbTransaction对象
         </PackageReleaseNotes>
     </PropertyGroup>
 

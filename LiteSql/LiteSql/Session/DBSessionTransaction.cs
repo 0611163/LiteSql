@@ -14,15 +14,15 @@ namespace LiteSql
         /// <summary>
         /// 开始事务
         /// </summary>
-        public DbTransaction BeginTransaction()
+        public void BeginTransaction()
         {
-            return BeginTransaction(IsolationLevel.Unspecified);
+            BeginTransaction(IsolationLevel.Unspecified);
         }
 
         /// <summary>
         /// 开始事务
         /// </summary>
-        public DbTransaction BeginTransaction(IsolationLevel isolationLevel)
+        public void BeginTransaction(IsolationLevel isolationLevel)
         {
             var conn = GetConnection();
             if (conn.State == ConnectionState.Closed) conn.Open();
@@ -37,7 +37,6 @@ namespace LiteSql
                 _tran = null;
                 throw;
             }
-            return _tran;
         }
         #endregion
 
