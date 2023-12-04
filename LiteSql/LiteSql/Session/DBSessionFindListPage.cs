@@ -14,7 +14,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public List<T> QueryPage<T>(string sql, string orderby, int pageSize, int currentPage) where T : new()
+        public List<T> QueryPage<T>(string sql, string orderby, int pageSize, int currentPage)
         {
             sql = _provider.CreatePageSql(sql, orderby, pageSize, currentPage);
 
@@ -26,7 +26,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public async Task<List<T>> QueryPageAsync<T>(string sql, string orderby, int pageSize, int currentPage) where T : new()
+        public async Task<List<T>> QueryPageAsync<T>(string sql, string orderby, int pageSize, int currentPage)
         {
             sql = _provider.CreatePageSql(sql, orderby, pageSize, currentPage);
 
@@ -38,7 +38,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public List<T> QueryPage<T>(string sql, string orderby, int pageSize, int currentPage, DbParameter[] cmdParms) where T : new()
+        public List<T> QueryPage<T>(string sql, string orderby, int pageSize, int currentPage, DbParameter[] cmdParms)
         {
             sql = _provider.CreatePageSql(sql, orderby, pageSize, currentPage);
 
@@ -48,7 +48,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public async Task<List<T>> QueryPageAsync<T>(string sql, string orderby, int pageSize, int currentPage, DbParameter[] cmdParms) where T : new()
+        public async Task<List<T>> QueryPageAsync<T>(string sql, string orderby, int pageSize, int currentPage, DbParameter[] cmdParms)
         {
             sql = _provider.CreatePageSql(sql, orderby, pageSize, currentPage);
 
@@ -60,7 +60,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public List<T> QueryPage<T>(ISqlString sql, string orderby, int pageSize, int currentPage) where T : new()
+        public List<T> QueryPage<T>(ISqlString sql, string orderby, int pageSize, int currentPage)
         {
             return QueryPage<T>(sql.SQL, orderby, pageSize, currentPage, sql.Params);
         }
@@ -68,7 +68,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询列表
         /// </summary>
-        public Task<List<T>> QueryPageAsync<T>(ISqlString sql, string orderby, int pageSize, int currentPage) where T : new()
+        public Task<List<T>> QueryPageAsync<T>(ISqlString sql, string orderby, int pageSize, int currentPage)
         {
             return QueryPageAsync<T>(sql.SQL, orderby, pageSize, currentPage, sql.Params);
         }

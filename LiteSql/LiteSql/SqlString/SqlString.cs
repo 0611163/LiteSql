@@ -15,7 +15,7 @@ namespace LiteSql
     /// <summary>
     /// 参数化查询SQL字符串
     /// </summary>
-    public class SqlString<T> : SqlString, ISqlString<T> where T : new()
+    public class SqlString<T> : SqlString, ISqlString<T>
     {
         #region 构造函数
         public SqlString(IProvider provider, IDbSession session, string sql = null, params object[] args) : base(provider, session, sql, args)
@@ -614,7 +614,7 @@ namespace LiteSql
         /// <summary>
         /// 返回第一行的值，不存在则返回null
         /// </summary>
-        public T First<T>() where T : new()
+        public T First<T>()
         {
             return _session.Query<T>(this);
         }
@@ -622,7 +622,7 @@ namespace LiteSql
         /// <summary>
         /// 返回第一行的值，不存在则返回null
         /// </summary>
-        public Task<T> FirstAsync<T>() where T : new()
+        public Task<T> FirstAsync<T>()
         {
             return _session.QueryAsync<T>(this);
         }
@@ -630,7 +630,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public List<T> ToList<T>() where T : new()
+        public List<T> ToList<T>()
         {
             return _session.QueryList<T>(this);
         }
@@ -638,7 +638,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public Task<List<T>> ToListAsync<T>() where T : new()
+        public Task<List<T>> ToListAsync<T>()
         {
             return _session.QueryListAsync<T>(this);
         }
@@ -646,7 +646,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询
         /// </summary>
-        public List<T> ToPageList<T>(string orderby, int pageSize, int currentPage) where T : new()
+        public List<T> ToPageList<T>(string orderby, int pageSize, int currentPage)
         {
             return _session.QueryPage<T>(this, orderby, pageSize, currentPage);
         }
@@ -654,7 +654,7 @@ namespace LiteSql
         /// <summary>
         /// 分页查询
         /// </summary>
-        public Task<List<T>> ToPageListAsync<T>(string orderby, int pageSize, int currentPage) where T : new()
+        public Task<List<T>> ToPageListAsync<T>(string orderby, int pageSize, int currentPage)
         {
             return _session.QueryPageAsync<T>(this, orderby, pageSize, currentPage);
         }
@@ -794,7 +794,7 @@ namespace LiteSql
         /// 查询实体
         /// </summary>
         [Obsolete]
-        public T Query<T>() where T : new()
+        public T Query<T>()
         {
             return _session.Query<T>(this);
         }
@@ -803,7 +803,7 @@ namespace LiteSql
         /// 查询实体
         /// </summary>
         [Obsolete]
-        public Task<T> QueryAsync<T>() where T : new()
+        public Task<T> QueryAsync<T>()
         {
             return _session.QueryAsync<T>(this);
         }
@@ -812,7 +812,7 @@ namespace LiteSql
         /// 查询列表
         /// </summary>
         [Obsolete]
-        public List<T> QueryList<T>() where T : new()
+        public List<T> QueryList<T>()
         {
             return _session.QueryList<T>(this);
         }
@@ -821,7 +821,7 @@ namespace LiteSql
         /// 查询列表
         /// </summary>
         [Obsolete]
-        public Task<List<T>> QueryListAsync<T>() where T : new()
+        public Task<List<T>> QueryListAsync<T>()
         {
             return _session.QueryListAsync<T>(this);
         }
@@ -830,7 +830,7 @@ namespace LiteSql
         /// 分页查询
         /// </summary>
         [Obsolete]
-        public List<T> QueryPage<T>(string orderby, int pageSize, int currentPage) where T : new()
+        public List<T> QueryPage<T>(string orderby, int pageSize, int currentPage)
         {
             return _session.QueryPage<T>(this, orderby, pageSize, currentPage);
         }
@@ -839,7 +839,7 @@ namespace LiteSql
         /// 分页查询
         /// </summary>
         [Obsolete]
-        public Task<List<T>> QueryPageAsync<T>(string orderby, int pageSize, int currentPage) where T : new()
+        public Task<List<T>> QueryPageAsync<T>(string orderby, int pageSize, int currentPage)
         {
             return _session.QueryPageAsync<T>(this, orderby, pageSize, currentPage);
         }

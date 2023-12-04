@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -15,7 +16,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public List<T> QueryList<T>(string sql) where T : new()
+        public List<T> QueryList<T>(string sql)
         {
             SqlFilter(ref sql);
             OnExecuting?.Invoke(sql, null);
@@ -42,7 +43,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public async Task<List<T>> QueryListAsync<T>(string sql) where T : new()
+        public async Task<List<T>> QueryListAsync<T>(string sql)
         {
             SqlFilter(ref sql);
             OnExecuting?.Invoke(sql, null);
@@ -70,7 +71,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public List<T> QueryList<T>(string sql, DbParameter[] cmdParms) where T : new()
+        public List<T> QueryList<T>(string sql, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(sql, cmdParms);
 
@@ -96,7 +97,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public async Task<List<T>> QueryListAsync<T>(string sql, DbParameter[] cmdParms) where T : new()
+        public async Task<List<T>> QueryListAsync<T>(string sql, DbParameter[] cmdParms)
         {
             OnExecuting?.Invoke(sql, cmdParms);
 
@@ -122,7 +123,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public List<T> QueryList<T>(ISqlString sql) where T : new()
+        public List<T> QueryList<T>(ISqlString sql)
         {
             return QueryList<T>(sql.SQL, sql.Params);
         }
@@ -130,7 +131,7 @@ namespace LiteSql
         /// <summary>
         /// 查询列表
         /// </summary>
-        public Task<List<T>> QueryListAsync<T>(ISqlString sql) where T : new()
+        public Task<List<T>> QueryListAsync<T>(ISqlString sql)
         {
             return QueryListAsync<T>(sql.SQL, sql.Params);
         }
@@ -141,7 +142,7 @@ namespace LiteSql
         /// <summary>
         /// DataReaderToList
         /// </summary>
-        private List<T> DataReaderToList<T>(IDataReader rd) where T : new()
+        private List<T> DataReaderToList<T>(IDataReader rd)
         {
             List<T> list = new List<T>();
 
@@ -157,6 +158,31 @@ namespace LiteSql
                 while (rd.Read())
                 {
                     list.Add((T)rd[0]);
+                }
+            }
+            else if (typeof(T) == typeof(object)) //支持QueryList<dynamic>即返回值List<dynamic>类型
+            {
+                int fcnt = rd.FieldCount;
+                Dictionary<string, int> fields = new Dictionary<string, int>();
+                for (int i = 0; i < fcnt; i++)
+                {
+                    string field = rd.GetName(i);
+                    if (!fields.ContainsKey(field))
+                    {
+                        fields.Add(field, i);
+                    }
+                }
+
+                while (rd.Read())
+                {
+                    dynamic obj = new ExpandoObject();
+
+                    foreach (string field in fields.Keys)
+                    {
+                        ((IDictionary<string, object>)obj).Add(field, rd[fields[field]]);
+                    }
+
+                    list.Add(obj);
                 }
             }
             else

@@ -12,7 +12,7 @@ namespace LiteSql
     /// <summary>
     /// SQL字符串类
     /// </summary>
-    public class SqlQueryable<T> : ISqlQueryable<T> where T : new()
+    public class SqlQueryable<T> : ISqlQueryable<T>
     {
         #region 变量
         private SqlString _sqlString;
