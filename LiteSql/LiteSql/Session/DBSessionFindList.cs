@@ -175,12 +175,11 @@ namespace LiteSql
 
                 while (rd.Read())
                 {
-                    object obj = new ExpandoObject();
-                    IDictionary<string, object> dict = (IDictionary<string, object>)obj;
+                    IDictionary<string, object> obj = new ExpandoObject();
 
                     foreach (string field in fields.Keys)
                     {
-                        dict.Add(field, rd[fields[field]]);
+                        obj.Add(field, rd[fields[field]]);
                     }
 
                     list.Add((T)obj);

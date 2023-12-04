@@ -6,9 +6,9 @@
         <Nullable>disable</Nullable>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>LiteSql</Title>
-        <AssemblyVersion>2.0.8</AssemblyVersion>
-        <FileVersion>2.0.8</FileVersion>
-        <Version>2.0.8</Version>
+        <AssemblyVersion>2.0.9</AssemblyVersion>
+        <FileVersion>2.0.9</FileVersion>
+        <Version>2.0.9</Version>
         <PackageId>LiteSql</PackageId>
         <PackageProjectUrl>https://github.com/0611163/LiteSql</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -20,9 +20,7 @@
         </Description>
         <PackageReleaseNotes>
             更新内容：
-            1. 支持QueryList＜dynamic＞即返回值List＜dynamic＞类型
-            2. 移除接口的where T : new()限制，以支持QueryList＜string＞
-            3. 不需要依赖Microsoft.CSharp
+            1. QueryList＜string＞内部实现代码优化
         </PackageReleaseNotes>
     </PropertyGroup>
 
