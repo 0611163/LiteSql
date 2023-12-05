@@ -6,9 +6,9 @@
         <Nullable>disable</Nullable>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>LiteSql</Title>
-        <AssemblyVersion>2.0.10</AssemblyVersion>
-        <FileVersion>2.0.10</FileVersion>
-        <Version>2.0.10</Version>
+        <AssemblyVersion>2.0.11</AssemblyVersion>
+        <FileVersion>2.0.11</FileVersion>
+        <Version>2.0.11</Version>
         <PackageId>LiteSql</PackageId>
         <PackageProjectUrl>https://github.com/0611163/LiteSql</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

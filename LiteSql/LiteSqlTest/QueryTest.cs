@@ -403,6 +403,28 @@ namespace LiteSqlTest
         }
         #endregion
 
+        #region 测试List<T>类型
+        [TestMethod]
+        public void TestListT2()
+        {
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
+            {
+                Console.WriteLine(s);
+            };
+
+            var sql = session.Sql("select amount from bs_order");
+            List<double> list = session.QueryList<double>(sql.SQL, sql.Params);
+
+            foreach (var item in list)
+            {
+                Console.WriteLine($"值：{item}");
+            }
+            Assert.IsTrue(list.Count > 0);
+        }
+        #endregion
+
         #region 测试Dynamic类型
         [TestMethod]
         public void TestDynamic()

@@ -148,6 +148,10 @@ namespace LiteSql
 
             if (typeof(T).IsValueType)
             {
+                Type type = typeof(T);
+                bool isNullable = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+                Type genericType = isNullable ? type.GenericTypeArguments[0] : null;
+
                 while (rd.Read())
                 {
                     object obj = rd[0];
@@ -158,7 +162,14 @@ namespace LiteSql
                     }
                     else
                     {
-                        list.Add((T)obj);
+                        if (isNullable)
+                        {
+                            list.Add((T)Convert.ChangeType(obj, genericType));
+                        }
+                        else
+                        {
+                            list.Add((T)Convert.ChangeType(obj, type));
+                        }
                     }
                 }
             }
