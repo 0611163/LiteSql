@@ -146,11 +146,20 @@ namespace LiteSql
         {
             List<T> list = new List<T>();
 
-            if (typeof(T) == typeof(int))
+            if (typeof(T).IsValueType)
             {
                 while (rd.Read())
                 {
-                    list.Add((T)rd[0]);
+                    object obj = rd[0];
+
+                    if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
+                    {
+                        list.Add(default(T));
+                    }
+                    else
+                    {
+                        list.Add((T)obj);
+                    }
                 }
             }
             else if (typeof(T) == typeof(string))

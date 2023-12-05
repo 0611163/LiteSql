@@ -6,9 +6,9 @@
         <Nullable>disable</Nullable>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>LiteSql</Title>
-        <AssemblyVersion>2.0.9</AssemblyVersion>
-        <FileVersion>2.0.9</FileVersion>
-        <Version>2.0.9</Version>
+        <AssemblyVersion>2.0.10</AssemblyVersion>
+        <FileVersion>2.0.10</FileVersion>
+        <Version>2.0.10</Version>
         <PackageId>LiteSql</PackageId>
         <PackageProjectUrl>https://github.com/0611163/LiteSql</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -20,7 +20,7 @@
         </Description>
         <PackageReleaseNotes>
             更新内容：
-            1. QueryList＜string＞内部实现代码优化
+            1. QueryList＜T＞中的T支持各值类型完善
         </PackageReleaseNotes>
     </PropertyGroup>
 
