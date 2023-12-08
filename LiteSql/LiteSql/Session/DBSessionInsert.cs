@@ -23,8 +23,6 @@ namespace LiteSql
 
             PrepareInsertSql(obj, ref strSql, ref parameters);
 
-            OnExecuting?.Invoke(strSql.ToString(), parameters);
-
             Execute(strSql.ToString(), parameters);
         }
 
@@ -38,8 +36,6 @@ namespace LiteSql
 
             PrepareInsertSql(obj, ref strSql, ref parameters);
             strSql.Append(";" + selectIdSql + ";");
-
-            OnExecuting?.Invoke(strSql.ToString(), parameters);
 
             object id = ExecuteScalar(strSql.ToString(), parameters);
             return Convert.ToInt64(id);
@@ -57,8 +53,6 @@ namespace LiteSql
 
             PrepareInsertSql(obj, ref strSql, ref parameters);
 
-            OnExecuting?.Invoke(strSql.ToString(), parameters);
-
             await ExecuteAsync(strSql.ToString(), parameters);
         }
 
@@ -72,8 +66,6 @@ namespace LiteSql
 
             PrepareInsertSql(obj, ref strSql, ref parameters);
             strSql.Append(";" + selectIdSql + ";");
-
-            OnExecuting?.Invoke(strSql.ToString(), parameters);
 
             object id = await ExecuteScalarAsync(strSql.ToString(), parameters);
             return Convert.ToInt64(id);
@@ -104,8 +96,6 @@ namespace LiteSql
 
                 PrepareInsertSql<T>(listPage, ref strSql, ref parameters, ref savedCount);
 
-                OnExecuting?.Invoke(strSql.ToString(), parameters);
-
                 Execute(strSql.ToString(), parameters);
             }
         }
@@ -134,8 +124,6 @@ namespace LiteSql
                 var listPage = list.Skip(i).Take(pageSize).ToList();
 
                 PrepareInsertSql<T>(listPage, ref strSql, ref parameters, ref savedCount);
-
-                OnExecuting?.Invoke(strSql.ToString(), parameters);
 
                 await ExecuteAsync(strSql.ToString(), parameters);
             }

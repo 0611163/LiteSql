@@ -85,6 +85,8 @@ namespace LiteSql
         /// </summary>
         public DbConnection Conn => _tran?.Connection;
 
+        private CommandType _commandType = CommandType.Text;
+
         #endregion
 
         #region 静态构造函数
@@ -250,6 +252,17 @@ namespace LiteSql
                 if (conn.State == ConnectionState.Closed) await conn.OpenAsync();
                 return conn;
             }
+        }
+        #endregion
+
+        #region 设置CommandType
+        /// <summary>
+        /// 设置CommandType
+        /// </summary>
+        public IDbSession SetCommandType(CommandType commandType)
+        {
+            _commandType = commandType;
+            return this;
         }
         #endregion
 

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LiteSql;
 using Utils;
+using System.Data;
 
 namespace LiteSqlTest
 {
@@ -486,6 +487,55 @@ namespace LiteSqlTest
             {
                 Console.WriteLine($"{item.user_name}, {item.real_name}, {item.remark}");
             }
+            Assert.IsTrue(list.Count > 0);
+        }
+        #endregion
+
+        #region 测试调用存储过程
+        [TestMethod]
+        public void TestStoredProcedure()
+        {
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
+            {
+                Console.WriteLine(s);
+            };
+
+            List<dynamic> list = session.SetCommandType(CommandType.StoredProcedure).Sql("query_user", new { maxId = 20 }).ToList<dynamic>();
+
+            foreach (var item in list)
+            {
+                Console.WriteLine($"{item.user_name}, {item.real_name}, {item.remark}");
+            }
+            Assert.IsTrue(list.Count > 0);
+
+            list = session.SetCommandType(CommandType.Text).Sql("select user_name, real_name, remark from sys_user where id<=@Id", 20).ToList<dynamic>();
+            Assert.IsTrue(list.Count > 0);
+        }
+        #endregion
+
+        #region 测试查询并返回DataTable
+        [TestMethod]
+        public void TestReturnDataTable()
+        {
+            var session = LiteSqlFactory.GetSession();
+
+            session.OnExecuting = (s, p) =>
+            {
+                Console.WriteLine(s);
+            };
+
+            var sql = session.Sql("select * from sys_user where id<=@Id", 20);
+            DataTable dt = session.QueryDataTable(sql.SQL, sql.Params);
+
+            foreach (DataRow dr in dt.Rows)
+            {
+                Console.WriteLine($"{dr["user_name"]}, {dr["real_name"]}, {dr["remark"]}");
+            }
+            Assert.IsTrue(dt.Rows.Count > 0);
+
+            var list = sql.ToList<dynamic>();
             Assert.IsTrue(list.Count > 0);
         }
         #endregion

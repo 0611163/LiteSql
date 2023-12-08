@@ -46,8 +46,6 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType)));
 
-            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
-
             return Execute(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -89,8 +87,6 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType)));
 
-            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
-
             return await ExecuteAsync(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -121,8 +117,6 @@ namespace LiteSql
             sbSql.Remove(sbSql.Length - 1, 1);
             sbSql.Append(")");
 
-            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
-
             return Execute(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -151,8 +145,6 @@ namespace LiteSql
             }
             sbSql.Remove(sbSql.Length - 1, 1);
             sbSql.Append(")");
-
-            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
 
             return await ExecuteAsync(sbSql.ToString(), cmdParms);
         }
@@ -199,8 +191,6 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
-            OnExecuting?.Invoke(sbSql.ToString(), null);
-
             return Execute(sbSql.ToString(), null);
         }
         #endregion
@@ -217,8 +207,6 @@ namespace LiteSql
             SqlFilter(ref condition);
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
-
-            OnExecuting?.Invoke(sbSql.ToString(), null);
 
             return await ExecuteAsync(sbSql.ToString(), null);
         }
@@ -264,8 +252,6 @@ namespace LiteSql
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
 
-            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
-
             return Execute(sbSql.ToString(), cmdParms);
         }
         #endregion
@@ -282,8 +268,6 @@ namespace LiteSql
             SqlFilter(ref condition);
             Tuple<string, string> delTmpl = _provider.CreateDeleteSqlTempldate();
             sbSql.Append(string.Format(delTmpl.Item1 + " {0} " + delTmpl.Item2 + " {1}", GetTableName(_provider, type), condition));
-
-            OnExecuting?.Invoke(sbSql.ToString(), cmdParms);
 
             return await ExecuteAsync(sbSql.ToString(), cmdParms);
         }

@@ -27,9 +27,6 @@ namespace LiteSql
         /// </summary>
         public bool Exists(string sqlString)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
             object obj = ExecuteScalar(sqlString);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -49,9 +46,6 @@ namespace LiteSql
         /// </summary>
         public async Task<bool> ExistsAsync(string sqlString)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
             object obj = await ExecuteScalarAsync(sqlString);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -73,9 +67,6 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         public T QuerySingle<T>(string sqlString)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
             object obj = ExecuteScalar(sqlString);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -96,9 +87,6 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         public object QuerySingle(string sqlString)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
             object obj = ExecuteScalar(sqlString);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -119,9 +107,6 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         public async Task<T> QuerySingleAsync<T>(string sqlString)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
             object obj = await ExecuteScalarAsync(sqlString);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -142,9 +127,6 @@ namespace LiteSql
         /// <param name="sqlString">查询语句</param>
         public async Task<object> QuerySingleAsync(string sqlString)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, null);
-
             object obj = await ExecuteScalarAsync(sqlString);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -222,9 +204,6 @@ namespace LiteSql
         /// </summary>
         public bool Exists(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
             object obj = ExecuteScalar(sqlString, cmdParms);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -244,9 +223,6 @@ namespace LiteSql
         /// </summary>
         public async Task<bool> ExistsAsync(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
             object obj = await ExecuteScalarAsync(sqlString, cmdParms);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -269,9 +245,6 @@ namespace LiteSql
         /// <param name="cmdParms">参数</param>
         public T QuerySingle<T>(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
             object obj = ExecuteScalar(sqlString, cmdParms);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -293,9 +266,6 @@ namespace LiteSql
         /// <param name="cmdParms">参数</param>
         public object QuerySingle(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
             object obj = ExecuteScalar(sqlString, cmdParms);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -317,9 +287,6 @@ namespace LiteSql
         /// <param name="cmdParms">参数</param>
         public async Task<T> QuerySingleAsync<T>(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
             object obj = await ExecuteScalarAsync(sqlString, cmdParms);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -341,9 +308,6 @@ namespace LiteSql
         /// <param name="cmdParms">参数</param>
         public async Task<object> QuerySingleAsync(string sqlString, DbParameter[] cmdParms)
         {
-            SqlFilter(ref sqlString);
-            OnExecuting?.Invoke(sqlString, cmdParms);
-
             object obj = await ExecuteScalarAsync(sqlString, cmdParms);
 
             if (object.Equals(obj, null) || object.Equals(obj, DBNull.Value))
@@ -603,13 +567,13 @@ namespace LiteSql
         #endregion
 
         #region PrepareCommand
-        private static void PrepareCommand(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
+        private void PrepareCommand(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
         {
             if (conn.State != ConnectionState.Open) conn.Open();
             cmd.Connection = conn;
             cmd.CommandText = cmdText;
             if (trans != null) cmd.Transaction = trans;
-            cmd.CommandType = CommandType.Text;
+            cmd.CommandType = _commandType;
             if (cmdParms != null)
             {
                 foreach (DbParameter parm in cmdParms)
@@ -621,13 +585,13 @@ namespace LiteSql
         #endregion
 
         #region PrepareCommandAsync
-        private static async Task PrepareCommandAsync(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
+        private async Task PrepareCommandAsync(DbCommand cmd, DbConnection conn, DbTransaction trans, string cmdText, DbParameter[] cmdParms)
         {
             if (conn.State != ConnectionState.Open) await conn.OpenAsync();
             cmd.Connection = conn;
             cmd.CommandText = cmdText;
             if (trans != null) cmd.Transaction = trans;
-            cmd.CommandType = CommandType.Text;
+            cmd.CommandType = _commandType;
             if (cmdParms != null)
             {
                 foreach (DbParameter parm in cmdParms)
@@ -846,6 +810,107 @@ namespace LiteSql
                 DbDataReader myReader = await cmd.ExecuteReaderAsync();
                 cmd.Parameters.Clear();
                 return myReader;
+            }
+        }
+        #endregion
+
+
+        #region 查询并返回DataTable
+        /// <summary>
+        /// 执行查询语句，返回DataTable
+        /// </summary>
+        public DataTable QueryDataTable(string sqlString)
+        {
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                var reader = ExecuteReader(sqlString, conn);
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                return dt;
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 执行查询语句，返回DataTable
+        /// </summary>
+        public async Task<DataTable> QueryDataTableAsync(string sqlString)
+        {
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                var reader = await ExecuteReaderAsync(sqlString, conn);
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                return dt;
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 执行查询语句，返回DataTable
+        /// </summary>
+        /// <param name="sqlString">查询语句</param>
+        ///  <param name="cmdParms">参数</param>
+        /// <returns>IDataReader</returns>
+        public DataTable QueryDataTable(string sqlString, DbParameter[] cmdParms)
+        {
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                var reader = ExecuteReader(sqlString, cmdParms, conn);
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                return dt;
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 执行查询语句，返回DataTable
+        /// </summary>
+        /// <param name="sqlString">查询语句</param>
+        ///  <param name="cmdParms">参数</param>
+        /// <returns>IDataReader</returns>
+        public async Task<DataTable> QueryDataTableAsync(string sqlString, DbParameter[] cmdParms)
+        {
+            var conn = GetConnection(_tran);
+
+            try
+            {
+                var reader = await ExecuteReaderAsync(sqlString, cmdParms, conn);
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                return dt;
+            }
+            finally
+            {
+                if (_tran == null)
+                {
+                    if (conn.State != ConnectionState.Closed) conn.Close();
+                }
             }
         }
         #endregion

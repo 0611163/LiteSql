@@ -93,5 +93,12 @@ namespace LiteSql
         Task<DbConnection> GetOpenedConnectionAsync(DbTransaction tran = null);
         #endregion
 
+        #region 设置CommandType
+        /// <summary>
+        /// 设置CommandType
+        /// </summary>
+        IDbSession SetCommandType(CommandType commandType);
+        #endregion
+
     }
 }

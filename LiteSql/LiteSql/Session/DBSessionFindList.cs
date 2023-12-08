@@ -18,9 +18,6 @@ namespace LiteSql
         /// </summary>
         public List<T> QueryList<T>(string sql)
         {
-            SqlFilter(ref sql);
-            OnExecuting?.Invoke(sql, null);
-
             var conn = GetConnection(_tran);
 
             try
@@ -45,9 +42,6 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> QueryListAsync<T>(string sql)
         {
-            SqlFilter(ref sql);
-            OnExecuting?.Invoke(sql, null);
-
             var conn = GetConnection(_tran);
 
             try
@@ -73,8 +67,6 @@ namespace LiteSql
         /// </summary>
         public List<T> QueryList<T>(string sql, DbParameter[] cmdParms)
         {
-            OnExecuting?.Invoke(sql, cmdParms);
-
             var conn = GetConnection(_tran);
 
             try
@@ -99,8 +91,6 @@ namespace LiteSql
         /// </summary>
         public async Task<List<T>> QueryListAsync<T>(string sql, DbParameter[] cmdParms)
         {
-            OnExecuting?.Invoke(sql, cmdParms);
-
             var conn = GetConnection(_tran);
 
             try

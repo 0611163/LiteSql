@@ -479,6 +479,17 @@ namespace LiteSql
             Dictionary<string, object> dict = new Dictionary<string, object>();
             MatchCollection mc = _regex.Matches(sql);
             int argIndex = 0;
+
+            if (isAnonymous && mc.Count == 0) //存储过程的情况
+            {
+                foreach (string name in anonymousValues.Keys)
+                {
+                    object obj = anonymousValues[name];
+                    dict.Add(name, obj);
+                }
+                return dict;
+            }
+
             foreach (Match m in mc)
             {
                 var oldSql = m.Value;
@@ -508,6 +519,7 @@ namespace LiteSql
                     sql = ReplaceSql(sql, oldSql, name, parameterType);
                 }
             }
+
             return dict;
         }
         #endregion
