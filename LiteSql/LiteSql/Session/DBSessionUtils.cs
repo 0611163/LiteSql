@@ -53,6 +53,12 @@ namespace LiteSql
                 {
                     PropertyInfoEx propertyInfoEx = new PropertyInfoEx(propertyInfo);
 
+                    NotMappedAttribute notMappedAttribute = propertyInfo.GetCustomAttribute<NotMappedAttribute>(false);
+                    if (notMappedAttribute == null)
+                    {
+                        propertyInfoEx.IsDBField = true;
+                    }
+
                     ColumnAttribute dbFieldAttribute = propertyInfo.GetCustomAttribute<ColumnAttribute>(false);
                     if (dbFieldAttribute != null)
                     {
@@ -65,7 +71,6 @@ namespace LiteSql
                             propertyInfoEx.FieldName = propertyInfo.Name;
                         }
 
-                        propertyInfoEx.IsDBField = true;
                         propertyInfoEx.DBFieldAttribute = dbFieldAttribute;
                     }
                     else

@@ -18,7 +18,6 @@ namespace Models
         /// 主键
         /// </summary>
         [Key]
-        [Column("id")]
         public long Id { get; set; }
 
         /// <summary>
@@ -36,13 +35,11 @@ namespace Models
         /// <summary>
         /// 用户密码
         /// </summary>
-        [Column("password")]
         public string Password { get; set; }
 
         /// <summary>
         /// 备注
         /// </summary>
-        [Column("remark")]
         public string Remark { get; set; }
 
         /// <summary>
