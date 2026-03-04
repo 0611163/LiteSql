@@ -55,7 +55,7 @@ namespace LiteSql
             string idNameWithQuote = _provider.OpenQuote + idName + _provider.CloseQuote;
             cmdParms[0] = _provider.GetDbParameter(_provider.GetParameterName(idName, idType), id);
 
-            string sql = string.Format("select * from {0} where {0}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType));
+            string sql = string.Format("select * from {0} where {1}={2}", GetTableName(_provider, type), idNameWithQuote, _provider.GetParameterName(idName, idType));
 
             object result = await FindAsync(type, sql, cmdParms);
 
